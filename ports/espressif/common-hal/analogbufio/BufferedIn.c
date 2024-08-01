@@ -1,33 +1,11 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * SPDX-FileCopyrightText: Copyright (c) 2023 Milind Movasha
- *
- * SPDX-License-Identifier: BSD-3-Clause
- *
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2023 Milind Movasha
+//
+// SPDX-License-Identifier: MIT
 
 #include <stdio.h>
+#include "bindings/espidf/__init__.h"
 #include "common-hal/analogbufio/BufferedIn.h"
 #include "shared-bindings/analogbufio/BufferedIn.h"
 #include "shared-bindings/microcontroller/Pin.h"
@@ -39,7 +17,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "driver/adc.h"
 
 // #define DEBUG_ANALOGBUFIO
 
@@ -56,12 +33,14 @@
 #elif defined(CONFIG_IDF_TARGET_ESP32S2)
 #define ADC_RESULT_BYTE     2
 #define ADC_CONV_LIMIT_EN   0
-#elif defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32H2)
+#elif defined(CONFIG_IDF_TARGET_ESP32C2) || defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32C6) || defined(CONFIG_IDF_TARGET_ESP32H2)
 #define ADC_RESULT_BYTE     4
 #define ADC_CONV_LIMIT_EN   0
 #elif defined(CONFIG_IDF_TARGET_ESP32S3)
 #define ADC_RESULT_BYTE     4
 #define ADC_CONV_LIMIT_EN   0
+#else
+#error No known CONFIG_IDF_TARGET_xxx found
 #endif
 
 static void start_dma(analogbufio_bufferedin_obj_t *self, adc_digi_convert_mode_t *convert_mode, adc_digi_output_format_t *output_format);
@@ -70,34 +49,9 @@ static void stop_dma(analogbufio_bufferedin_obj_t *self);
 void common_hal_analogbufio_bufferedin_construct(analogbufio_bufferedin_obj_t *self, const mcu_pin_obj_t *pin, uint32_t sample_rate) {
     self->pin = pin;
     self->sample_rate = sample_rate;
-}
-
-static void start_dma(analogbufio_bufferedin_obj_t *self, adc_digi_convert_mode_t *convert_mode, adc_digi_output_format_t *output_format) {
-    uint16_t adc1_chan_mask = 0;
-    uint16_t adc2_chan_mask = 0;
-
-    const mcu_pin_obj_t *pin = self->pin;
-    uint32_t sample_rate = self->sample_rate;
-
-    *output_format = ADC_DIGI_OUTPUT_FORMAT_TYPE1;
-    if (pin->adc_index == ADC_UNIT_1) {
-        *convert_mode = ADC_CONV_SINGLE_UNIT_1;
-    } else {
-        *convert_mode = ADC_CONV_SINGLE_UNIT_2;
-    }
-
     if (pin->adc_index == NO_ADC || pin->adc_channel == NO_ADC_CHANNEL) {
         raise_ValueError_invalid_pin();
     }
-
-    /*
-     *	Chip version	Conversion Mode		Output Format Type
-     *	ESP32           1                   TYPE1
-     *	ESP32S2         1,2,BOTH,ALTER      TYPE1, TYPE2
-     *	ESP32C3         ALTER               TYPE2
-     *	ESP32S3         1,2,BOTH,ALTER      TYPE2
-     *	ESP32H3         1,2,BOTH,ALTER      TYPE2
-     */
 
     #if defined(CONFIG_IDF_TARGET_ESP32)
     if (pin->adc_index != ADC_UNIT_1) {
@@ -110,6 +64,36 @@ static void start_dma(analogbufio_bufferedin_obj_t *self, adc_digi_convert_mode_
     }
     #endif
 
+    // C3 and S3 have errata related to ADC2 and continuous mode.
+    #if (defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)) && !defined(CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3)
+    if (pin->adc_index != ADC_UNIT_1) {
+        raise_ValueError_invalid_pin();
+    }
+    #endif
+
+    common_hal_mcu_pin_claim(pin);
+}
+
+static void start_dma(analogbufio_bufferedin_obj_t *self, adc_digi_convert_mode_t *convert_mode, adc_digi_output_format_t *output_format) {
+    const mcu_pin_obj_t *pin = self->pin;
+    uint32_t sample_rate = self->sample_rate;
+
+    *output_format = ADC_DIGI_OUTPUT_FORMAT_TYPE1;
+    if (pin->adc_index == ADC_UNIT_1) {
+        *convert_mode = ADC_CONV_SINGLE_UNIT_1;
+    } else {
+        *convert_mode = ADC_CONV_SINGLE_UNIT_2;
+    }
+
+    /*
+     *	Chip version	Conversion Mode		Output Format Type
+     *	ESP32           1                   TYPE1
+     *	ESP32S2         1,2,BOTH,ALTER      TYPE1, TYPE2
+     *	ESP32C3         ALTER               TYPE2
+     *	ESP32S3         1,2,BOTH,ALTER      TYPE2
+     *	ESP32H3         1,2,BOTH,ALTER      TYPE2
+     */
+
     #if defined(CONFIG_IDF_TARGET_ESP32C3)
     /* ESP32C3 only supports alter mode */
     *convert_mode = ADC_CONV_ALTER_UNIT;
@@ -119,34 +103,21 @@ static void start_dma(analogbufio_bufferedin_obj_t *self, adc_digi_convert_mode_
     *output_format = ADC_DIGI_OUTPUT_FORMAT_TYPE2;
     #endif
 
-    common_hal_mcu_pin_claim(pin);
-
-    if (pin->adc_index == ADC_UNIT_1) {
-        adc1_chan_mask = 1 << pin->adc_channel;
-    } else {
-        adc2_chan_mask = 1 << pin->adc_channel;
-    }
-
-    adc_digi_init_config_t adc_dma_config = {
+    adc_continuous_handle_cfg_t adc_dma_config = {
         .max_store_buf_size = DMA_BUFFER_SIZE,
-        .conv_num_each_intr = NUM_SAMPLES_PER_INTERRUPT,
-        .adc1_chan_mask = adc1_chan_mask,
-        .adc2_chan_mask = adc2_chan_mask,
+        .conv_frame_size = NUM_SAMPLES_PER_INTERRUPT * SOC_ADC_DIGI_DATA_BYTES_PER_CONV
     };
 
     #if defined(DEBUG_ANALOGBUFIO)
     mp_printf(&mp_plat_print, "pin:%d, ADC channel:%d, ADC index:%d, adc1_chan_mask:0x%x, adc2_chan_mask:0x%x\n", pin->number, pin->adc_channel, pin->adc_index, adc1_chan_mask, adc2_chan_mask);
     #endif // DEBUG_ANALOGBUFIO
-    esp_err_t err = adc_digi_initialize(&adc_dma_config);
+    esp_err_t err = adc_continuous_new_handle(&adc_dma_config, &self->handle);
     if (ESP_OK != err) {
         stop_dma(self);
-        common_hal_analogbufio_bufferedin_deinit(self);
-        mp_raise_ValueError_varg(translate("Unable to initialize ADC DMA controller, ErrorCode:%d"), err);
+        CHECK_ESP_RESULT(err);
     }
 
-    adc_digi_configuration_t dig_cfg = {
-        .conv_limit_en = ADC_CONV_LIMIT_EN,
-        .conv_limit_num = 250,
+    adc_continuous_config_t dig_cfg = {
         .pattern_num = NUM_ADC_CHANNELS,
         .sample_freq_hz = sample_rate,
         .conv_mode = *convert_mode,
@@ -172,25 +143,28 @@ static void start_dma(analogbufio_bufferedin_obj_t *self, adc_digi_convert_mode_
     mp_printf(&mp_plat_print, "adc_pattern[0].channel:%d, adc_pattern[0].unit:%d, adc_pattern[0].atten:%d\n", adc_pattern[0].channel, adc_pattern[0].unit, adc_pattern[0].atten);
     #endif // DEBUG_ANALOGBUFIO
 
-    err = adc_digi_controller_configure(&dig_cfg);
+    err = adc_continuous_config(self->handle, &dig_cfg);
     if (ESP_OK != err) {
         stop_dma(self);
-        common_hal_analogbufio_bufferedin_deinit(self);
-        mp_raise_ValueError_varg(translate("Unable to configure ADC DMA controller, ErrorCode:%d"), err);
+        CHECK_ESP_RESULT(err);
     }
-    err = adc_digi_start();
+    err = adc_continuous_start(self->handle);
     if (ESP_OK != err) {
         stop_dma(self);
-        common_hal_analogbufio_bufferedin_deinit(self);
-        mp_raise_ValueError_varg(translate("Unable to start ADC DMA controller, ErrorCode:%d"), err);
+        CHECK_ESP_RESULT(err);
     }
+    self->started = true;
 }
 
 static void stop_dma(analogbufio_bufferedin_obj_t *self) {
-    adc_digi_stop();
-    adc_digi_deinitialize();
-    // Release ADC Pin
-    reset_pin_number(self->pin->number);
+    if (self->started) {
+        adc_continuous_stop(self->handle);
+        self->started = false;
+    }
+    if (self->handle != NULL) {
+        adc_continuous_deinit(self->handle);
+        self->handle = NULL;
+    }
 }
 
 bool common_hal_analogbufio_bufferedin_deinited(analogbufio_bufferedin_obj_t *self) {
@@ -201,11 +175,18 @@ void common_hal_analogbufio_bufferedin_deinit(analogbufio_bufferedin_obj_t *self
     if (common_hal_analogbufio_bufferedin_deinited(self)) {
         return;
     }
+    // Release ADC Pin
+    reset_pin_number(self->pin->number);
     self->pin = NULL;
 }
 
 static bool check_valid_data(const adc_digi_output_data_t *data, const mcu_pin_obj_t *pin, adc_digi_convert_mode_t convert_mode, adc_digi_output_format_t output_format) {
-    unsigned int unit = data->type2.unit;
+    unsigned int unit;
+    #if SOC_ADC_PERIPH_NUM == 1
+    unit = 0;
+    #else
+    unit = data->type2.unit;
+    #endif
     if (output_format == ADC_DIGI_OUTPUT_FORMAT_TYPE2) {
         if (data->type2.channel >= SOC_ADC_CHANNEL_NUM(unit)) {
             return false;
@@ -234,8 +215,8 @@ static bool check_valid_data(const adc_digi_output_data_t *data, const mcu_pin_o
     return true;
 }
 
-uint32_t common_hal_analogbufio_bufferedin_readinto(analogbufio_bufferedin_obj_t *self, uint8_t *buffer, uint32_t len, uint8_t bytes_per_sample) {
-    uint8_t result[NUM_SAMPLES_PER_INTERRUPT] __attribute__ ((aligned(4))) = {0};
+uint32_t common_hal_analogbufio_bufferedin_readinto(analogbufio_bufferedin_obj_t *self, uint8_t *buffer, uint32_t len, uint8_t bytes_per_sample, bool loop) {
+    uint8_t result[NUM_SAMPLES_PER_INTERRUPT * SOC_ADC_DIGI_DATA_BYTES_PER_CONV] __attribute__ ((aligned(4))) = {0};
     uint32_t captured_samples = 0;
     uint32_t captured_bytes = 0;
     esp_err_t ret;
@@ -245,7 +226,7 @@ uint32_t common_hal_analogbufio_bufferedin_readinto(analogbufio_bufferedin_obj_t
     adc_digi_output_format_t output_format = ADC_DIGI_OUTPUT_FORMAT_TYPE1;
 
     if (bytes_per_sample != 2) {
-        mp_raise_ValueError_varg(translate("%q must be array of type 'H'"), MP_QSTR_buffer);
+        mp_raise_ValueError_varg(MP_ERROR_TEXT("%q must be array of type 'H'"), MP_QSTR_buffer);
     }
 
     start_dma(self, &convert_mode, &output_format);
@@ -256,7 +237,7 @@ uint32_t common_hal_analogbufio_bufferedin_readinto(analogbufio_bufferedin_obj_t
 
     while (captured_bytes < len) {
         ret_num = 0;
-        ret = adc_digi_read_bytes(result, NUM_SAMPLES_PER_INTERRUPT, &ret_num, ADC_READ_TIMEOUT_MS);
+        ret = adc_continuous_read(self->handle, result, NUM_SAMPLES_PER_INTERRUPT * SOC_ADC_DIGI_DATA_BYTES_PER_CONV, &ret_num, ADC_READ_TIMEOUT_MS);
 
         if (ret == ESP_OK) {
             for (uint32_t i = 0; i < ret_num; i += ADC_RESULT_BYTE) {

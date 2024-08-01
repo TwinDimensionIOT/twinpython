@@ -1,32 +1,11 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2018 Scott Shawcroft for Adafruit Industries
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2018 Scott Shawcroft for Adafruit Industries
+//
+// SPDX-License-Identifier: MIT
 
 #include <string.h>
 
-#include "supervisor/serial.h"
 #include "lib/oofatfs/ff.h"
 #include "py/mpconfig.h"
 #include "py/mphal.h"
@@ -34,6 +13,7 @@
 #include "py/runtime.h"
 #include "py/stream.h"
 
+#include "supervisor/shared/serial.h"
 #include "supervisor/shared/status_leds.h"
 
 #if CIRCUITPY_WATCHDOG
@@ -62,7 +42,7 @@ void mp_hal_stdout_tx_strn(const char *str, size_t len) {
     #ifdef CIRCUITPY_BOOT_OUTPUT_FILE
     if (boot_output != NULL) {
         // Ensure boot_out.txt is capped at 1 filesystem block and ends with a newline
-        #define TRUNCATED translate("[truncated due to length]")
+        #define TRUNCATED MP_ERROR_TEXT("[truncated due to length]")
         size_t truncated_message_len = decompress_length(TRUNCATED);
         size_t maxlen = 512 - truncated_message_len; // includes trailing '\0' so we do not need to account for trailing newline '\n' in vstr_add_byte
         if (len + boot_output->len > maxlen) {

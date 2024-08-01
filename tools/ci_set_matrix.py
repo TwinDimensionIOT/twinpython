@@ -45,6 +45,7 @@ from shared_bindings_matrix import (
 # Files that never influence board builds
 IGNORE_BOARD = {
     ".devcontainer",
+    "conf.py",
     "docs",
     "tests",
     "tools/ci_changes_per_commit.py",
@@ -188,22 +189,19 @@ def set_boards(build_all: bool):
 
                     # Check frozen files to see if they are in each board
                     if file.startswith("frozen"):
-                        if file in settings.get("FROZEN_MPY_DIRS", ""):
+                        if file in settings["FROZEN_MPY_DIRS"]:
                             boards_to_build.add(board)
                             continue
 
                     # Check supervisor files
                     # This is useful for limiting workflow changes to the relevant boards
                     if file.startswith("supervisor"):
-                        if file in settings.get("SRC_SUPERVISOR", ""):
+                        if file in settings["SRC_SUPERVISOR"]:
                             boards_to_build.add(board)
                             continue
 
                         if file.startswith("supervisor/shared/web_workflow/static/"):
                             web_workflow = settings["CIRCUITPY_WEB_WORKFLOW"]
-
-                            while web_workflow.startswith("$("):
-                                web_workflow = settings[web_workflow[2:-1]]
 
                             if web_workflow != "0":
                                 boards_to_build.add(board)
@@ -259,7 +257,7 @@ def set_docs(run: bool):
                 if pattern_doc.search(file) and (
                     (
                         subprocess.run(
-                            f"git diff -U0 $BASE_SHA...$HEAD_SHA {github_workspace + file} | grep -o -m 1 '^[+-]\/\/|'",
+                            rf"git diff -U0 $BASE_SHA...$HEAD_SHA {github_workspace + file} | grep -o -m 1 '^[+-]\/\/|'",
                             capture_output=True,
                             shell=True,
                         ).stdout

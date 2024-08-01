@@ -26,8 +26,7 @@ import os
 import pathlib
 import re
 import subprocess
-import sys
-import functools
+
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -38,8 +37,9 @@ SUPPORTED_PORTS = [
     "espressif",
     "litex",
     "mimxrt10xx",
-    "nrf",
+    "nordic",
     "raspberrypi",
+    "renode",
     "silabs",
     "stm",
 ]
@@ -56,14 +56,15 @@ ALIASES_BY_BOARD = {
 
 ALIASES_BRAND_NAMES = {
     "circuitplayground_express_4h": "Adafruit Circuit Playground Express 4-H",
-    "circuitplayground_express_digikey_pycon2019": "Circuit Playground Express Digi-Key PyCon 2019",
+    "circuitplayground_express_digikey_pycon2019":
+        "Circuit Playground Express Digi-Key PyCon 2019",
     "edgebadge": "Adafruit EdgeBadge",
     "pyportal_pynt": "Adafruit PyPortal Pynt",
     "gemma_m0_pycon2018": "Adafruit Gemma M0 PyCon 2018",
 }
 
 ADDITIONAL_MODULES = {
-    "_asyncio": "MICROPY_PY_UASYNCIO",
+    "_asyncio": "MICROPY_PY_ASYNCIO",
     "adafruit_bus_device": "CIRCUITPY_BUSDEVICE",
     "adafruit_pixelbuf": "CIRCUITPY_PIXELBUF",
     "array": "CIRCUITPY_ARRAY",
@@ -78,14 +79,16 @@ ADDITIONAL_MODULES = {
     "keypad.KeyMatrix": "CIRCUITPY_KEYPAD_KEYMATRIX",
     "keypad.Keys": "CIRCUITPY_KEYPAD_KEYS",
     "keypad.ShiftRegisterKeys": "CIRCUITPY_KEYPAD_SHIFTREGISTERKEYS",
+    "keypad_demux.DemuxKeyMatrix": "CIRCUITPY_KEYPAD_DEMUX",
     "os.getenv": "CIRCUITPY_OS_GETENV",
-    "select": "MICROPY_PY_USELECT_SELECT",
+    "select": "MICROPY_PY_SELECT_SELECT",
     "sys": "CIRCUITPY_SYS",
     "terminalio": "CIRCUITPY_DISPLAYIO",
-    "usb": "CIRCUITPY_USB_HOST",
+    "usb": "CIRCUITPY_PYUSB",
+    "socketpool.socketpool.AF_INET6": "CIRCUITPY_SOCKETPOOL_IPV6",
 }
 
-MODULES_NOT_IN_BINDINGS = [ "binascii", "errno", "json", "re", "ulab" ]
+MODULES_NOT_IN_BINDINGS = ["binascii", "errno", "json", "re", "ulab"]
 
 FROZEN_EXCLUDES = ["examples", "docs", "tests", "utils", "conf.py", "setup.py"]
 """Files and dirs at the root of a frozen directory that should be ignored.
@@ -103,7 +106,8 @@ def get_circuitpython_root_dir():
 
 
 def get_bindings():
-    """Get a list of modules in shared-bindings and ports/*/bindings based on folder names."""
+    """Get a list of modules in shared-bindings and ports/*/bindings
+    based on folder names."""
     shared_bindings_modules = [
         module.name
         for module in (get_circuitpython_root_dir() / "shared-bindings").iterdir()
@@ -112,7 +116,8 @@ def get_bindings():
     bindings_modules = []
     for d in get_circuitpython_root_dir().glob("ports/*/bindings"):
         bindings_modules.extend(module.name for module in d.iterdir() if d.is_dir())
-    return shared_bindings_modules + bindings_modules + MODULES_NOT_IN_BINDINGS + list(ADDITIONAL_MODULES.keys())
+    return shared_bindings_modules + bindings_modules + MODULES_NOT_IN_BINDINGS + \
+        list(ADDITIONAL_MODULES.keys())
 
 
 def get_board_mapping():
@@ -125,7 +130,6 @@ def get_board_mapping():
         board_path = root_dir / "ports" / port / "boards"
         for board_path in os.scandir(board_path):
             if board_path.is_dir():
-                board_files = os.listdir(board_path.path)
                 board_id = board_path.name
                 aliases = ALIASES_BY_BOARD.get(board_path.name, [])
                 boards[board_id] = {
@@ -170,9 +174,19 @@ def get_settings_from_makefile(port_dir, board_name):
     This means that the effect of all Makefile directives is taken
     into account, without having to re-encode the logic that sets them
     in this script, something that has proved error-prone
+
+    This list must explicitly include any setting queried by tools/ci_set_matrix.py.
     """
+    if os.getenv('NO_BINDINGS_MATRIX'):
+        return {
+                'CIRCUITPY_BUILD_EXTENSIONS': '.bin'
+                }
+
     contents = subprocess.run(
-        ["make", "-C", port_dir, "-f", "Makefile", f"BOARD={board_name}", "print-CFLAGS", "print-CIRCUITPY_BUILD_EXTENSIONS", "print-FROZEN_MPY_DIRS", "print-SRC_PATTERNS"],
+        ["make", "-C", port_dir, "-f", "Makefile", f"BOARD={board_name}",
+         "print-CFLAGS", "print-CIRCUITPY_BUILD_EXTENSIONS",
+         "print-FROZEN_MPY_DIRS", "print-SRC_PATTERNS",
+         "print-SRC_SUPERVISOR"],
         encoding="utf-8",
         errors="replace",
         stdout=subprocess.PIPE,
@@ -189,7 +203,7 @@ def get_settings_from_makefile(port_dir, board_name):
     settings = {}
     for line in contents.stdout.split("\n"):
         if line.startswith('CFLAGS ='):
-            for m in re.findall('-D([A-Z][A-Z0-9_]*)=(\d+)', line):
+            for m in re.findall(r'-D([A-Z][A-Z0-9_]*)=(\d+)', line):
                 settings[m[0]] = m[1]
         elif m := re.match(r"^([A-Z][A-Z0-9_]*) = (.*)$", line):
             settings[m.group(1)] = m.group(2)
@@ -213,12 +227,12 @@ def get_repository_url(directory):
         with open(readme, "r") as fp:
             for line in fp.readlines():
                 if m := re.match(
-                    "\s+:target:\s+(http\S+(docs.circuitpython|readthedocs)\S+)\s*",
+                    r"\s+:target:\s+(http\S+(docs.circuitpython|readthedocs)\S+)\s*",
                     line,
                 ):
                     path = m.group(1)
                     break
-                if m := re.search("<(http[^>]+)>", line):
+                if m := re.search(r"<(http[^>]+)>", line):
                     path = m.group(1)
                     break
     if path is None:
@@ -279,7 +293,6 @@ def lookup_setting(settings, key, default=""):
     return value
 
 
-@functools.cache
 def all_ports_all_boards(ports=SUPPORTED_PORTS):
     for port in ports:
         port_dir = get_circuitpython_root_dir() / "ports" / port
@@ -289,7 +302,9 @@ def all_ports_all_boards(ports=SUPPORTED_PORTS):
             yield (port, entry)
 
 
-def support_matrix_by_board(use_branded_name=True, withurl=True):
+def support_matrix_by_board(use_branded_name=True, withurl=True,
+                            add_port=False, add_chips=False,
+                            add_pins=False, add_branded_name=False):
     """Compiles a list of the available core modules available for each
     board.
     """
@@ -300,16 +315,63 @@ def support_matrix_by_board(use_branded_name=True, withurl=True):
         port_dir = get_circuitpython_root_dir() / "ports" / port
         settings = get_settings_from_makefile(str(port_dir), entry.name)
 
-        if use_branded_name:
+        if use_branded_name or add_branded_name:
             with open(entry / "mpconfigboard.h") as get_name:
                 board_contents = get_name.read()
             board_name_re = re.search(
                 r"(?<=MICROPY_HW_BOARD_NAME)\s+(.+)", board_contents
             )
             if board_name_re:
-                board_name = board_name_re.group(1).strip('"')
+                branded_name = board_name_re.group(1).strip('"')
+                if '"' in branded_name:  # sometimes the closing " is not at line end
+                    branded_name = branded_name[:branded_name.index('"')]
+                board_name = branded_name
+
+        if use_branded_name:
+            board_name = branded_name
         else:
             board_name = entry.name
+
+        if add_chips:
+            with open(entry / "mpconfigboard.h") as get_name:
+                board_contents = get_name.read()
+            mcu_re = re.search(
+                r'(?<=MICROPY_HW_MCU_NAME)\s+(.+)', board_contents
+            )
+            if mcu_re:
+                mcu = mcu_re.group(1).strip('"')
+                if '"' in mcu:  # in case the closing " is not at line end
+                    mcu = mcu[:mcu.index('"')]
+            else:
+                mcu = ""
+            with open(entry / "mpconfigboard.mk") as get_name:
+                board_contents = get_name.read()
+            flash_re = re.search(
+                r'(?<=EXTERNAL_FLASH_DEVICES)\s+=\s+(.+)', board_contents
+            )
+            if flash_re:
+                # deal with the variability in the way multiple flash chips
+                # are denoted.  We want them to end up as a quoted,
+                # comma separated string
+                flash = flash_re.group(1).replace('"','')
+                flash = f'"{flash}"'
+            else:
+                flash = ""
+
+        if add_pins:
+            pins = []
+            try:
+                with open(entry / "pins.c") as get_name:
+                    pin_lines = get_name.readlines()
+            except FileNotFoundError:  # silabs boards have no pins.c
+                pass
+            else:
+                for p in pin_lines:
+                    pin_re = re.search(r"QSTR_([^\)]+).+pin_([^\)]+)", p)
+                    if pin_re:
+                        board_pin = pin_re.group(1)
+                        chip_pin = pin_re.group(2)
+                        pins.append((board_pin, chip_pin))
 
         board_modules = []
         for module in base:
@@ -335,14 +397,25 @@ def support_matrix_by_board(use_branded_name=True, withurl=True):
                 frozen_modules.sort()
 
         # generate alias boards too
+
+        board_info = {
+                       "modules": board_modules,
+                       "frozen_libraries": frozen_modules,
+                       "extensions": board_extensions,
+                      }
+        if add_branded_name:
+            board_info["branded_name"] = branded_name
+        if add_port:
+            board_info["port"] = port
+        if add_chips:
+            board_info["mcu"] = mcu
+            board_info["flash"] = flash
+        if add_pins:
+            board_info["pins"] = pins
         board_matrix = [
             (
                 board_name,
-                {
-                    "modules": board_modules,
-                    "frozen_libraries": frozen_modules,
-                    "extensions": board_extensions,
-                },
+                board_info
             )
         ]
         if entry.name in ALIASES_BY_BOARD:
@@ -352,14 +425,24 @@ def support_matrix_by_board(use_branded_name=True, withurl=True):
                         alias = ALIASES_BRAND_NAMES[alias]
                     else:
                         alias = alias.replace("_", " ").title()
+                board_info = {
+                    "modules": board_modules,
+                    "frozen_libraries": frozen_modules,
+                    "extensions": board_extensions,
+                    }
+                if add_branded_name:
+                    board_info["branded_name"] = branded_name
+                if add_port:
+                    board_info["port"] = port
+                if add_chips:
+                    board_info["mcu"] = mcu
+                    board_info["flash"] = flash
+                if add_pins:
+                    board_info["pins"] = pins
                 board_matrix.append(
                     (
                         alias,
-                        {
-                            "modules": board_modules,
-                            "frozen_libraries": frozen_modules,
-                            "extensions": board_extensions,
-                        },
+                        board_info
                     )
                 )
 

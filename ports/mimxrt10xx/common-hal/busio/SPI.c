@@ -1,29 +1,9 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2016 Scott Shawcroft
- * Copyright (c) 2019 Artur Pacholec
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2016 Scott Shawcroft
+// SPDX-FileCopyrightText: Copyright (c) 2019 Artur Pacholec
+//
+// SPDX-License-Identifier: MIT
 
 #include "shared-bindings/microcontroller/Pin.h"
 #include "shared-bindings/microcontroller/__init__.h"
@@ -45,14 +25,14 @@
 #define MAX_SPI_BUSY_RETRIES 100
 
 // arrays use 0 based numbering: SPI1 is stored at index 0
-STATIC bool reserved_spi[MP_ARRAY_SIZE(mcu_spi_banks)];
-STATIC bool never_reset_spi[MP_ARRAY_SIZE(mcu_spi_banks)];
+static bool reserved_spi[MP_ARRAY_SIZE(mcu_spi_banks)];
+static bool never_reset_spi[MP_ARRAY_SIZE(mcu_spi_banks)];
 
 #if IMXRT11XX
-STATIC const clock_ip_name_t s_lpspiClocks[] = LPSPI_CLOCKS;
+static const clock_ip_name_t s_lpspiClocks[] = LPSPI_CLOCKS;
 #endif
 
-STATIC void config_periph_pin(const mcu_periph_obj_t *periph) {
+static void config_periph_pin(const mcu_periph_obj_t *periph) {
     IOMUXC_SetPinMux(
         periph->pin->mux_reg, periph->mux_mode,
         periph->input_reg, periph->input_idx,
@@ -99,7 +79,7 @@ void common_hal_busio_spi_construct(busio_spi_obj_t *self,
     bool spi_taken = false;
 
     if (half_duplex) {
-        mp_raise_NotImplementedError(translate("Half duplex SPI is not implemented"));
+        mp_raise_NotImplementedError_varg(MP_ERROR_TEXT("%q"), MP_QSTR_half_duplex);
     }
 
     for (uint i = 0; i < sck_count; i++) {
@@ -174,7 +154,7 @@ void common_hal_busio_spi_construct(busio_spi_obj_t *self,
             }
         } else {
             // throw an error immediately
-            mp_raise_ValueError(translate("Must provide MISO or MOSI pin"));
+            mp_raise_ValueError(MP_ERROR_TEXT("Must provide MISO or MOSI pin"));
         }
     }
 
@@ -182,7 +162,7 @@ void common_hal_busio_spi_construct(busio_spi_obj_t *self,
         self->spi = mcu_spi_banks[self->clock->bank_idx - 1];
     } else {
         if (spi_taken) {
-            mp_raise_ValueError(translate("Hardware in use, try alternative pins"));
+            mp_raise_ValueError(MP_ERROR_TEXT("Hardware in use, try alternative pins"));
         } else {
             raise_ValueError_invalid_pins();
         }
@@ -331,7 +311,7 @@ bool common_hal_busio_spi_write(busio_spi_obj_t *self,
         return true;
     }
     if (self->mosi == NULL) {
-        mp_raise_ValueError_varg(translate("No %q pin"), MP_QSTR_mosi);
+        mp_raise_ValueError_varg(MP_ERROR_TEXT("No %q pin"), MP_QSTR_mosi);
     }
 
     lpspi_transfer_t xfer = { 0 };
@@ -349,7 +329,7 @@ bool common_hal_busio_spi_read(busio_spi_obj_t *self,
         return true;
     }
     if (self->miso == NULL) {
-        mp_raise_ValueError_varg(translate("No %q pin"), MP_QSTR_miso);
+        mp_raise_ValueError_varg(MP_ERROR_TEXT("No %q pin"), MP_QSTR_miso);
     }
 
     LPSPI_SetDummyData(self->spi, write_value);
@@ -368,10 +348,10 @@ bool common_hal_busio_spi_transfer(busio_spi_obj_t *self, const uint8_t *data_ou
         return true;
     }
     if (self->mosi == NULL && data_out != NULL) {
-        mp_raise_ValueError_varg(translate("No %q pin"), MP_QSTR_mosi);
+        mp_raise_ValueError_varg(MP_ERROR_TEXT("No %q pin"), MP_QSTR_mosi);
     }
     if (self->miso == NULL && data_in != NULL) {
-        mp_raise_ValueError_varg(translate("No %q pin"), MP_QSTR_miso);
+        mp_raise_ValueError_varg(MP_ERROR_TEXT("No %q pin"), MP_QSTR_miso);
     }
 
     LPSPI_SetDummyData(self->spi, 0xFF);

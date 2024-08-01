@@ -110,6 +110,13 @@ autoapi_template_dir = 'docs/autoapi/templates'
 autoapi_python_class_content = "both"
 autoapi_python_use_implicit_namespaces = True
 autoapi_root = "shared-bindings"
+autoapi_file_patterns = ["*.pyi"]
+
+# Suppress cache warnings to prevent "unpickable" [sic] warning
+# about autoapi_prepare_jinja_env() from sphinx >= 7.3.0.
+# See https://github.com/sphinx-doc/sphinx/issues/12300
+suppress_warnings = ["config.cache"]
+
 def autoapi_prepare_jinja_env(jinja_env):
     jinja_env.globals['support_matrix_reverse'] = modules_support_matrix_reverse
 
@@ -174,6 +181,7 @@ exclude_patterns = ["**/build*",
                     ".venv",
                     ".direnv",
                     ".devcontainer/Readme.md",
+                    "circuitpython-stubs",
                     "data",
                     "docs/autoapi",
                     "docs/README.md",
@@ -202,27 +210,28 @@ exclude_patterns = ["**/build*",
                     "ports/cxd56/spresense-exported-sdk",
                     "ports/espressif/certificates",
                     "ports/espressif/esp-idf",
-                    "ports/espressif/esp32-camera",
+                    "ports/espressif/esp-camera",
+                    "ports/espressif/esp-protocols",
                     "ports/espressif/.idf_tools",
                     "ports/espressif/peripherals",
                     "ports/litex/hw",
                     "ports/minimal",
                     "ports/mimxrt10xx/peripherals",
                     "ports/mimxrt10xx/sdk",
-                    "ports/nrf/device",
-                    "ports/nrf/bluetooth",
-                    "ports/nrf/modules",
-                    "ports/nrf/nrfx",
-                    "ports/nrf/peripherals",
-                    "ports/nrf/usb",
+                    "ports/nordic/device",
+                    "ports/nordic/bluetooth",
+                    "ports/nordic/modules",
+                    "ports/nordic/nrfx",
+                    "ports/nordic/peripherals",
+                    "ports/nordic/usb",
                     "ports/raspberrypi/sdk",
                     "ports/raspberrypi/lib",
-                    "ports/silabs",
+                    "ports/silabs/gecko_sdk",
+                    "ports/silabs/tools",
                     "ports/stm/st_driver",
                     "ports/stm/packages",
                     "ports/stm/peripherals",
                     "ports/stm/ref",
-                    "ports/unix",
                     "py",
                     "shared/*",
                     "shared-bindings/util.*",
@@ -266,19 +275,9 @@ rst_epilog = """
 
 # -- Options for HTML output ----------------------------------------------
 
-# on_rtd is whether we are on readthedocs.org
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
-
-if not on_rtd:  # only import and set the theme if we're building docs locally
-    try:
-        import sphinx_rtd_theme
-        html_theme = 'sphinx_rtd_theme'
-        html_theme_path = [sphinx_rtd_theme.get_html_theme_path(), '.']
-    except:
-        html_theme = 'default'
-        html_theme_path = ['.']
-else:
-    html_theme_path = ['.']
+import sphinx_rtd_theme
+html_theme = 'sphinx_rtd_theme'
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path(), '.']
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -371,15 +370,23 @@ latex_elements = {
 # Additional stuff for the LaTeX preamble.
 #'preamble': '',
 # Include 3 levels of headers in PDF ToC
-'preamble': '\setcounter{tocdepth}{2}',
+'preamble': r'''
+\setcounter{tocdepth}{2}
+\hbadness=99999
+\hfuzz=20pt
+\usepackage{pdflscape}
+''',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'CircuitPython.tex', 'CircuitPython Documentation',
+  ("docs/pdf", 'CircuitPython.tex', 'CircuitPython Documentation',
    'CircuitPython Contributors', 'manual'),
+  # Uncomment this if you want to build a PDF of the board -> module support matrix.
+  # ("shared-bindings/support_matrix", 'SupportMatrix.tex', 'Board Support Matrix',
+  # 'CircuitPython Contributors', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of

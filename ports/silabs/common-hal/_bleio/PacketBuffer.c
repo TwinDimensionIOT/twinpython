@@ -34,8 +34,8 @@
 #include "shared-bindings/_bleio/PacketBuffer.h"
 #include "shared/runtime/interrupt_char.h"
 #include "common-hal/_bleio/Connection.h"
+#include "supervisor/shared/serial.h"
 #include "supervisor/shared/tick.h"
-#include "supervisor/serial.h"
 
 // List packet buffer of peripheral device
 bleio_packet_buffer_obj_list_t bleio_packet_buffer_list;
@@ -145,7 +145,7 @@ void _common_hal_bleio_packet_buffer_construct(
     uint32_t *outgoing_buffer1,
     uint32_t *outgoing_buffer2,
     size_t max_packet_size,
-    void *static_handler_entry) {
+    ble_event_handler_t static_handler_entry) {
 
     bleio_characteristic_properties_t temp_prop;
     self->characteristic = characteristic;
@@ -289,7 +289,7 @@ mp_int_t common_hal_bleio_packet_buffer_write(bleio_packet_buffer_obj_t *self,
     }
     if (self->outgoing[0] == NULL) {
         mp_raise_bleio_BluetoothError(
-            translate("Writes not supported on Characteristic"));
+            MP_ERROR_TEXT("Writes not supported on Characteristic"));
     }
     if (self->conn_handle == BLE_CONN_HANDLE_INVALID) {
         return -1;
@@ -305,13 +305,13 @@ mp_int_t common_hal_bleio_packet_buffer_write(bleio_packet_buffer_obj_t *self,
     if (total_len > outgoing_packet_length) {
         // Supplied data will not fit in a single BLE packet.
         mp_raise_ValueError_varg(
-            translate("Total data to write is larger than %q"),
+            MP_ERROR_TEXT("Total data to write is larger than %q"),
             MP_QSTR_outgoing_packet_length);
     }
     if (total_len > self->max_packet_size) {
         // Supplied data will not fit in a single BLE packet.
         mp_raise_ValueError_varg(
-            translate("Total data to write is larger than %q"),
+            MP_ERROR_TEXT("Total data to write is larger than %q"),
             MP_QSTR_max_packet_size);
     }
     outgoing_packet_length = MIN(outgoing_packet_length, self->max_packet_size);

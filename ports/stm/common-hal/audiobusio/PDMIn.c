@@ -1,35 +1,14 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2022 Matthew McGowan for Blues Inc.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2022 Matthew McGowan for Blues Inc.
+//
+// SPDX-License-Identifier: MIT
 
 #include <stdint.h>
 #include "common-hal/audiobusio/PDMIn.h"
 #include "shared-bindings/audiobusio/PDMIn.h"
 #include "shared-bindings/microcontroller/Pin.h"
 #include "py/runtime.h"
-#include "supervisor/memory.h"
 #include "MEMS_Audio_ll_stm32l4.h"
 
 
@@ -55,16 +34,16 @@ void common_hal_audiobusio_pdmin_construct(audiobusio_pdmin_obj_t *self,
 
 
     if (!mono) {
-        mp_raise_ValueError(translate("only mono is supported"));
+        mp_raise_ValueError(MP_ERROR_TEXT("only mono is supported"));
     }
     if (sample_rate != 16000) {
-        mp_raise_ValueError(translate("only sample_rate=16000 is supported"));
+        mp_raise_ValueError(MP_ERROR_TEXT("only sample_rate=16000 is supported"));
     }
     if (bit_depth != 16) {
-        mp_raise_ValueError(translate("only bit_depth=16 is supported"));
+        mp_raise_ValueError(MP_ERROR_TEXT("only bit_depth=16 is supported"));
     }
     if (oversample != 64) {
-        mp_raise_ValueError(translate("only oversample=64 is supported"));
+        mp_raise_ValueError(MP_ERROR_TEXT("only oversample=64 is supported"));
     }
 
     // wait for the previous instance to finish.

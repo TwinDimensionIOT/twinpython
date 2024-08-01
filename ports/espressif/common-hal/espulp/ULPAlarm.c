@@ -1,35 +1,15 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2022 microDev
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2022 microDev
+//
+// SPDX-License-Identifier: MIT
 
 #include "bindings/espulp/ULPAlarm.h"
 
 #include "common-hal/alarm/__init__.h"
 #include "supervisor/port.h"
 
-#include "driver/rtc_cntl.h"
+#include "esp_private/rtc_ctrl.h"
 #include "soc/rtc_cntl_reg.h"
 
 #include "esp_sleep.h"
@@ -57,7 +37,7 @@ mp_obj_t espulp_ulpalarm_record_wake_alarm(void) {
 }
 
 // This is used to wake the main CircuitPython task.
-STATIC void ulp_interrupt(void *arg) {
+static void ulp_interrupt(void *arg) {
     (void)arg;
     woke_up = true;
     port_wake_main_task_from_isr();
@@ -69,7 +49,7 @@ void espulp_ulpalarm_set_alarm(const bool deep_sleep, const size_t n_alarms, con
     for (size_t i = 0; i < n_alarms; i++) {
         if (mp_obj_is_type(alarms[i], &espulp_ulpalarm_type)) {
             if (alarm != MP_OBJ_NULL) {
-                mp_raise_ValueError_varg(translate("Only one %q can be set."), MP_QSTR_ULPAlarm);
+                mp_raise_ValueError_varg(MP_ERROR_TEXT("Only one %q can be set."), MP_QSTR_ULPAlarm);
             }
             alarm = MP_OBJ_TO_PTR(alarms[i]);
         }
@@ -81,20 +61,22 @@ void espulp_ulpalarm_set_alarm(const bool deep_sleep, const size_t n_alarms, con
 
     // enable ulp interrupt
     switch (alarm->ulp->arch) {
+        #ifdef CONFIG_ULP_COPROC_TYPE_FSM
         case FSM:
             #ifdef CONFIG_IDF_TARGET_ESP32
-            rtc_isr_register(&ulp_interrupt, NULL, RTC_CNTL_ULP_CP_INT_RAW);
+            rtc_isr_register(&ulp_interrupt, NULL, RTC_CNTL_ULP_CP_INT_RAW, 0);
             #else
-            rtc_isr_register(&ulp_interrupt, NULL, RTC_CNTL_ULP_CP_INT_ST);
+            rtc_isr_register(&ulp_interrupt, NULL, RTC_CNTL_ULP_CP_INT_ST, 0);
             #endif
             REG_SET_BIT(RTC_CNTL_INT_ENA_REG, RTC_CNTL_ULP_CP_INT_ENA);
             break;
+        #endif
+        #ifdef CONFIG_ULP_COPROC_TYPE_RISCV
         case RISCV:
-            #ifndef CONFIG_IDF_TARGET_ESP32
-            rtc_isr_register(&ulp_interrupt, NULL, RTC_CNTL_COCPU_INT_ST);
+            rtc_isr_register(&ulp_interrupt, NULL, RTC_CNTL_COCPU_INT_ST, 0);
             REG_SET_BIT(RTC_CNTL_INT_ENA_REG, RTC_CNTL_COCPU_INT_ENA);
             break;
-            #endif
+        #endif
         default:
             mp_raise_NotImplementedError(NULL);
             break;
@@ -110,14 +92,18 @@ void espulp_ulpalarm_prepare_for_deep_sleep(void) {
 
     // disable ulp interrupt
     rtc_isr_deregister(&ulp_interrupt, NULL);
+    #ifdef CONFIG_ULP_COPROC_TYPE_FSM
     REG_CLR_BIT(RTC_CNTL_INT_ENA_REG, RTC_CNTL_ULP_CP_INT_ENA);
-    #ifndef CONFIG_IDF_TARGET_ESP32
+    #endif
+    #ifdef CONFIG_ULP_COPROC_TYPE_RISCV
     REG_CLR_BIT(RTC_CNTL_INT_ENA_REG, RTC_CNTL_COCPU_INT_ENA);
     #endif
 
     // enable ulp wakeup
     esp_sleep_enable_ulp_wakeup();
+    #if defined(SOC_PM_SUPPORT_RTC_SLOW_MEM_PD) && SOC_PM_SUPPORT_RTC_SLOW_MEM_PD
     esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_ON);
+    #endif
 }
 
 bool espulp_ulpalarm_woke_this_cycle(void) {

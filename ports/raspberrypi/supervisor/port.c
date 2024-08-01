@@ -1,28 +1,8 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2021 Scott Shawcroft for Adafruit Industries
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2021 Scott Shawcroft for Adafruit Industries
+//
+// SPDX-License-Identifier: MIT
 
 #include <string.h>
 #include <stdlib.h>
@@ -33,16 +13,18 @@
 
 #include "bindings/rp2pio/StateMachine.h"
 #include "genhdr/mpversion.h"
-#include "shared-bindings/audiopwmio/PWMAudioOut.h"
 #include "shared-bindings/busio/I2C.h"
 #include "shared-bindings/busio/SPI.h"
 #include "shared-bindings/countio/Counter.h"
 #include "shared-bindings/microcontroller/__init__.h"
 #include "shared-bindings/rtc/__init__.h"
-#include "shared-bindings/pwmio/PWMOut.h"
+
+#if CIRCUITPY_AUDIOCORE
+#include "audio_dma.h"
+#endif
 
 #if CIRCUITPY_SSL
-#include "common-hal/ssl/__init__.h"
+#include "shared-module/ssl/__init__.h"
 #endif
 
 #if CIRCUITPY_WIFI
@@ -71,7 +53,7 @@
 #include "pico/bootrom.h"
 #include "hardware/watchdog.h"
 
-#include "supervisor/serial.h"
+#include "supervisor/shared/serial.h"
 
 #include "tusb.h"
 #include <cmsis_compiler.h>
@@ -80,9 +62,9 @@ critical_section_t background_queue_lock;
 
 extern volatile bool mp_msc_enabled;
 
-STATIC void _tick_callback(uint alarm_num);
+static void _tick_callback(uint alarm_num);
 
-STATIC void _binary_info(void) {
+static void _binary_info(void) {
     // Binary info readable with `picotool`.
     bi_decl(bi_program_name("CircuitPython"));
     bi_decl(bi_program_version_string(MICROPY_GIT_TAG));
@@ -184,10 +166,6 @@ void reset_port(void) {
     reset_countio();
     #endif
 
-    #if CIRCUITPY_PWMIO
-    pwmout_reset();
-    #endif
-
     #if CIRCUITPY_RP2PIO
     reset_rp2pio_statemachine();
     #endif
@@ -196,15 +174,16 @@ void reset_port(void) {
     rtc_reset();
     #endif
 
-    #if CIRCUITPY_AUDIOPWMIO
-    audiopwmout_reset();
-    #endif
     #if CIRCUITPY_AUDIOCORE
     audio_dma_reset();
     #endif
 
     #if CIRCUITPY_SSL
     ssl_reset();
+    #endif
+
+    #if CIRCUITPY_WATCHDOG
+    watchdog_reset();
     #endif
 
     #if CIRCUITPY_WIFI
@@ -229,15 +208,15 @@ void reset_cpu(void) {
     }
 }
 
-bool port_has_fixed_stack(void) {
-    return false;
-}
-
 // From the linker script
 extern uint32_t _ld_cp_dynamic_mem_start;
 extern uint32_t _ld_cp_dynamic_mem_end;
 uint32_t *port_stack_get_limit(void) {
-    return &_ld_cp_dynamic_mem_start;
+    #pragma GCC diagnostic push
+
+    #pragma GCC diagnostic ignored "-Warray-bounds"
+    return port_stack_get_top() - (CIRCUITPY_DEFAULT_STACK_SIZE + CIRCUITPY_EXCEPTION_STACK_SIZE) / sizeof(uint32_t);
+    #pragma GCC diagnostic pop
 }
 
 uint32_t *port_stack_get_top(void) {
@@ -245,11 +224,11 @@ uint32_t *port_stack_get_top(void) {
 }
 
 uint32_t *port_heap_get_bottom(void) {
-    return port_stack_get_limit();
+    return &_ld_cp_dynamic_mem_start;
 }
 
 uint32_t *port_heap_get_top(void) {
-    return port_stack_get_top();
+    return port_stack_get_limit();
 }
 
 uint32_t __uninitialized_ram(saved_word);
@@ -268,10 +247,13 @@ static volatile bool _woken_up;
 
 uint64_t port_get_raw_ticks(uint8_t *subticks) {
     uint64_t microseconds = time_us_64();
+    if (subticks != NULL) {
+        *subticks = (uint8_t)(((microseconds % 1000000) % 977) / 31);
+    }
     return 1024 * (microseconds / 1000000) + (microseconds % 1000000) / 977;
 }
 
-STATIC void _tick_callback(uint alarm_num) {
+static void _tick_callback(uint alarm_num) {
     if (ticks_enabled) {
         supervisor_tick();
         hardware_alarm_set_target(0, delayed_by_us(get_absolute_time(), 977));
@@ -305,7 +287,11 @@ void port_interrupt_after_ticks(uint32_t ticks) {
 
 void port_idle_until_interrupt(void) {
     common_hal_mcu_disable_interrupts();
+    #if CIRCUITPY_USB_HOST
     if (!background_callback_pending() && !tud_task_event_ready() && !tuh_task_event_ready() && !_woken_up) {
+    #else
+    if (!background_callback_pending() && !tud_task_event_ready() && !_woken_up) {
+        #endif
         __DSB();
         __WFI();
     }

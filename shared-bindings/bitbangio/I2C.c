@@ -1,28 +1,8 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2016 Scott Shawcroft
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2016 Scott Shawcroft
+//
+// SPDX-License-Identifier: MIT
 
 // This file contains all of the Python API definitions for the
 // bitbangio.I2C class.
@@ -36,7 +16,6 @@
 #include "py/binary.h"
 #include "py/mperrno.h"
 #include "py/runtime.h"
-#include "supervisor/shared/translate/translate.h"
 
 //| class I2C:
 //|     """Two wire serial protocol"""
@@ -66,7 +45,7 @@
 //|         :param int frequency: The clock frequency of the bus
 //|         :param int timeout: The maximum clock stretching timeout in microseconds"""
 //|         ...
-STATIC mp_obj_t bitbangio_i2c_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
+static mp_obj_t bitbangio_i2c_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
     enum { ARG_scl, ARG_sda, ARG_frequency, ARG_timeout };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_scl, MP_ARG_REQUIRED | MP_ARG_OBJ },
@@ -88,14 +67,14 @@ STATIC mp_obj_t bitbangio_i2c_make_new(const mp_obj_type_t *type, size_t n_args,
 //|     def deinit(self) -> None:
 //|         """Releases control of the underlying hardware so other classes can use it."""
 //|         ...
-STATIC mp_obj_t bitbangio_i2c_obj_deinit(mp_obj_t self_in) {
+static mp_obj_t bitbangio_i2c_obj_deinit(mp_obj_t self_in) {
     bitbangio_i2c_obj_t *self = MP_OBJ_TO_PTR(self_in);
     shared_module_bitbangio_i2c_deinit(self);
     return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_1(bitbangio_i2c_deinit_obj, bitbangio_i2c_obj_deinit);
 
-STATIC void check_for_deinit(bitbangio_i2c_obj_t *self) {
+static void check_for_deinit(bitbangio_i2c_obj_t *self) {
     if (shared_module_bitbangio_i2c_deinited(self)) {
         raise_deinited_error();
     }
@@ -110,16 +89,16 @@ STATIC void check_for_deinit(bitbangio_i2c_obj_t *self) {
 //|         """Automatically deinitializes the hardware on context exit. See
 //|         :ref:`lifetime-and-contextmanagers` for more info."""
 //|         ...
-STATIC mp_obj_t bitbangio_i2c_obj___exit__(size_t n_args, const mp_obj_t *args) {
+static mp_obj_t bitbangio_i2c_obj___exit__(size_t n_args, const mp_obj_t *args) {
     (void)n_args;
     shared_module_bitbangio_i2c_deinit(args[0]);
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(bitbangio_i2c_obj___exit___obj, 4, 4, bitbangio_i2c_obj___exit__);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(bitbangio_i2c_obj___exit___obj, 4, 4, bitbangio_i2c_obj___exit__);
 
 static void check_lock(bitbangio_i2c_obj_t *self) {
     if (!shared_module_bitbangio_i2c_has_lock(self)) {
-        mp_raise_RuntimeError(translate("Function requires lock"));
+        mp_raise_RuntimeError(MP_ERROR_TEXT("Function requires lock"));
     }
 }
 
@@ -128,7 +107,7 @@ static void check_lock(bitbangio_i2c_obj_t *self) {
 //|         those that respond.  A device responds if it pulls the SDA line low after
 //|         its address (including a read bit) is sent on the bus."""
 //|         ...
-STATIC mp_obj_t bitbangio_i2c_scan(mp_obj_t self_in) {
+static mp_obj_t bitbangio_i2c_scan(mp_obj_t self_in) {
     bitbangio_i2c_obj_t *self = MP_OBJ_TO_PTR(self_in);
     check_for_deinit(self);
     check_lock(self);
@@ -147,7 +126,7 @@ MP_DEFINE_CONST_FUN_OBJ_1(bitbangio_i2c_scan_obj, bitbangio_i2c_scan);
 //|     def try_lock(self) -> bool:
 //|         """Attempts to grab the I2C lock. Returns True on success."""
 //|         ...
-STATIC mp_obj_t bitbangio_i2c_obj_try_lock(mp_obj_t self_in) {
+static mp_obj_t bitbangio_i2c_obj_try_lock(mp_obj_t self_in) {
     bitbangio_i2c_obj_t *self = MP_OBJ_TO_PTR(self_in);
     check_for_deinit(self);
     return mp_obj_new_bool(shared_module_bitbangio_i2c_try_lock(self));
@@ -157,7 +136,7 @@ MP_DEFINE_CONST_FUN_OBJ_1(bitbangio_i2c_try_lock_obj, bitbangio_i2c_obj_try_lock
 //|     def unlock(self) -> None:
 //|         """Releases the I2C lock."""
 //|         ...
-STATIC mp_obj_t bitbangio_i2c_obj_unlock(mp_obj_t self_in) {
+static mp_obj_t bitbangio_i2c_obj_unlock(mp_obj_t self_in) {
     bitbangio_i2c_obj_t *self = MP_OBJ_TO_PTR(self_in);
     check_for_deinit(self);
     shared_module_bitbangio_i2c_unlock(self);
@@ -183,7 +162,7 @@ MP_DEFINE_CONST_FUN_OBJ_1(bitbangio_i2c_unlock_obj, bitbangio_i2c_obj_unlock);
 //|         :param int end: Index to write up to but not include"""
 //|         ...
 // Shared arg parsing for readfrom_into and writeto_then_readfrom.
-STATIC void readfrom(bitbangio_i2c_obj_t *self, mp_int_t address, mp_obj_t buffer, int32_t start, mp_int_t end) {
+static void readfrom(bitbangio_i2c_obj_t *self, mp_int_t address, mp_obj_t buffer, int32_t start, mp_int_t end) {
     mp_buffer_info_t bufinfo;
     mp_get_buffer_raise(buffer, &bufinfo, MP_BUFFER_WRITE);
 
@@ -202,7 +181,7 @@ STATIC void readfrom(bitbangio_i2c_obj_t *self, mp_int_t address, mp_obj_t buffe
     }
 }
 
-STATIC mp_obj_t bitbangio_i2c_readfrom_into(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+static mp_obj_t bitbangio_i2c_readfrom_into(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     enum { ARG_address, ARG_buffer, ARG_start, ARG_end };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_address,    MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = 0} },
@@ -244,7 +223,7 @@ MP_DEFINE_CONST_FUN_OBJ_KW(bitbangio_i2c_readfrom_into_obj, 1, bitbangio_i2c_rea
 //|         """
 //|         ...
 // Shared arg parsing for writeto and writeto_then_readfrom.
-STATIC void writeto(bitbangio_i2c_obj_t *self, mp_int_t address, mp_obj_t buffer, int32_t start, mp_int_t end, bool stop) {
+static void writeto(bitbangio_i2c_obj_t *self, mp_int_t address, mp_obj_t buffer, int32_t start, mp_int_t end, bool stop) {
     // get the buffer to write the data from
     mp_buffer_info_t bufinfo;
     mp_get_buffer_raise(buffer, &bufinfo, MP_BUFFER_READ);
@@ -266,7 +245,7 @@ STATIC void writeto(bitbangio_i2c_obj_t *self, mp_int_t address, mp_obj_t buffer
     }
 }
 
-STATIC mp_obj_t bitbangio_i2c_writeto(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+static mp_obj_t bitbangio_i2c_writeto(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     enum { ARG_address, ARG_buffer, ARG_start, ARG_end };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_address,    MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = 0} },
@@ -284,7 +263,7 @@ STATIC mp_obj_t bitbangio_i2c_writeto(size_t n_args, const mp_obj_t *pos_args, m
         args[ARG_end].u_int, true);
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_KW(bitbangio_i2c_writeto_obj, 1, bitbangio_i2c_writeto);
+static MP_DEFINE_CONST_FUN_OBJ_KW(bitbangio_i2c_writeto_obj, 1, bitbangio_i2c_writeto);
 
 
 //|     import sys
@@ -321,7 +300,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_KW(bitbangio_i2c_writeto_obj, 1, bitbangio_i2c_wr
 //|         """
 //|         ...
 //|
-STATIC mp_obj_t bitbangio_i2c_writeto_then_readfrom(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+static mp_obj_t bitbangio_i2c_writeto_then_readfrom(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     enum { ARG_address, ARG_out_buffer, ARG_in_buffer, ARG_out_start, ARG_out_end, ARG_in_start, ARG_in_end };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_address,    MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = 0} },
@@ -347,7 +326,7 @@ STATIC mp_obj_t bitbangio_i2c_writeto_then_readfrom(size_t n_args, const mp_obj_
 }
 MP_DEFINE_CONST_FUN_OBJ_KW(bitbangio_i2c_writeto_then_readfrom_obj, 1, bitbangio_i2c_writeto_then_readfrom);
 
-STATIC const mp_rom_map_elem_t bitbangio_i2c_locals_dict_table[] = {
+static const mp_rom_map_elem_t bitbangio_i2c_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&bitbangio_i2c_deinit_obj) },
     { MP_ROM_QSTR(MP_QSTR___enter__), MP_ROM_PTR(&default___enter___obj) },
     { MP_ROM_QSTR(MP_QSTR___exit__), MP_ROM_PTR(&bitbangio_i2c_obj___exit___obj) },
@@ -361,11 +340,12 @@ STATIC const mp_rom_map_elem_t bitbangio_i2c_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_writeto_then_readfrom), MP_ROM_PTR(&bitbangio_i2c_writeto_then_readfrom_obj) },
 };
 
-STATIC MP_DEFINE_CONST_DICT(bitbangio_i2c_locals_dict, bitbangio_i2c_locals_dict_table);
+static MP_DEFINE_CONST_DICT(bitbangio_i2c_locals_dict, bitbangio_i2c_locals_dict_table);
 
-const mp_obj_type_t bitbangio_i2c_type = {
-    { &mp_type_type },
-    .name = MP_QSTR_I2C,
-    .make_new = bitbangio_i2c_make_new,
-    .locals_dict = (mp_obj_dict_t *)&bitbangio_i2c_locals_dict,
-};
+MP_DEFINE_CONST_OBJ_TYPE(
+    bitbangio_i2c_type,
+    MP_QSTR_I2C,
+    MP_TYPE_FLAG_NONE,
+    make_new, bitbangio_i2c_make_new,
+    locals_dict, &bitbangio_i2c_locals_dict
+    );

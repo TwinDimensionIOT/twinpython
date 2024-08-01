@@ -1,33 +1,14 @@
-/*
- * This file is part of the Micro Python project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2022 Scott Shawcroft for Adafruit Industries
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2022 Scott Shawcroft for Adafruit Industries
+//
+// SPDX-License-Identifier: MIT
 
 #include "bindings/rp2pio/StateMachine.h"
 #include "shared-bindings/microcontroller/Pin.h"
 #include "shared-bindings/microcontroller/Processor.h"
 #include "shared-bindings/usb_host/Port.h"
+#include "supervisor/shared/serial.h"
 #include "supervisor/usb.h"
 
 #include "src/common/pico_time/include/pico/time.h"
@@ -43,11 +24,10 @@
 #include "lib/Pico-PIO-USB/src/pio_usb.h"
 #include "lib/Pico-PIO-USB/src/pio_usb_configuration.h"
 
-#include "supervisor/serial.h"
 
 usb_host_port_obj_t usb_host_instance;
 
-STATIC PIO pio_instances[2] = {pio0, pio1};
+static PIO pio_instances[2] = {pio0, pio1};
 volatile bool _core1_ready = false;
 
 static void __not_in_flash_func(core1_main)(void) {
@@ -81,7 +61,7 @@ static void __not_in_flash_func(core1_main)(void) {
     }
 }
 
-STATIC uint8_t _sm_free_count(uint8_t pio_index) {
+static uint8_t _sm_free_count(uint8_t pio_index) {
     PIO pio = pio_instances[pio_index];
     uint8_t free_count = 0;
     for (size_t j = 0; j < NUM_PIO_STATE_MACHINES; j++) {
@@ -92,7 +72,7 @@ STATIC uint8_t _sm_free_count(uint8_t pio_index) {
     return free_count;
 }
 
-STATIC bool _has_program_room(uint8_t pio_index, uint8_t program_size) {
+static bool _has_program_room(uint8_t pio_index, uint8_t program_size) {
     PIO pio = pio_instances[pio_index];
     pio_program_t program_struct = {
         .instructions = NULL,
@@ -111,7 +91,7 @@ usb_host_port_obj_t *common_hal_usb_host_port_construct(const mcu_pin_obj_t *dp,
     // Return the singleton if given the same pins.
     if (self->dp != NULL) {
         if (self->dp != dp || self->dm != dm) {
-            mp_raise_msg_varg(&mp_type_RuntimeError, translate("%q in use"), MP_QSTR_usb_host);
+            mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("%q in use"), MP_QSTR_usb_host);
         }
         return self;
     }
@@ -122,17 +102,17 @@ usb_host_port_obj_t *common_hal_usb_host_port_construct(const mcu_pin_obj_t *dp,
     pio_usb_configuration_t pio_cfg = PIO_USB_DEFAULT_CONFIG;
     pio_cfg.skip_alarm_pool = true;
     pio_cfg.pin_dp = dp->number;
-    pio_cfg.pio_tx_num = 0;
-    pio_cfg.pio_rx_num = 1;
-    // PIO with room for 22 instructions
-    // PIO with room for 31 instructions and two free SM.
+    // Allocating the peripherals like this works on Pico W, where the
+    // "preferred PIO" for the cyw43 wifi chip is PIO 1.
+    pio_cfg.pio_tx_num = 1; // uses 22 instructions and 1 SM
+    pio_cfg.pio_rx_num = 0; // uses 31 instructions and 2 SM.
     if (!_has_program_room(pio_cfg.pio_tx_num, 22) || _sm_free_count(pio_cfg.pio_tx_num) < 1 ||
         !_has_program_room(pio_cfg.pio_rx_num, 31) || _sm_free_count(pio_cfg.pio_rx_num) < 2) {
-        mp_raise_RuntimeError(translate("All state machines in use"));
+        mp_raise_RuntimeError(MP_ERROR_TEXT("All state machines in use"));
     }
     pio_cfg.tx_ch = dma_claim_unused_channel(false); // DMA channel
     if (pio_cfg.tx_ch < 0) {
-        mp_raise_RuntimeError(translate("All dma channels in use"));
+        mp_raise_RuntimeError(MP_ERROR_TEXT("All dma channels in use"));
     }
 
     self->base.type = &usb_host_port_type;
@@ -169,4 +149,11 @@ usb_host_port_obj_t *common_hal_usb_host_port_construct(const mcu_pin_obj_t *dp,
     tuh_init(TUH_OPT_RHPORT);
 
     return self;
+}
+
+// Not used, but we must define to put this hook into SRAM
+void __not_in_flash_func(tuh_event_hook_cb)(uint8_t rhport, uint32_t eventid, bool in_isr) {
+    (void)rhport;
+    (void)eventid;
+    (void)in_isr;
 }

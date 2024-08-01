@@ -1,28 +1,8 @@
-/*
- * This file is part of the Micro Python project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2023 Scott Shawcroft for Adafruit Industries
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2023 Scott Shawcroft for Adafruit Industries
+//
+// SPDX-License-Identifier: MIT
 
 #include "bindings/picodvi/Framebuffer.h"
 
@@ -31,6 +11,7 @@
 #include "shared-bindings/time/__init__.h"
 #include "common-hal/pwmio/PWMOut.h"
 #include "common-hal/rp2pio/StateMachine.h"
+#include "supervisor/port.h"
 
 #include "src/common/pico_stdlib/include/pico/stdlib.h"
 #include "src/rp2040/hardware_structs/include/hardware/structs/mpu.h"
@@ -43,7 +24,7 @@
 
 picodvi_framebuffer_obj_t *active_picodvi = NULL;
 
-STATIC PIO pio_instances[2] = {pio0, pio1};
+static PIO pio_instances[2] = {pio0, pio1};
 
 static void __not_in_flash_func(core1_main)(void) {
     // The MPU is reset before this starts.
@@ -123,8 +104,6 @@ static void __not_in_flash_func(core1_scanline_callback)(void) {
     self->next_scanline += 1;
     if (self->next_scanline >= self->height) {
         self->next_scanline = 0;
-        // Update the framebuffer pointer in case it moved.
-        self->framebuffer = self->allocation->ptr;
     }
 }
 
@@ -139,28 +118,32 @@ void common_hal_picodvi_framebuffer_construct(picodvi_framebuffer_obj_t *self,
     const mcu_pin_obj_t *blue_dp, const mcu_pin_obj_t *blue_dn,
     mp_uint_t color_depth) {
     if (active_picodvi != NULL) {
-        mp_raise_msg_varg(&mp_type_RuntimeError, translate("%q in use"), MP_QSTR_picodvi);
+        mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("%q in use"), MP_QSTR_picodvi);
     }
 
     bool color_framebuffer = color_depth >= 8;
     const struct dvi_timing *timing = NULL;
     if ((width == 640 && height == 480) ||
-        (width == 320 && height == 240)) {
+        (width == 320 && height == 240) ||
+        (width == 640 && height == 240)
+        ) {
         timing = &dvi_timing_640x480p_60hz;
     } else if ((width == 800 && height == 480) ||
-               (width == 400 && height == 240)) {
+               (width == 400 && height == 240) ||
+               (width == 800 && height == 240)
+               ) {
         timing = &dvi_timing_800x480p_60hz;
     } else {
         if (height != 480 && height != 240) {
-            mp_raise_ValueError_varg(translate("Invalid %q"), MP_QSTR_height);
+            mp_raise_ValueError_varg(MP_ERROR_TEXT("Invalid %q"), MP_QSTR_height);
         }
-        mp_raise_ValueError_varg(translate("Invalid %q"), MP_QSTR_width);
+        mp_raise_ValueError_varg(MP_ERROR_TEXT("Invalid %q"), MP_QSTR_width);
     }
 
     // If the width is > 400, then it must not be color frame buffer and vice
     // versa.
     if ((width > 400) == color_framebuffer) {
-        mp_raise_ValueError_varg(translate("Invalid %q"), MP_QSTR_color_depth);
+        mp_raise_ValueError_varg(MP_ERROR_TEXT("Invalid %q"), MP_QSTR_color_depth);
     }
 
     bool invert_diffpairs = clk_dn->number < clk_dp->number;
@@ -215,7 +198,7 @@ void common_hal_picodvi_framebuffer_construct(picodvi_framebuffer_obj_t *self,
     }
 
     if (pio_index == NUM_PIOS) {
-        mp_raise_RuntimeError(translate("All state machines in use"));
+        mp_raise_RuntimeError(MP_ERROR_TEXT("All state machines in use"));
     }
 
     self->width = width;
@@ -224,16 +207,15 @@ void common_hal_picodvi_framebuffer_construct(picodvi_framebuffer_obj_t *self,
     size_t tmds_bufs_per_scanline;
     size_t scanline_width = width;
     if (color_framebuffer) {
-        dvi_vertical_repeat = 2;
         dvi_monochrome_tmds = false;
         tmds_bufs_per_scanline = 3;
         scanline_width *= 2;
     } else {
-        dvi_vertical_repeat = 1;
         dvi_monochrome_tmds = true;
         // One tmds buffer is used for all three color outputs.
         tmds_bufs_per_scanline = 1;
     }
+    dvi_vertical_repeat = timing->v_active_lines / self->height;
     self->pitch = (self->width * color_depth) / 8;
     // Align each row to words.
     if (self->pitch % sizeof(uint32_t) != 0) {
@@ -243,20 +225,17 @@ void common_hal_picodvi_framebuffer_construct(picodvi_framebuffer_obj_t *self,
     size_t framebuffer_size = self->pitch * self->height;
     self->tmdsbuf_size = tmds_bufs_per_scanline * scanline_width / DVI_SYMBOLS_PER_WORD + 1;
     size_t total_allocation_size = sizeof(uint32_t) * (framebuffer_size + DVI_N_TMDS_BUFFERS * self->tmdsbuf_size);
-    self->allocation = allocate_memory(total_allocation_size, false, true);
-    if (self->allocation == NULL) {
+    self->framebuffer = (uint32_t *)port_malloc(total_allocation_size, true);
+    if (self->framebuffer == NULL) {
         m_malloc_fail(total_allocation_size);
         return;
     }
 
     // Do the pwmio check last because it claims the pwm slice.
     if (!pwmio_claim_slice_ab_channels(slice)) {
-        mp_raise_ValueError(translate("All timers for this pin are in use"));
+        mp_raise_ValueError(MP_ERROR_TEXT("All timers for this pin are in use"));
     }
     self->pwm_slice = slice;
-
-    pwmout_never_reset(self->pwm_slice, 0);
-    pwmout_never_reset(self->pwm_slice, 1);
 
     for (size_t i = 0; i < 4; i++) {
         never_reset_pin_number(self->pin_pair[i]);
@@ -270,7 +249,6 @@ void common_hal_picodvi_framebuffer_construct(picodvi_framebuffer_obj_t *self,
     // For the output.
     user_irq_claim(DMA_IRQ_1);
     self->framebuffer_len = framebuffer_size;
-    self->framebuffer = self->allocation->ptr;
     self->color_depth = color_depth;
 
     self->dvi.timing = timing;
@@ -322,7 +300,7 @@ void common_hal_picodvi_framebuffer_construct(picodvi_framebuffer_obj_t *self,
     }
 }
 
-STATIC void _turn_off_dma(uint8_t channel) {
+static void _turn_off_dma(uint8_t channel) {
     dma_channel_config c = dma_channel_get_default_config(channel);
     channel_config_set_enable(&c, false);
     dma_channel_set_config(channel, &c, false /* trigger */);
@@ -383,7 +361,7 @@ void common_hal_picodvi_framebuffer_deinit(picodvi_framebuffer_obj_t *self) {
 
     active_picodvi = NULL;
 
-    free_memory(self->allocation);
+    port_free(self->framebuffer);
     self->framebuffer = NULL;
 
     self->base.type = &mp_type_NoneType;

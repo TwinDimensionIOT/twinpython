@@ -1,26 +1,8 @@
-# This file is part of the MicroPython project, http://micropython.org/
-#
-# The MIT License (MIT)
+# This file is part of the CircuitPython project: https://circuitpython.org
 #
 # SPDX-FileCopyrightText: Copyright (c) 2019 Dan Halbert for Adafruit Industries
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# SPDX-License-Identifier: MIT
 
 include ../../py/circuitpy_mkenv.mk
 
@@ -176,7 +158,10 @@ ifeq ($(GCC_VERSION_GTEQ_11),1)
 CFLAGS += -Wno-stringop-overread -Wno-stringop-overflow
 endif
 
-LDFLAGS = $(CFLAGS) -nostartfiles -Wl,-nostdlib -Wl,-T,$(GENERATED_LD_FILE) -Wl,-Map=$@.map -Wl,-cref -Wl,-gc-sections -specs=nano.specs
+# Somehow the lto doesn't know it needs __ffssi2 until it is too late. (Maybe
+# because the code uses __builtin_ffs().) So, explicitly say we'll need it up
+# front. -u is to say a symbol is undefined from the start.
+LDFLAGS = $(CFLAGS) -u __ffssi2 -nostartfiles -Wl,-nostdlib -Wl,-T,$(GENERATED_LD_FILE) -Wl,-Map=$@.map -Wl,-cref -Wl,-gc-sections -specs=nano.specs
 
 # Use toolchain libm if we're not using our own.
 ifndef INTERNAL_LIBM
@@ -302,13 +287,9 @@ SRC_C += \
 	timer_handler.c \
 	$(SRC_PERIPHERALS) \
 
-$(BUILD)/lib/tinyusb/src/portable/microchip/samd/dcd_samd.o: CFLAGS += -Wno-missing-prototypes
+$(BUILD)/lib/tlsf/tlsf.o: CFLAGS += -Wno-cast-align
 
-# This is an OR because it filters to any 1s and then checks to see if it is not
-# empty.
-ifneq (,$(filter 1,$(CIRCUITPY_PWMIO) $(CIRCUITPY_AUDIOIO) $(CIRCUITPY_RGBMATRIX)))
-SRC_C += shared_timers.c
-endif
+$(BUILD)/lib/tinyusb/src/portable/microchip/samd/dcd_samd.o: CFLAGS += -Wno-missing-prototypes
 
 ifeq ($(CIRCUITPY_SAMD),1)
 SRC_C += bindings/samd/Clock.c bindings/samd/__init__.c
@@ -352,7 +333,7 @@ OBJ += $(addprefix $(BUILD)/, $(SRC_CIRCUITPY_COMMON:.c=.o))
 OBJ += $(addprefix $(BUILD)/, $(SRC_S:.s=.o))
 OBJ += $(addprefix $(BUILD)/, $(SRC_MOD:.c=.o))
 
-SRC_QSTR += $(HEADER_BUILD)/sdiodata.h
+QSTR_GLOBAL_REQUIREMENTS += $(HEADER_BUILD)/sdiodata.h
 OBJ_EXTRA_ORDER_DEPS += $(HEADER_BUILD)/sioddata.h
 $(HEADER_BUILD)/sdiodata.h: tools/mksdiodata.py | $(HEADER_BUILD)
 	$(Q)$(PYTHON) $< > $@
@@ -362,7 +343,7 @@ OBJ_EXTRA_ORDER_DEPS += $(HEADER_BUILD)/candata.h
 $(HEADER_BUILD)/candata.h: tools/mkcandata.py | $(HEADER_BUILD)
 	$(Q)$(PYTHON) $< > $@
 
-SRC_QSTR += $(SRC_C) $(SRC_SUPERVISOR) $(SRC_COMMON_HAL_EXPANDED) $(SRC_SHARED_MODULE_EXPANDED)
+SRC_QSTR += $(SRC_C) $(SRC_SUPERVISOR) $(SRC_COMMON_HAL_EXPANDED) $(SRC_SHARED_MODULE_EXPANDED) $(SRC_CIRCUITPY_COMMON)
 # Sources that only hold QSTRs after pre-processing.
 SRC_QSTR_PREPROCESSOR += peripherals/samd/$(PERIPHERALS_CHIP_FAMILY)/clocks.c
 

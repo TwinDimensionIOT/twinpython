@@ -1,26 +1,8 @@
-# This file is part of the MicroPython project, http://micropython.org/
-#
-# The MIT License (MIT)
+# This file is part of the CircuitPython project: https://circuitpython.org
 #
 # SPDX-FileCopyrightText: Copyright (c) 2019 Dan Halbert for Adafruit Industries
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# SPDX-License-Identifier: MIT
 
 include ../../py/circuitpy_mkenv.mk
 
@@ -39,7 +21,7 @@ INC_CYW43 := \
 	-isystem sdk/src/rp2_common/pico_lwip/include/ \
 	-isystem sdk/src/rp2_common/pico_rand/include/ \
 
-CFLAGS_CYW43 := -DCYW43_LWIP=1 -DPICO_CYW43_ARCH_THREADSAFE_BACKGROUND=1 -DCYW43_USE_SPI -DIGNORE_GPIO25 -DIGNORE_GPIO23 -DIGNORE_GPIO24 -DCYW43_LOGIC_DEBUG=0 -DCYW43_NETUTILS=1 -DPICO_BUILD
+CFLAGS_CYW43 := -DCYW43_LWIP=1 -DPICO_CYW43_ARCH_THREADSAFE_BACKGROUND=1 -DCYW43_USE_SPI -DIGNORE_GPIO25 -DIGNORE_GPIO23 -DIGNORE_GPIO24 -DCYW43_LOGIC_DEBUG=0 -DCYW43_USE_STATS=0 -DPICO_BUILD -DCYW43_ENABLE_BLUETOOTH=0 -DPICO_CYW43_ARCH_POLL=0
 SRC_SDK_CYW43 := \
 	src/common/pico_sync/sem.c \
 	src/rp2_common/pico_async_context/async_context_base.c \
@@ -173,12 +155,12 @@ endif
 # Remove -Wno-stringop-overflow after we can test with CI's GCC 10. Mac's looks weird.
 DISABLE_WARNINGS = -Wno-stringop-overflow -Wno-cast-align
 
-CFLAGS += $(INC) -Wall -Werror -std=gnu11 -nostdlib -fshort-enums $(BASE_CFLAGS) $(CFLAGS_MOD) $(COPT) $(DISABLE_WARNINGS) -Werror=missing-prototypes
+CFLAGS += $(INC) -Wall -Werror -std=gnu11 -fshort-enums $(BASE_CFLAGS) $(CFLAGS_MOD) $(COPT) $(DISABLE_WARNINGS) -Werror=missing-prototypes
 
 CFLAGS += \
 	-march=armv6-m \
 	-mthumb \
-	-mabi=aapcs-linux \
+	-mabi=aapcs \
 	-mcpu=cortex-m0plus \
 	-msoft-float \
 	-mfloat-abi=soft
@@ -249,10 +231,6 @@ SRC_C += \
 	background.c \
 	peripherals/pins.c \
 	lib/crypto-algorithms/sha256.c \
-	lib/PicoDVI/software/libdvi/dvi.c \
-	lib/PicoDVI/software/libdvi/dvi_serialiser.c \
-	lib/PicoDVI/software/libdvi/dvi_timing.c \
-	lib/PicoDVI/software/libdvi/tmds_encode.c \
 	lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c \
 	lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c \
 	mphalport.c \
@@ -273,6 +251,10 @@ endif
 
 ifeq ($(CIRCUITPY_PICODVI),1)
 SRC_C += \
+	lib/PicoDVI/software/libdvi/dvi.c \
+	lib/PicoDVI/software/libdvi/dvi_serialiser.c \
+	lib/PicoDVI/software/libdvi/dvi_timing.c \
+	lib/PicoDVI/software/libdvi/tmds_encode.c \
   bindings/picodvi/__init__.c \
   bindings/picodvi/Framebuffer.c \
   common-hal/picodvi/Framebuffer.c \
@@ -298,6 +280,7 @@ SRC_MBEDTLS := $(addprefix lib/mbedtls/library/, \
         cipher.c \
         cipher_wrap.c \
         cmac.c \
+        constant_time.c \
         ctr_drbg.c \
         debug.c \
         des.c \
@@ -316,7 +299,6 @@ SRC_MBEDTLS := $(addprefix lib/mbedtls/library/, \
         md4.c \
         md5.c \
         md.c \
-        md_wrap.c \
         oid.c \
         padlock.c \
         pem.c \
@@ -340,6 +322,7 @@ SRC_MBEDTLS := $(addprefix lib/mbedtls/library/, \
         ssl_ciphersuites.c \
         ssl_cli.c \
         ssl_cookie.c \
+        ssl_msg.c \
         ssl_srv.c \
         ssl_ticket.c \
         ssl_tls.c \
@@ -353,18 +336,19 @@ SRC_MBEDTLS := $(addprefix lib/mbedtls/library/, \
         x509write_csr.c \
         xtea.c \
 	)
-SRC_C += $(SRC_MBEDTLS) mbedtls/mbedtls_port.c mbedtls/crt_bundle.c
+SRC_C += $(SRC_MBEDTLS) lib/mbedtls_config/mbedtls_port.c lib/mbedtls_config/crt_bundle.c
 CFLAGS += \
 	  -isystem $(TOP)/lib/mbedtls/include \
-	  -DMBEDTLS_CONFIG_FILE='"mbedtls/mbedtls_config.h"' \
+	  -DMBEDTLS_CONFIG_FILE='"$(TOP)/lib/mbedtls_config/mbedtls_config.h"' \
 
-$(BUILD)/x509_crt_bundle.S: $(TOP)/lib/certificates/nina-fw/data/roots.pem $(TOP)/tools/gen_crt_bundle.py
+$(BUILD)/x509_crt_bundle.S: $(TOP)/lib/certificates/data/roots.pem $(TOP)/tools/gen_crt_bundle.py
 	$(Q)$(PYTHON) $(TOP)/tools/gen_crt_bundle.py -i $< -o $@ --asm
 OBJ_MBEDTLS := $(BUILD)/x509_crt_bundle.o
 $(patsubst %.c,$(BUILD)/%.o,$(SRC_MBEDTLS))): CFLAGS += -Wno-suggest-attribute=format
 else
 OBJ_MBEDTLS :=
 endif
+
 
 SRC_COMMON_HAL_EXPANDED = $(addprefix shared-bindings/, $(SRC_COMMON_HAL)) \
                           $(addprefix shared-bindings/, $(SRC_BINDINGS_ENUMS)) \
@@ -392,7 +376,11 @@ SRC_S_UPPER = sdk/src/rp2_common/hardware_divider/divider.S \
               sdk/src/rp2_common/pico_int64_ops/pico_int64_ops_aeabi.S \
               sdk/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S \
               sdk/src/rp2_common/pico_standard_link/crt0.S \
-              lib/PicoDVI/software/libdvi/tmds_encode_asm.S \
+
+ifeq ($(CIRCUITPY_PICODVI),1)
+SRC_S_UPPER += lib/PicoDVI/software/libdvi/tmds_encode_asm.S \
+
+endif
 
 OBJ = $(PY_O) $(SUPERVISOR_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 OBJ += $(addprefix $(BUILD)/, $(SRC_SDK:.c=.o))
@@ -424,7 +412,8 @@ $(BUILD)/stage2.c: stage2.c.jinja gen_stage2.py | $(BUILD)/
 	$(STEPECHO) "GEN $<"
 	$(Q)$(PYTHON) gen_stage2.py $< $@ $(EXTERNAL_FLASH_DEVICES)
 
-$(HEADER_BUILD)/flash_info.h: flash_info.h.jinja gen_stage2.py | $(HEADER_BUILD)/
+QSTR_GLOBAL_REQUIREMENTS += $(HEADER_BUILD)/flash_info.h
+$(HEADER_BUILD)/flash_info.h: flash_info.h.jinja gen_stage2.py
 	$(STEPECHO) "GEN $<"
 	$(Q)$(PYTHON) gen_stage2.py $< $@ $(EXTERNAL_FLASH_DEVICES)
 
@@ -435,7 +424,7 @@ $(BUILD)/boot2.elf: $(BUILD)/stage2.c
 	$(Q)$(CC) $(CFLAGS) $(BOOT2_S_CFLAGS) -Os -ggdb3 -I. -fPIC --specs=nosys.specs -nostartfiles -Wl,-T,boot_stage2.ld  -Wl,-Map=$@.map -o $@ $<
 	$(Q)$(SIZE) $@
 
-SRC_QSTR += $(SRC_C) $(SRC_SUPERVISOR) $(SRC_COMMON_HAL_EXPANDED) $(SRC_SHARED_MODULE_EXPANDED)
+SRC_QSTR += $(SRC_C) $(SRC_SUPERVISOR) $(SRC_COMMON_HAL_EXPANDED) $(SRC_SHARED_MODULE_EXPANDED) $(SRC_CIRCUITPY_COMMON)
 
 all: $(BUILD)/firmware.uf2
 

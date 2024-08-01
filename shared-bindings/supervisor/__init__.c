@@ -1,28 +1,8 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2016-2017 Scott Shawcroft for Adafruit Industries
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2016-2017 Scott Shawcroft for Adafruit Industries
+//
+// SPDX-License-Identifier: MIT
 #include <string.h>
 
 #include "py/obj.h"
@@ -30,13 +10,13 @@
 #include "py/objstr.h"
 
 #include "shared/runtime/interrupt_char.h"
+#include "supervisor/port.h"
 #include "supervisor/shared/display.h"
 #include "supervisor/shared/reload.h"
 #include "supervisor/shared/traceback.h"
-#include "supervisor/shared/translate/translate.h"
 #include "supervisor/shared/workflow.h"
 
-#if CIRCUITPY_USB_IDENTIFICATION
+#if CIRCUITPY_USB_DEVICE && CIRCUITPY_USB_IDENTIFICATION
 #include "supervisor/usb.h"
 #endif
 
@@ -65,7 +45,7 @@
 //|     """Reload the main Python code and run it (equivalent to hitting Ctrl-D at the REPL)."""
 //|     ...
 //|
-STATIC mp_obj_t supervisor_reload(void) {
+static mp_obj_t supervisor_reload(void) {
     reload_initiate(RUN_REASON_SUPERVISOR_RELOAD);
     return mp_const_none;
 }
@@ -112,7 +92,7 @@ MP_DEFINE_CONST_FUN_OBJ_0(supervisor_reload_obj, supervisor_reload);
 //|     reset to the standard search sequence."""
 //|     ...
 //|
-STATIC mp_obj_t supervisor_set_next_code_file(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+static mp_obj_t supervisor_set_next_code_file(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_filename, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_rom_obj = mp_const_none} },
         { MP_QSTR_reload_on_success, MP_ARG_KW_ONLY | MP_ARG_BOOL, {.u_bool = false} },
@@ -130,11 +110,12 @@ STATIC mp_obj_t supervisor_set_next_code_file(size_t n_args, const mp_obj_t *pos
         mp_arg_val_t sticky_on_reload;
     } args;
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, (mp_arg_val_t *)&args);
-    if (!mp_obj_is_str_or_bytes(args.filename.u_obj) && args.filename.u_obj != mp_const_none) {
-        mp_raise_TypeError(translate("argument has wrong type"));
+    mp_obj_t filename_obj = args.filename.u_obj;
+    if (!mp_obj_is_str_or_bytes(filename_obj) && filename_obj != mp_const_none) {
+        mp_raise_TypeError_varg(MP_ERROR_TEXT("%q must be of type %q or %q, not %q"), MP_QSTR_filename, MP_QSTR_str, MP_QSTR_None, mp_obj_get_type(filename_obj)->name);
     }
-    if (args.filename.u_obj == mp_const_none) {
-        args.filename.u_obj = mp_const_empty_bytes;
+    if (filename_obj == mp_const_none) {
+        filename_obj = mp_const_empty_bytes;
     }
     uint8_t options = 0;
     if (args.reload_on_success.u_bool) {
@@ -153,19 +134,19 @@ STATIC mp_obj_t supervisor_set_next_code_file(size_t n_args, const mp_obj_t *pos
         options |= SUPERVISOR_NEXT_CODE_OPT_STICKY_ON_RELOAD;
     }
     size_t len;
-    const char *filename = mp_obj_str_get_data(args.filename.u_obj, &len);
-    free_memory(next_code_allocation);
+    const char *filename = mp_obj_str_get_data(filename_obj, &len);
+    if (next_code_configuration != NULL) {
+        port_free(next_code_configuration);
+        next_code_configuration = NULL;
+    }
     if (options != 0 || len != 0) {
-        next_code_allocation = allocate_memory(align32_size(sizeof(next_code_info_t) + len + 1), false, true);
-        if (next_code_allocation == NULL) {
-            m_malloc_fail(sizeof(next_code_info_t) + len + 1);
+        next_code_configuration = port_malloc(sizeof(supervisor_next_code_info_t) + len + 1, false);
+        if (next_code_configuration == NULL) {
+            m_malloc_fail(sizeof(supervisor_next_code_info_t) + len + 1);
         }
-        next_code_info_t *next_code = (next_code_info_t *)next_code_allocation->ptr;
-        next_code->options = options | SUPERVISOR_NEXT_CODE_OPT_NEWLY_SET;
-        memcpy(&next_code->filename, filename, len);
-        next_code->filename[len] = '\0';
-    } else {
-        next_code_allocation = NULL;
+        next_code_configuration->options = options | SUPERVISOR_NEXT_CODE_OPT_NEWLY_SET;
+        memcpy(&next_code_configuration->filename, filename, len);
+        next_code_configuration->filename[len] = '\0';
     }
     return mp_const_none;
 }
@@ -229,15 +210,15 @@ MP_DEFINE_CONST_FUN_OBJ_0(supervisor_ticks_ms_obj, supervisor_ticks_ms);
 //|     Only code (main or boot) runs are considered, not REPL runs."""
 //|     ...
 //|
-STATIC mp_obj_t supervisor_get_previous_traceback(void) {
-    if (prev_traceback_allocation) {
-        size_t len = strlen((const char *)prev_traceback_allocation->ptr);
+static mp_obj_t supervisor_get_previous_traceback(void) {
+    if (prev_traceback_string) {
+        size_t len = strlen(prev_traceback_string);
         if (len > 0) {
             mp_obj_str_t *o = mp_obj_malloc(mp_obj_str_t, &mp_type_str);
             o->len = len;
             // callers probably aren't going to compare this string, so skip computing the hash
             o->hash = 0;
-            o->data = (const byte *)prev_traceback_allocation->ptr;
+            o->data = (const byte *)prev_traceback_string;
             return MP_OBJ_FROM_PTR(o);
         }
     }
@@ -249,7 +230,7 @@ MP_DEFINE_CONST_FUN_OBJ_0(supervisor_get_previous_traceback_obj, supervisor_get_
 //|     """Reset the CircuitPython serial terminal with new dimensions."""
 //|     ...
 //|
-STATIC mp_obj_t supervisor_reset_terminal(mp_obj_t x_pixels, mp_obj_t y_pixels) {
+static mp_obj_t supervisor_reset_terminal(mp_obj_t x_pixels, mp_obj_t y_pixels) {
     #if CIRCUITPY_DISPLAYIO
     supervisor_stop_terminal();
     supervisor_start_terminal(mp_obj_get_int(x_pixels), mp_obj_get_int(y_pixels));
@@ -277,8 +258,8 @@ MP_DEFINE_CONST_FUN_OBJ_2(supervisor_reset_terminal_obj, supervisor_reset_termin
 //|     """
 //|     ...
 //|
-STATIC mp_obj_t supervisor_set_usb_identification(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    #if CIRCUITPY_USB_IDENTIFICATION
+static mp_obj_t supervisor_set_usb_identification(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+    #if CIRCUITPY_USB_DEVICE && CIRCUITPY_USB_IDENTIFICATION
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_manufacturer, MP_ARG_OBJ, {.u_rom_obj = mp_const_none} },
         { MP_QSTR_product, MP_ARG_OBJ, {.u_rom_obj = mp_const_none} },
@@ -293,34 +274,33 @@ STATIC mp_obj_t supervisor_set_usb_identification(size_t n_args, const mp_obj_t 
     } args;
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, (mp_arg_val_t *)&args);
 
-    if (!usb_identification_allocation) {
-        usb_identification_allocation = allocate_memory(sizeof(usb_identification_t), false, true);
+    if (custom_usb_identification == NULL) {
+        custom_usb_identification = port_malloc(sizeof(usb_identification_t), false);
     }
-    usb_identification_t *identification = (usb_identification_t *)usb_identification_allocation->ptr;
 
     mp_arg_validate_int_range(args.vid.u_int, -1, (1 << 16) - 1, MP_QSTR_vid);
     mp_arg_validate_int_range(args.pid.u_int, -1, (1 << 16) - 1, MP_QSTR_pid);
 
-    identification->vid = args.vid.u_int > -1 ? args.vid.u_int : USB_VID;
-    identification->pid = args.pid.u_int > -1 ? args.pid.u_int : USB_PID;
+    custom_usb_identification->vid = args.vid.u_int > -1 ? args.vid.u_int : USB_VID;
+    custom_usb_identification->pid = args.pid.u_int > -1 ? args.pid.u_int : USB_PID;
 
     mp_buffer_info_t info;
     if (args.manufacturer.u_obj != mp_const_none) {
         mp_get_buffer_raise(args.manufacturer.u_obj, &info, MP_BUFFER_READ);
         mp_arg_validate_length_range(info.len, 0, 126, MP_QSTR_manufacturer);
-        memcpy(identification->manufacturer_name, info.buf, info.len);
-        identification->manufacturer_name[info.len] = 0;
+        memcpy(custom_usb_identification->manufacturer_name, info.buf, info.len);
+        custom_usb_identification->manufacturer_name[info.len] = 0;
     } else {
-        strcpy(identification->manufacturer_name, USB_MANUFACTURER);
+        strcpy(custom_usb_identification->manufacturer_name, USB_MANUFACTURER);
     }
 
     if (args.product.u_obj != mp_const_none) {
         mp_get_buffer_raise(args.product.u_obj, &info, MP_BUFFER_READ);
         mp_arg_validate_length_range(info.len, 0, 126, MP_QSTR_product);
-        memcpy(identification->product_name, info.buf, info.len);
-        identification->product_name[info.len] = 0;
+        memcpy(custom_usb_identification->product_name, info.buf, info.len);
+        custom_usb_identification->product_name[info.len] = 0;
     } else {
-        strcpy(identification->product_name, USB_PRODUCT);
+        strcpy(custom_usb_identification->product_name, USB_PRODUCT);
     }
 
     return mp_const_none;
@@ -330,7 +310,7 @@ STATIC mp_obj_t supervisor_set_usb_identification(size_t n_args, const mp_obj_t 
 }
 MP_DEFINE_CONST_FUN_OBJ_KW(supervisor_set_usb_identification_obj, 0, supervisor_set_usb_identification);
 
-STATIC const mp_rom_map_elem_t supervisor_module_globals_table[] = {
+static const mp_rom_map_elem_t supervisor_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_supervisor) },
     { MP_ROM_QSTR(MP_QSTR_runtime),  MP_ROM_PTR(&common_hal_supervisor_runtime_obj) },
     { MP_ROM_QSTR(MP_QSTR_reload),  MP_ROM_PTR(&supervisor_reload_obj) },
@@ -348,7 +328,7 @@ STATIC const mp_rom_map_elem_t supervisor_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_status_bar),  MP_ROM_PTR(&shared_module_supervisor_status_bar_obj) },
 };
 
-STATIC MP_DEFINE_CONST_DICT(supervisor_module_globals, supervisor_module_globals_table);
+static MP_DEFINE_CONST_DICT(supervisor_module_globals, supervisor_module_globals_table);
 
 const mp_obj_module_t supervisor_module = {
     .base = { &mp_type_module },

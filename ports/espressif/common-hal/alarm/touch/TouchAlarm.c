@@ -1,28 +1,8 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2020 microDev
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2020 microDev
+//
+// SPDX-License-Identifier: MIT
 
 #include "shared-bindings/alarm/__init__.h"
 #include "shared-bindings/alarm/touch/TouchAlarm.h"
@@ -85,7 +65,7 @@ mp_obj_t alarm_touch_touchalarm_record_wake_alarm(void) {
 }
 
 // This is used to wake the main CircuitPython task.
-STATIC void touch_interrupt(void *arg) {
+static void touch_interrupt(void *arg) {
     (void)arg;
     woke_up = true;
     port_wake_main_task_from_isr();
@@ -98,7 +78,7 @@ void alarm_touch_touchalarm_set_alarm(const bool deep_sleep, const size_t n_alar
     for (size_t i = 0; i < n_alarms; i++) {
         if (mp_obj_is_type(alarms[i], &alarm_touch_touchalarm_type)) {
             if (deep_sleep && touch_alarm_set) {
-                mp_raise_ValueError_varg(translate("Only one %q can be set in deep sleep."), MP_QSTR_TouchAlarm);
+                mp_raise_ValueError_varg(MP_ERROR_TEXT("Only one %q can be set in deep sleep."), MP_QSTR_TouchAlarm);
             }
             touch_alarm = MP_OBJ_TO_PTR(alarms[i]);
             touch_channel_mask |= 1 << touch_alarm->pin->number;

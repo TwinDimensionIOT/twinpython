@@ -1,28 +1,8 @@
-/*
- * This file is part of the Micro Python project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2023 Jeff Epler for Adafruit Industries
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2023 Jeff Epler for Adafruit Industries
+//
+// SPDX-License-Identifier: MIT
 
 #include <math.h>
 #include "py/runtime.h"
@@ -120,6 +100,24 @@ void common_hal_synthio_note_set_waveform(synthio_note_obj_t *self, mp_obj_t wav
     self->waveform_obj = waveform_in;
 }
 
+mp_int_t common_hal_synthio_note_get_waveform_loop_start(synthio_note_obj_t *self) {
+    return self->waveform_loop_start;
+}
+
+void common_hal_synthio_note_set_waveform_loop_start(synthio_note_obj_t *self, mp_int_t value_in) {
+    mp_int_t val = mp_arg_validate_int_range(value_in, 0, SYNTHIO_WAVEFORM_SIZE - 1, MP_QSTR_waveform_loop_start);
+    self->waveform_loop_start = val;
+}
+
+mp_int_t common_hal_synthio_note_get_waveform_loop_end(synthio_note_obj_t *self) {
+    return self->waveform_loop_end;
+}
+
+void common_hal_synthio_note_set_waveform_loop_end(synthio_note_obj_t *self, mp_int_t value_in) {
+    mp_int_t val = mp_arg_validate_int_range(value_in, 1, SYNTHIO_WAVEFORM_SIZE, MP_QSTR_waveform_loop_end);
+    self->waveform_loop_end = val;
+}
+
 mp_obj_t common_hal_synthio_note_get_ring_waveform_obj(synthio_note_obj_t *self) {
     return self->ring_waveform_obj;
 }
@@ -133,6 +131,24 @@ void common_hal_synthio_note_set_ring_waveform(synthio_note_obj_t *self, mp_obj_
         self->ring_waveform_buf = bufinfo_ring_waveform;
     }
     self->ring_waveform_obj = ring_waveform_in;
+}
+
+mp_int_t common_hal_synthio_note_get_ring_waveform_loop_start(synthio_note_obj_t *self) {
+    return self->ring_waveform_loop_start;
+}
+
+void common_hal_synthio_note_set_ring_waveform_loop_start(synthio_note_obj_t *self, mp_int_t value_in) {
+    mp_int_t val = mp_arg_validate_int_range(value_in, 0, SYNTHIO_WAVEFORM_SIZE - 1, MP_QSTR_ring_waveform_loop_start);
+    self->ring_waveform_loop_start = val;
+}
+
+mp_int_t common_hal_synthio_note_get_ring_waveform_loop_end(synthio_note_obj_t *self) {
+    return self->ring_waveform_loop_end;
+}
+
+void common_hal_synthio_note_set_ring_waveform_loop_end(synthio_note_obj_t *self, mp_int_t value_in) {
+    mp_int_t val = mp_arg_validate_int_range(value_in, 1, SYNTHIO_WAVEFORM_SIZE, MP_QSTR_ring_waveform_loop_end);
+    self->ring_waveform_loop_end = val;
 }
 
 void synthio_note_recalculate(synthio_note_obj_t *self, int32_t sample_rate) {
@@ -160,9 +176,9 @@ void synthio_note_start(synthio_note_obj_t *self, int32_t sample_rate) {
 #define BEND_SCALE (32768)
 #define BEND_OFFSET (BEND_SCALE)
 
-STATIC uint16_t pitch_bend_table[] = { 0, 1948, 4013, 6200, 8517, 10972, 13573, 16329, 19248, 22341, 25618, 29090, 32768 };
+static uint16_t pitch_bend_table[] = { 0, 1948, 4013, 6200, 8517, 10972, 13573, 16329, 19248, 22341, 25618, 29090, 32768 };
 
-STATIC uint32_t pitch_bend(uint32_t frequency_scaled, int32_t bend_value) {
+static uint32_t pitch_bend(uint32_t frequency_scaled, int32_t bend_value) {
     int octave = bend_value >> 15;
     bend_value &= 0x7fff;
     uint32_t bend_value_semitone = (uint32_t)bend_value * 24; // 65536/semitone
@@ -178,7 +194,7 @@ STATIC uint32_t pitch_bend(uint32_t frequency_scaled, int32_t bend_value) {
 #define ONE MICROPY_FLOAT_CONST(1.)
 #define ALMOST_ONE (MICROPY_FLOAT_CONST(32767.) / 32768)
 
-uint32_t synthio_note_step(synthio_note_obj_t *self, int32_t sample_rate, int16_t dur, uint16_t loudness[2]) {
+uint32_t synthio_note_step(synthio_note_obj_t *self, int32_t sample_rate, int16_t dur, int16_t loudness[2]) {
     int panning = synthio_block_slot_get_scaled(&self->panning, -ALMOST_ONE, ALMOST_ONE);
     int left_panning_scaled, right_panning_scaled;
     if (panning >= 0) {
@@ -189,7 +205,7 @@ uint32_t synthio_note_step(synthio_note_obj_t *self, int32_t sample_rate, int16_
         left_panning_scaled = 32767 + panning;
     }
 
-    int amplitude = synthio_block_slot_get_scaled(&self->amplitude, ZERO, ALMOST_ONE);
+    int amplitude = synthio_block_slot_get_scaled(&self->amplitude, -ALMOST_ONE, ALMOST_ONE);
     left_panning_scaled = (left_panning_scaled * amplitude) >> 15;
     right_panning_scaled = (right_panning_scaled * amplitude) >> 15;
     loudness[0] = (loudness[0] * left_panning_scaled) >> 15;

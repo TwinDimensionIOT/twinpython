@@ -1,34 +1,14 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2020 Scott Shawcroft for Adafruit Industries
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2020 Scott Shawcroft for Adafruit Industries
+//
+// SPDX-License-Identifier: MIT
 
 #include "supervisor/board.h"
 #include "mpconfigboard.h"
 #include "shared-bindings/microcontroller/Pin.h"
 #include "shared-bindings/board/__init__.h"
-#include "shared-bindings/displayio/I2CDisplay.h"
+#include "shared-bindings/i2cdisplaybus/I2CDisplayBus.h"
 #include "shared-module/displayio/__init__.h"
 #include "shared-module/displayio/mipi_constants.h"
 #include "shared-bindings/busio/I2C.h"
@@ -54,17 +34,17 @@ uint8_t display_init_sequence[] = { // SSD1306
 static void display_init(void) {
     busio_i2c_obj_t *i2c = common_hal_board_create_i2c(0);
 
-    displayio_i2cdisplay_obj_t *bus = &allocate_display_bus()->i2cdisplay_bus;
-    bus->base.type = &displayio_i2cdisplay_type;
-    common_hal_displayio_i2cdisplay_construct(bus,
+    i2cdisplaybus_i2cdisplaybus_obj_t *bus = &allocate_display_bus()->i2cdisplay_bus;
+    bus->base.type = &i2cdisplaybus_i2cdisplaybus_type;
+    common_hal_i2cdisplaybus_i2cdisplaybus_construct(bus,
         i2c,
         0x3c,
         &pin_GPIO18 // reset
         );
 
-    displayio_display_obj_t *display = &allocate_display()->display;
-    display->base.type = &displayio_display_type;
-    common_hal_displayio_display_construct(display,
+    busdisplay_busdisplay_obj_t *display = &allocate_display()->display;
+    display->base.type = &busdisplay_busdisplay_type;
+    common_hal_busdisplay_busdisplay_construct(display,
         bus,
         128, // Width
         32, // Height
@@ -97,11 +77,6 @@ static void display_init(void) {
 void board_init(void) {
     // init display
     display_init();
-    // Debug UART
-    #ifdef DEBUG
-    common_hal_never_reset_pin(&pin_GPIO43);
-    common_hal_never_reset_pin(&pin_GPIO44);
-    #endif /* DEBUG */
 }
 
 // Use the MP_WEAK supervisor/shared/board.c versions of routines not defined here.

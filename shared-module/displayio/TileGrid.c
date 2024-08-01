@@ -1,28 +1,8 @@
-/*
- * This file is part of the Micro Python project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2018 Scott Shawcroft for Adafruit Industries
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2018 Scott Shawcroft for Adafruit Industries
+//
+// SPDX-License-Identifier: MIT
 
 #include "shared-bindings/displayio/TileGrid.h"
 
@@ -31,7 +11,6 @@
 #include "shared-bindings/displayio/ColorConverter.h"
 #include "shared-bindings/displayio/OnDiskBitmap.h"
 #include "shared-bindings/displayio/Palette.h"
-#include "shared-bindings/displayio/Shape.h"
 
 void common_hal_displayio_tilegrid_construct(displayio_tilegrid_t *self, mp_obj_t bitmap,
     uint16_t bitmap_width_in_tiles, uint16_t bitmap_height_in_tiles,
@@ -110,7 +89,7 @@ bool displayio_tilegrid_get_previous_area(displayio_tilegrid_t *self, displayio_
     return true;
 }
 
-STATIC void _update_current_x(displayio_tilegrid_t *self) {
+static void _update_current_x(displayio_tilegrid_t *self) {
     uint16_t width;
     if (self->transpose_xy) {
         width = self->pixel_height;
@@ -143,7 +122,7 @@ STATIC void _update_current_x(displayio_tilegrid_t *self) {
     }
 }
 
-STATIC void _update_current_y(displayio_tilegrid_t *self) {
+static void _update_current_y(displayio_tilegrid_t *self) {
     uint16_t height;
     if (self->transpose_xy) {
         height = self->pixel_width;
@@ -265,7 +244,7 @@ uint8_t common_hal_displayio_tilegrid_get_tile(displayio_tilegrid_t *self, uint1
 
 void common_hal_displayio_tilegrid_set_tile(displayio_tilegrid_t *self, uint16_t x, uint16_t y, uint8_t tile_index) {
     if (tile_index >= self->tiles_in_bitmap) {
-        mp_raise_ValueError(translate("Tile index out of bounds"));
+        mp_raise_ValueError(MP_ERROR_TEXT("Tile index out of bounds"));
     }
     uint8_t *tiles = self->tiles;
     if (self->inline_tiles) {
@@ -304,7 +283,7 @@ void common_hal_displayio_tilegrid_set_tile(displayio_tilegrid_t *self, uint16_t
 
 void common_hal_displayio_tilegrid_set_all_tiles(displayio_tilegrid_t *self, uint8_t tile_index) {
     if (tile_index >= self->tiles_in_bitmap) {
-        mp_raise_ValueError(translate("Tile index out of bounds"));
+        mp_raise_ValueError(MP_ERROR_TEXT("Tile index out of bounds"));
     }
     uint8_t *tiles = self->tiles;
     if (self->inline_tiles) {
@@ -503,8 +482,6 @@ bool displayio_tilegrid_fill_area(displayio_tilegrid_t *self,
             // buffer because most bitmaps are row associated.
             if (mp_obj_is_type(self->bitmap, &displayio_bitmap_type)) {
                 input_pixel.pixel = common_hal_displayio_bitmap_get_pixel(self->bitmap, input_pixel.tile_x, input_pixel.tile_y);
-            } else if (mp_obj_is_type(self->bitmap, &displayio_shape_type)) {
-                input_pixel.pixel = common_hal_displayio_shape_get_pixel(self->bitmap, input_pixel.tile_x, input_pixel.tile_y);
             } else if (mp_obj_is_type(self->bitmap, &displayio_ondiskbitmap_type)) {
                 input_pixel.pixel = common_hal_displayio_ondiskbitmap_get_pixel(self->bitmap, input_pixel.tile_x, input_pixel.tile_y);
             }
@@ -573,8 +550,6 @@ void displayio_tilegrid_finish_refresh(displayio_tilegrid_t *self) {
     }
     if (mp_obj_is_type(self->bitmap, &displayio_bitmap_type)) {
         displayio_bitmap_finish_refresh(self->bitmap);
-    } else if (mp_obj_is_type(self->bitmap, &displayio_shape_type)) {
-        displayio_shape_finish_refresh(self->bitmap);
     } else if (mp_obj_is_type(self->bitmap, &displayio_ondiskbitmap_type)) {
         // OnDiskBitmap changes will trigger a complete reload so no need to
         // track changes.
@@ -618,12 +593,6 @@ displayio_area_t *displayio_tilegrid_get_refresh_areas(displayio_tilegrid_t *sel
             } else {
                 self->full_change = true;
             }
-        }
-    } else if (mp_obj_is_type(self->bitmap, &displayio_shape_type)) {
-        displayio_area_t *refresh_area = displayio_shape_get_refresh_areas(self->bitmap, tail);
-        if (refresh_area != tail) {
-            displayio_area_copy(refresh_area, &self->dirty_area);
-            self->partial_change = true;
         }
     }
 

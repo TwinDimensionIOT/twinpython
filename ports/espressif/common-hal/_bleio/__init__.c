@@ -1,30 +1,10 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2018 Dan Halbert for Adafruit Industries
- * Copyright (c) 2018 Artur Pacholec
- * Copyright (c) 2016 Glenn Ruben Bakke
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2018 Dan Halbert for Adafruit Industries
+// SPDX-FileCopyrightText: Copyright (c) 2018 Artur Pacholec
+// SPDX-FileCopyrightText: Copyright (c) 2016 Glenn Ruben Bakke
+//
+// SPDX-License-Identifier: MIT
 
 #include <string.h>
 
@@ -39,8 +19,12 @@
 #include "supervisor/shared/bluetooth/bluetooth.h"
 
 #include "common-hal/_bleio/__init__.h"
-// #include "common-hal/_bleio/bonding.h"
 #include "common-hal/_bleio/ble_events.h"
+
+#include "nvs_flash.h"
+
+
+background_callback_t bleio_background_callback;
 
 void bleio_user_reset() {
     // Stop any user scanning or advertising.
@@ -56,7 +40,6 @@ void bleio_user_reset() {
 // Turn off BLE on a reset or reload.
 void bleio_reset() {
     // Set this explicitly to save data.
-    common_hal_bleio_adapter_obj.base.type = &bleio_adapter_type;
     if (!common_hal_bleio_adapter_get_enabled(&common_hal_bleio_adapter_obj)) {
         return;
     }
@@ -72,7 +55,26 @@ void bleio_reset() {
 // It currently only has properties and no state. Inited by bleio_reset
 bleio_adapter_obj_t common_hal_bleio_adapter_obj;
 
-void bleio_background(void) {
+void bleio_background(void *data) {
+    (void)data;
+    supervisor_bluetooth_background();
+}
+
+void common_hal_bleio_init(void) {
+    common_hal_bleio_adapter_obj.base.type = &bleio_adapter_type;
+
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        // NVS partition was truncated and needs to be erased
+        // Retry nvs_flash_init
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(err);
+
+
+    bleio_background_callback.fun = bleio_background;
+    bleio_background_callback.data = NULL;
 }
 
 void common_hal_bleio_gc_collect(void) {
@@ -85,26 +87,26 @@ void check_nimble_error(int rc, const char *file, size_t line) {
     }
     switch (rc) {
         case BLE_HS_ENOMEM:
-            mp_raise_msg(&mp_type_MemoryError, translate("Nimble out of memory"));
+            mp_raise_msg(&mp_type_MemoryError, MP_ERROR_TEXT("Nimble out of memory"));
             return;
         case BLE_HS_ETIMEOUT:
             mp_raise_msg(&mp_type_TimeoutError, NULL);
             return;
         case BLE_HS_EINVAL:
-            mp_raise_ValueError(translate("Invalid BLE parameter"));
+            mp_raise_ValueError(MP_ERROR_TEXT("Invalid BLE parameter"));
             return;
         case BLE_HS_ENOTCONN:
-            mp_raise_ConnectionError(translate("Not connected"));
+            mp_raise_ConnectionError(MP_ERROR_TEXT("Not connected"));
             return;
         default:
-            #if CIRCUITPY_VERBOSE_BLE
+            #if CIRCUITPY_VERBOSE_BLE || CIRCUITPY_DEBUG
             if (file) {
-                mp_raise_bleio_BluetoothError(translate("Unknown system firmware error at %s:%d: %d"), file, line, rc);
+                mp_raise_bleio_BluetoothError(MP_ERROR_TEXT("Unknown system firmware error at %s:%d: %d"), file, line, rc);
             }
             #else
             (void)file;
             (void)line;
-            mp_raise_bleio_BluetoothError(translate("Unknown system firmware error: %d"), rc);
+            mp_raise_bleio_BluetoothError(MP_ERROR_TEXT("Unknown system firmware error: %d"), rc);
             #endif
 
             break;
@@ -112,19 +114,26 @@ void check_nimble_error(int rc, const char *file, size_t line) {
 }
 
 void check_ble_error(int error_code, const char *file, size_t line) {
-    if (error_code == BLE_ERR_SUCCESS) {
+    // 0 means success. For BLE_HS_* codes, there is no defined "SUCCESS" value.
+    if (error_code == 0) {
         return;
     }
     switch (error_code) {
+        case BLE_HS_ATT_ERR(BLE_ATT_ERR_INSUFFICIENT_AUTHEN):
+            mp_raise_bleio_SecurityError(MP_ERROR_TEXT("Insufficient authentication"));
+            return;
+        case BLE_HS_ATT_ERR(BLE_ATT_ERR_INSUFFICIENT_ENC):
+            mp_raise_bleio_SecurityError(MP_ERROR_TEXT("Insufficient encryption"));
+            return;
         default:
-            #if CIRCUITPY_VERBOSE_BLE
+            #if CIRCUITPY_VERBOSE_BLE || CIRCUITPY_DEBUG
             if (file) {
-                mp_raise_bleio_BluetoothError(translate("Unknown BLE error at %s:%d: %d"), file, line, error_code);
+                mp_raise_bleio_BluetoothError(MP_ERROR_TEXT("Unknown BLE error at %s:%d: %d"), file, line, error_code);
             }
             #else
             (void)file;
             (void)line;
-            mp_raise_bleio_BluetoothError(translate("Unknown BLE error: %d"), error_code);
+            mp_raise_bleio_BluetoothError(MP_ERROR_TEXT("Unknown BLE error: %d"), error_code);
             #endif
 
             break;
@@ -140,6 +149,6 @@ void check_notify(BaseType_t result) {
 
 void common_hal_bleio_check_connected(uint16_t conn_handle) {
     if (conn_handle == BLEIO_HANDLE_INVALID) {
-        mp_raise_ConnectionError(translate("Not connected"));
+        mp_raise_ConnectionError(MP_ERROR_TEXT("Not connected"));
     }
 }

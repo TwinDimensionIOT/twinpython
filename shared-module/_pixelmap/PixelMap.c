@@ -1,29 +1,9 @@
-/*
- * This file is part of the CircuitPython project, https://github.com/adafruit/circuitpython
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2018 Rose Hooper
- * Copyright (c) 2022 Jeff Epler for Adafruit Industries
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2018 Rose Hooper
+// SPDX-FileCopyrightText: Copyright (c) 2022 Jeff Epler for Adafruit Industries
+//
+// SPDX-License-Identifier: MIT
 
 #include "py/smallint.h"
 #include "py/runtime.h"
@@ -121,7 +101,7 @@ mp_obj_t shared_module_pixelmap_pixelmap_getslice(pixelmap_pixelmap_obj_t *self,
 void shared_module_pixelmap_pixelmap_setslice(pixelmap_pixelmap_obj_t *self, const mp_obj_t values, mp_bound_slice_t slice, size_t slice_len) {
     size_t num_items = mp_obj_get_int(mp_obj_len(values));
     if (num_items != slice_len) {
-        mp_raise_ValueError_varg(translate("Unmatched number of items on RHS (expected %d, got %d)."), slice_len, num_items);
+        mp_raise_ValueError_varg(MP_ERROR_TEXT("Unmatched number of items on RHS (expected %d, got %d)."), slice_len, num_items);
     }
 
     bool auto_write = auto_write_get_and_clear(self);

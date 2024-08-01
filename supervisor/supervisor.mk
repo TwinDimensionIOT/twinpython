@@ -1,5 +1,6 @@
 SRC_SUPERVISOR = \
 	main.c \
+	lib/tlsf/tlsf.c \
 	supervisor/port.c \
 	supervisor/shared/background_callback.c \
 	supervisor/shared/board.c \
@@ -7,7 +8,6 @@ SRC_SUPERVISOR = \
 	supervisor/shared/fatfs.c \
 	supervisor/shared/flash.c \
 	supervisor/shared/lock.c \
-	supervisor/shared/memory.c \
 	supervisor/shared/micropython.c \
 	supervisor/shared/port.c \
 	supervisor/shared/reload.c \
@@ -21,10 +21,13 @@ SRC_SUPERVISOR = \
 	supervisor/shared/workflow.c \
 	supervisor/stub/misc.c \
 
+# For tlsf
+CFLAGS += -D_DEBUG=0
+
 NO_USB ?= $(wildcard supervisor/usb.c)
 
 
-ifeq ($(CIRCUITPY_USB),1)
+ifeq ($(CIRCUITPY_USB_DEVICE),1)
 CIRCUITPY_CREATOR_ID ?= $(USB_VID)
 CIRCUITPY_CREATION_ID ?= $(USB_PID)
 endif
@@ -106,16 +109,22 @@ ifeq ($(CIRCUITPY_STATUS_BAR),1)
 
 endif
 
-ifeq ($(CIRCUITPY_USB),1)
+ifeq ($(CIRCUITPY_TINYUSB),1)
   SRC_SUPERVISOR += \
-    lib/tinyusb/src/class/cdc/cdc_device.c \
     lib/tinyusb/src/common/tusb_fifo.c \
-    lib/tinyusb/src/device/usbd.c \
-    lib/tinyusb/src/device/usbd_control.c \
     lib/tinyusb/src/tusb.c \
     supervisor/usb.c \
-    supervisor/shared/usb/usb_desc.c \
     supervisor/shared/usb/usb.c \
+
+  ifeq ($(CIRCUITPY_USB_DEVICE),1)
+  SRC_SUPERVISOR += \
+    lib/tinyusb/src/class/cdc/cdc_device.c \
+    lib/tinyusb/src/device/usbd.c \
+    lib/tinyusb/src/device/usbd_control.c \
+    supervisor/shared/usb/usb_desc.c \
+    supervisor/shared/usb/usb_device.c \
+
+  endif
 
   ifeq ($(CIRCUITPY_USB_CDC), 1)
     SRC_SUPERVISOR += \
@@ -155,18 +164,41 @@ ifeq ($(CIRCUITPY_USB),1)
 
   endif
 
+  ifeq ($(CIRCUITPY_USB_VIDEO), 1)
+    SRC_SUPERVISOR += \
+      shared-bindings/usb_video/__init__.c \
+      shared-module/usb_video/__init__.c \
+      shared-bindings/usb_video/USBFramebuffer.c \
+      shared-module/usb_video/USBFramebuffer.c \
+      lib/tinyusb/src/class/video/video_device.c \
+
+    CFLAGS += -DCFG_TUD_VIDEO=1 -DCFG_TUD_VIDEO_STREAMING=1 -DCFG_TUD_VIDEO_STREAMING_EP_BUFSIZE=256 -DCFG_TUD_VIDEO_STREAMING_BULK=1
+  endif
+
+
   ifeq ($(CIRCUITPY_USB_VENDOR), 1)
     SRC_SUPERVISOR += \
       lib/tinyusb/src/class/vendor/vendor_device.c \
 
   endif
 
-  ifeq ($(CIRCUITPY_USB_HOST), 1)
+  ifeq ($(CIRCUITPY_TINYUSB_HOST), 1)
     SRC_SUPERVISOR += \
-      lib/tinyusb/src/class/hid/hid_host.c \
       lib/tinyusb/src/host/hub.c \
       lib/tinyusb/src/host/usbh.c \
+
+  endif
+
+  ifeq ($(CIRCUITPY_USB_KEYBOARD_WORKFLOW), 1)
+    SRC_SUPERVISOR += \
+      lib/tinyusb/src/class/hid/hid_host.c \
       supervisor/shared/usb/host_keyboard.c \
+
+  endif
+
+  ifeq ($(CIRCUITPY_MAX3421E), 1)
+    SRC_SUPERVISOR += \
+      lib/tinyusb/src/portable/analog/max3421/hcd_max3421.c \
 
   endif
 endif

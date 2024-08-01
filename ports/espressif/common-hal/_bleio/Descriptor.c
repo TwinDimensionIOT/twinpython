@@ -1,31 +1,12 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2019 Dan Halbert for Adafruit Industries
- * Copyright (c) 2018 Artur Pacholec
- * Copyright (c) 2016 Glenn Ruben Bakke
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2019 Dan Halbert for Adafruit Industries
+// SPDX-FileCopyrightText: Copyright (c) 2018 Artur Pacholec
+// SPDX-FileCopyrightText: Copyright (c) 2016 Glenn Ruben Bakke
+//
+// SPDX-License-Identifier: MIT
 
+#include "py/obj.h"
 #include "py/runtime.h"
 
 #include "shared-bindings/_bleio/__init__.h"
@@ -45,7 +26,7 @@ void common_hal_bleio_descriptor_construct(bleio_descriptor_obj_t *self, bleio_c
 
     const mp_int_t max_length_max = BLE_ATT_ATTR_MAX_LEN;
     if (max_length < 0 || max_length > max_length_max) {
-        mp_raise_ValueError_varg(translate("max_length must be 0-%d when fixed_length is %s"),
+        mp_raise_ValueError_varg(MP_ERROR_TEXT("max_length must be 0-%d when fixed_length is %s"),
             max_length_max, fixed_length ? "True" : "False");
     }
     self->max_length = max_length;
@@ -83,14 +64,45 @@ void common_hal_bleio_descriptor_set_value(bleio_descriptor_obj_t *self, mp_buff
         } else {
             // Validate data length for local descriptors only.
             if (self->fixed_length && bufinfo->len != self->max_length) {
-                mp_raise_ValueError(translate("Value length != required fixed length"));
+                mp_raise_ValueError(MP_ERROR_TEXT("Value length != required fixed length"));
             }
             if (bufinfo->len > self->max_length) {
-                mp_raise_ValueError(translate("Value length > max_length"));
+                mp_raise_ValueError(MP_ERROR_TEXT("Value length > max_length"));
             }
 
             // common_hal_bleio_gatts_write(self->handle, conn_handle, bufinfo);
         }
     }
 
+}
+
+int bleio_descriptor_access_cb(uint16_t conn_handle, uint16_t attr_handle,
+    struct ble_gatt_access_ctxt *ctxt, void *arg) {
+    bleio_descriptor_obj_t *self = arg;
+    const ble_uuid_t *uuid;
+    int rc;
+
+    switch (ctxt->op) {
+        case BLE_GATT_ACCESS_OP_READ_DSC:
+            uuid = ctxt->dsc->uuid;
+            if (ble_uuid_cmp(uuid, &self->uuid->nimble_ble_uuid.u) == 0) {
+                mp_buffer_info_t bufinfo;
+                if (!mp_get_buffer(self->initial_value, &bufinfo, MP_BUFFER_READ)) {
+                    return BLE_ATT_ERR_UNLIKELY;
+                }
+                rc = os_mbuf_append(ctxt->om,
+                    bufinfo.buf,
+                    bufinfo.len);
+                return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
+            }
+            return BLE_ATT_ERR_UNLIKELY;
+
+        case BLE_GATT_ACCESS_OP_WRITE_DSC:
+            return BLE_ATT_ERR_UNLIKELY;
+
+        default:
+            return BLE_ATT_ERR_UNLIKELY;
+    }
+
+    return BLE_ATT_ERR_UNLIKELY;
 }

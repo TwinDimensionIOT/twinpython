@@ -17,6 +17,7 @@ polib
 black
 pyyaml
 pre-commit
+micropython-uncrustify
 
 # for combining the Nordic SoftDevice with CircuitPython
 intelhex
@@ -25,7 +26,8 @@ intelhex
 pyelftools
 
 # for mbedtls certificate store
-cryptography
+# version limit due to espressif
+cryptography<36.1,>=2.1.4
 
 # for web workflow minify
 minify_html
@@ -34,3 +36,6 @@ jsmin
 # for Silicon Labs Configurator (SLC)
 websockets
 colorama
+
+# for silabs builds
+setuptools

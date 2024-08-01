@@ -1,30 +1,10 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2017 Scott Shawcroft for Adafruit Industries
- * SPDX-FileCopyrightText: Copyright (c) 2016 Damien P. George
- * Copyright (c) 2019 Artur Pacholec
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2017 Scott Shawcroft for Adafruit Industries
+// SPDX-FileCopyrightText: Copyright (c) 2016 Damien P. George
+// SPDX-FileCopyrightText: Copyright (c) 2019 Artur Pacholec
+//
+// SPDX-License-Identifier: MIT
 
 #include <stdint.h>
 
@@ -35,13 +15,10 @@
 
 #include "sdk/drivers/pwm/fsl_pwm.h"
 
-#include "supervisor/shared/translate/translate.h"
 #include "periph.h"
 
 static PWM_Type *const _flexpwms[] = PWM_BASE_PTRS;
 
-// 4 bits for each submodule in each FlexPWM.
-static uint16_t _pwm_never_reset[MP_ARRAY_SIZE(_flexpwms)];
 // Bitmask of whether state machines are use for variable frequency.
 static uint8_t _pwm_variable_frequency[MP_ARRAY_SIZE(_flexpwms)];
 // Configured frequency for each submodule.
@@ -90,39 +67,11 @@ static uint16_t _outen_mask(pwm_submodule_t submodule, pwm_channels_t channel) {
 
 void common_hal_pwmio_pwmout_never_reset(pwmio_pwmout_obj_t *self) {
     common_hal_never_reset_pin(self->pin);
-    _pwm_never_reset[self->flexpwm_index] |= (1 << (self->pwm->submodule * 4 + self->pwm->channel));
 }
 
-STATIC void _maybe_disable_clock(uint8_t instance) {
+static void _maybe_disable_clock(uint8_t instance) {
     if ((_flexpwms[instance]->MCTRL & PWM_MCTRL_RUN_MASK) == 0) {
         CLOCK_DisableClock(_flexpwm_clocks[instance][0]);
-    }
-}
-
-void reset_all_flexpwm(void) {
-    for (size_t i = 1; i < MP_ARRAY_SIZE(_pwm_never_reset); i++) {
-        PWM_Type *flexpwm = _flexpwms[i];
-        for (size_t submodule = 0; submodule < FSL_FEATURE_PWM_SUBMODULE_COUNT; submodule++) {
-            uint8_t sm_mask = 1 << submodule;
-            for (size_t channel = 0; channel < 3; channel++) {
-                uint16_t channel_mask = 0x1 << (submodule * 4 + channel);
-                if ((_pwm_never_reset[i] & channel_mask) != 0) {
-                    continue;
-                }
-
-                // Turn off the channel.
-                flexpwm->OUTEN &= ~_outen_mask(submodule, channel);
-            }
-            uint16_t submodule_mask = 0xf << (submodule * 4);
-            if ((_pwm_never_reset[i] & submodule_mask) != 0) {
-                // Leave the submodule on since a channel is marked for never_reset.
-                continue;
-            }
-            flexpwm->MCTRL &= ~(sm_mask << PWM_MCTRL_RUN_SHIFT);
-            _pwm_variable_frequency[i] &= ~sm_mask;
-            _pwm_sm_frequencies[i][submodule] = 0;
-        }
-        _maybe_disable_clock(i);
     }
 }
 
@@ -190,7 +139,7 @@ pwmout_result_t common_hal_pwmio_pwmout_construct(pwmio_pwmout_obj_t *self,
     if (((flexpwm->MCTRL >> PWM_MCTRL_RUN_SHIFT) & sm_mask) != 0) {
         // Another output has claimed this submodule for variable frequency already.
         if ((_pwm_variable_frequency[flexpwm_index] & sm_mask) != 0) {
-            return PWMOUT_ALL_TIMERS_ON_PIN_IN_USE;
+            return PWMOUT_INTERNAL_RESOURCES_IN_USE;
         }
 
         // We want variable frequency but another class has already claim a fixed frequency.
@@ -200,7 +149,7 @@ pwmout_result_t common_hal_pwmio_pwmout_construct(pwmio_pwmout_obj_t *self,
 
         // Another pin is already using this output.
         if ((flexpwm->OUTEN & outen_mask) != 0) {
-            return PWMOUT_ALL_TIMERS_ON_PIN_IN_USE;
+            return PWMOUT_INTERNAL_RESOURCES_IN_USE;
         }
 
         if (frequency != _pwm_sm_frequencies[flexpwm_index][submodule]) {
@@ -214,7 +163,6 @@ pwmout_result_t common_hal_pwmio_pwmout_construct(pwmio_pwmout_obj_t *self,
 
         /*
          * pwmConfig.enableDebugMode = false;
-         * pwmConfig.enableWait = false;
          * pwmConfig.reloadSelect = kPWM_LocalReload;
          * pwmConfig.faultFilterCount = 0;
          * pwmConfig.faultFilterPeriod = 0;
@@ -229,7 +177,6 @@ pwmout_result_t common_hal_pwmio_pwmout_construct(pwmio_pwmout_obj_t *self,
         PWM_GetDefaultConfig(&pwmConfig);
 
         pwmConfig.reloadLogic = kPWM_ReloadPwmFullCycle;
-        pwmConfig.enableWait = true;
         pwmConfig.enableDebugMode = true;
 
         pwmConfig.prescale = self->prescaler;
@@ -283,8 +230,6 @@ void common_hal_pwmio_pwmout_deinit(pwmio_pwmout_obj_t *self) {
         return;
     }
 
-    _pwm_never_reset[self->flexpwm_index] &= ~(1 << (self->pwm->submodule * 4 + self->pwm->channel));
-
     PWM_Type *flexpwm = self->pwm->pwm;
     pwm_submodule_t submodule = self->pwm->submodule;
     uint16_t sm_mask = 1 << submodule;
@@ -325,7 +270,7 @@ void common_hal_pwmio_pwmout_set_duty_cycle(pwmio_pwmout_obj_t *self, uint16_t d
     if (duty == 65535) {
         // X channels can't do a full 100% duty cycle.
         if (self->pwm->channel == kPWM_PwmX) {
-            mp_raise_ValueError_varg(translate("Invalid %q"), MP_QSTR_duty_cycle);
+            mp_raise_ValueError_varg(MP_ERROR_TEXT("Invalid %q"), MP_QSTR_duty_cycle);
         }
         duty_scaled = self->pulse_count + 1;
     } else {

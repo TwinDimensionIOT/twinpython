@@ -1,28 +1,8 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2021 Artyom Skrobov
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2021 Artyom Skrobov
+//
+// SPDX-License-Identifier: MIT
 
 #include <math.h>
 #include <string.h>
@@ -69,7 +49,7 @@ static const mp_arg_t biquad_properties[] = {
 //|         https://github.com/WebAudio/Audio-EQ-Cookbook/blob/main/Audio-EQ-Cookbook.txt
 //|         """
 //|
-STATIC mp_obj_t synthio_biquad_make_new(const mp_obj_type_t *type_in, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
+static mp_obj_t synthio_biquad_make_new(const mp_obj_type_t *type_in, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
     mp_arg_val_t args[MP_ARRAY_SIZE(biquad_properties)];
     mp_arg_parse_all_kw_array(n_args, n_kw, all_args, MP_ARRAY_SIZE(biquad_properties), biquad_properties, args);
 
@@ -82,23 +62,7 @@ STATIC mp_obj_t synthio_biquad_make_new(const mp_obj_type_t *type_in, size_t n_a
 }
 
 const mp_obj_namedtuple_type_t synthio_biquad_type_obj = {
-    .base = {
-        .base = {
-            .type = &mp_type_type
-        },
-        .flags = MP_TYPE_FLAG_EXTENDED,
-        .name = MP_QSTR_Biquad,
-        .print = namedtuple_print,
-        .parent = &mp_type_tuple,
-        .make_new = synthio_biquad_make_new,
-        .attr = namedtuple_attr,
-        MP_TYPE_EXTENDED_FIELDS(
-            .unary_op = mp_obj_tuple_unary_op,
-            .binary_op = mp_obj_tuple_binary_op,
-            .subscr = mp_obj_tuple_subscr,
-            .getiter = mp_obj_tuple_getiter,
-            ),
-    },
+    NAMEDTUPLE_TYPE_BASE_AND_SLOTS_MAKE_NEW(MP_QSTR_Biquad, synthio_biquad_make_new),
     .n_fields = 5,
     .fields = {
         MP_QSTR_a1,

@@ -11,6 +11,8 @@ CIRCUITPY_ROTARYIO_SOFTENCODER = 1
 CIRCUITPY_OPTIMIZE_PROPERTY_FLASH_SIZE ?= 1
 CIRCUITPY_LTO = 1
 
+CIRCUITPY_KEYPAD_DEMUX ?= 0
+
 ######################################################################
 # Put samd21-only choices here.
 
@@ -27,6 +29,7 @@ CIRCUITPY_AUDIOMIXER ?= 0
 CIRCUITPY_AUDIOMP3 ?= 0
 CIRCUITPY_BINASCII ?= 0
 CIRCUITPY_BITBANGIO ?= 0
+CIRCUITPY_BITMAPFILTER ?= 0
 CIRCUITPY_BITMAPTOOLS ?= 0
 CIRCUITPY_BLEIO_HCI = 0
 CIRCUITPY_BUILTINS_POW3 ?= 0
@@ -48,7 +51,7 @@ CIRCUITPY_RE ?= 0
 CIRCUITPY_SDCARDIO ?= 0
 CIRCUITPY_SYNTHIO ?= 0
 CIRCUITPY_TOUCHIO_USE_NATIVE ?= 1
-CIRCUITPY_TRACEBACK = 0
+CIRCUITPY_TRACEBACK ?= 0
 CIRCUITPY_ULAB = 0
 CIRCUITPY_VECTORIO = 0
 CIRCUITPY_ZLIB = 0
@@ -61,7 +64,7 @@ CIRCUITPY_SAFEMODE_PY ?= 0
 CIRCUITPY_USB_IDENTIFICATION ?= 0
 endif
 
-MICROPY_PY_ASYNC_AWAIT = 0
+MICROPY_PY_ASYNC_AWAIT ?= 0
 
 # We don't have room for the fonts for terminalio for certain languages,
 # so turn off terminalio, and if it's off and displayio is on,
@@ -96,18 +99,33 @@ ifeq ($(CIRCUITPY_FULL_BUILD),0)
 CIRCUITPY_LTO_PARTITION ?= one
 endif
 
+# 20A skus have 1MB flash and can fit more.
+ifeq ($(patsubst %20A,,$(CHIP_VARIANT)),)
+HAS_1MB_FLASH = 1
+else
+HAS_1MB_FLASH = 0
+endif
+
 # The ?='s allow overriding in mpconfigboard.mk.
 
 
 CIRCUITPY_ALARM ?= 1
+# Not enough room for both bitmaptools and bitmapfilter on most boards.
+CIRCUITPY_BITMAPFILTER ?= 0
 CIRCUITPY_FLOPPYIO ?= $(CIRCUITPY_FULL_BUILD)
 CIRCUITPY_FRAMEBUFFERIO ?= $(CIRCUITPY_FULL_BUILD)
+CIRCUITPY_MAX3421E ?= $(HAS_1MB_FLASH)
 CIRCUITPY_PS2IO ?= 1
 CIRCUITPY_RGBMATRIX ?= $(CIRCUITPY_FRAMEBUFFERIO)
 CIRCUITPY_SAMD ?= 1
 CIRCUITPY_SYNTHIO_MAX_CHANNELS = 12
 CIRCUITPY_ULAB_OPTIMIZE_SIZE ?= 1
 CIRCUITPY_WATCHDOG ?= 1
+
+ifeq ($(CHIP_VARIANT),SAMD51G19A)
+# No I2S on SAMD51G
+CIRCUITPY_AUDIOBUSIO = 0
+endif
 
 endif # samd51
 ######################################################################

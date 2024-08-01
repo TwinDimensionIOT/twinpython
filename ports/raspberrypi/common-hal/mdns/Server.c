@@ -1,28 +1,8 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2022 Scott Shawcroft for Adafruit Industries
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2022 Scott Shawcroft for Adafruit Industries
+//
+// SPDX-License-Identifier: MIT
 
 #include "shared-bindings/mdns/Server.h"
 
@@ -30,6 +10,7 @@
 #include "py/runtime.h"
 #include "shared/runtime/interrupt_char.h"
 #include "shared-bindings/mdns/RemoteService.h"
+#include "shared-bindings/mdns/Server.h"
 #include "shared-bindings/wifi/__init__.h"
 #include "supervisor/shared/tick.h"
 
@@ -38,10 +19,10 @@
 
 // Track if we've inited the LWIP MDNS at all. It expects to only init once.
 // Subsequent times, we restart it.
-STATIC bool inited = false;
+static bool inited = false;
 // Track if we are globally inited. This essentially forces one inited MDNS
 // object at a time. (But ignores MDNS objects that are deinited.)
-STATIC bool object_inited = false;
+static bool object_inited = false;
 
 #define NETIF_STA (&cyw43_state.netif[CYW43_ITF_STA])
 #define NETIF_AP (&cyw43_state.netif[CYW43_ITF_AP])
@@ -77,11 +58,11 @@ void mdns_server_construct(mdns_server_obj_t *self, bool workflow) {
 
 void common_hal_mdns_server_construct(mdns_server_obj_t *self, mp_obj_t network_interface) {
     if (network_interface != MP_OBJ_FROM_PTR(&common_hal_wifi_radio_obj)) {
-        mp_raise_ValueError(translate("mDNS only works with built-in WiFi"));
+        mp_raise_ValueError(MP_ERROR_TEXT("mDNS only works with built-in WiFi"));
         return;
     }
     if (object_inited) {
-        mp_raise_RuntimeError(translate("mDNS already initialized"));
+        mp_raise_RuntimeError(MP_ERROR_TEXT("mDNS already initialized"));
     }
     mdns_server_construct(self, false);
 }
@@ -128,7 +109,7 @@ typedef struct {
     size_t out_len;
 } nonalloc_search_state_t;
 
-STATIC void copy_data_into_remote_service(struct mdns_answer *answer, const char *varpart, int varlen, mdns_remoteservice_obj_t *out) {
+static void copy_data_into_remote_service(struct mdns_answer *answer, const char *varpart, int varlen, mdns_remoteservice_obj_t *out) {
     if (varlen > 0) {
         if (answer->info.type == DNS_RRTYPE_A) {
             char *hostname = out->hostname;
@@ -167,7 +148,7 @@ STATIC void copy_data_into_remote_service(struct mdns_answer *answer, const char
     }
 }
 
-STATIC void search_result_cb(struct mdns_answer *answer, const char *varpart, int varlen, int flags, void *arg) {
+static void search_result_cb(struct mdns_answer *answer, const char *varpart, int varlen, int flags, void *arg) {
     nonalloc_search_state_t *state = arg;
     state->out[state->i].base.type = &mdns_remoteservice_type;
 
@@ -225,7 +206,7 @@ typedef struct {
     size_t count;
 } alloc_search_state_t;
 
-STATIC void alloc_search_result_cb(struct mdns_answer *answer, const char *varpart, int varlen, int flags, void *arg) {
+static void alloc_search_result_cb(struct mdns_answer *answer, const char *varpart, int varlen, int flags, void *arg) {
     alloc_search_state_t *state = arg;
 
     if ((flags & MDNS_SEARCH_RESULT_FIRST) != 0) {
@@ -263,7 +244,7 @@ mp_obj_t common_hal_mdns_server_find(mdns_server_obj_t *self, const char *servic
         NETIF_STA, &alloc_search_result_cb, &state,
         &state.request_id);
     if (err != ERR_OK) {
-        mp_raise_RuntimeError(translate("Unable to start mDNS query"));
+        mp_raise_RuntimeError(MP_ERROR_TEXT("Unable to start mDNS query"));
     }
 
     uint64_t start_ticks = supervisor_ticks_ms64();
@@ -295,7 +276,27 @@ mp_obj_t common_hal_mdns_server_find(mdns_server_obj_t *self, const char *servic
     return MP_OBJ_FROM_PTR(tuple);
 }
 
-void common_hal_mdns_server_advertise_service(mdns_server_obj_t *self, const char *service_type, const char *protocol, mp_int_t port) {
+static void srv_txt_cb(struct mdns_service *service, void *ptr) {
+    mdns_server_obj_t *self = ptr;
+    err_t res;
+    for (size_t i = 0; i < self->num_txt_records; i++) {
+        res = mdns_resp_add_service_txtitem(service, self->txt_records[i], strlen(self->txt_records[i]));
+        if (res != ERR_OK) {
+            mp_raise_RuntimeError(MP_ERROR_TEXT("Failed to add service TXT record"));
+            return;
+        }
+    }
+}
+
+static void assign_txt_records(mdns_server_obj_t *self, const char *txt_records[], size_t num_txt_records) {
+    size_t allowed_num_txt_records = MDNS_MAX_TXT_RECORDS < num_txt_records ? MDNS_MAX_TXT_RECORDS : num_txt_records;
+    self->num_txt_records = allowed_num_txt_records;
+    for (size_t i = 0; i < allowed_num_txt_records; i++) {
+        self->txt_records[i] = txt_records[i];
+    }
+}
+
+void common_hal_mdns_server_advertise_service(mdns_server_obj_t *self, const char *service_type, const char *protocol, mp_int_t port, const char *txt_records[], size_t num_txt_records) {
     enum mdns_sd_proto proto = DNSSD_PROTO_UDP;
     if (strcmp(protocol, "_tcp") == 0) {
         proto = DNSSD_PROTO_TCP;
@@ -313,9 +314,11 @@ void common_hal_mdns_server_advertise_service(mdns_server_obj_t *self, const cha
     if (existing_slot < MDNS_MAX_SERVICES) {
         mdns_resp_del_service(NETIF_STA, existing_slot);
     }
-    int8_t slot = mdns_resp_add_service(NETIF_STA, self->instance_name, service_type, proto, port, NULL, NULL);
+
+    assign_txt_records(self, txt_records, num_txt_records);
+    int8_t slot = mdns_resp_add_service(NETIF_STA, self->instance_name, service_type, proto, port, srv_txt_cb, self);
     if (slot < 0) {
-        mp_raise_RuntimeError(translate("Out of MDNS service slots"));
+        mp_raise_RuntimeError(MP_ERROR_TEXT("Out of MDNS service slots"));
         return;
     }
     self->service_type[slot] = service_type;

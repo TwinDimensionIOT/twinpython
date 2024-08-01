@@ -1,31 +1,10 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2019 Dan Halbert for Adafruit Industries
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2019 Dan Halbert for Adafruit Industries
+//
+// SPDX-License-Identifier: MIT
 
-#ifndef __INCLUDED_MPCONFIGPORT_H
-#define __INCLUDED_MPCONFIGPORT_H
+#pragma once
 
 // Definitions for which SAMD chip we're using.
 #include "include/sam.h"
@@ -48,7 +27,7 @@
 #define MICROPY_PY_REVERSE_SPECIAL_METHODS          (0)
 #define MICROPY_PY_COLLECTIONS_DEQUE                (0)
 #define MICROPY_PY_COLLECTIONS_ORDEREDDICT          (0)
-#define MICROPY_PY_UERRNO_LIST \
+#define MICROPY_PY_ERRNO_LIST \
     X(EPERM) \
     X(ENOENT) \
     X(EIO) \
@@ -62,7 +41,7 @@
 
 #define MICROPY_FATFS_EXFAT    (0)
 // FAT32 mkfs takes about 500 bytes.
-#define MICROPY_FF_MKFS_FAT32 (0)
+#define MICROPY_FATFS_MKFS_FAT32 (0)
 
 // Only support simpler HID descriptors on SAMD21.
 #define CIRCUITPY_USB_HID_MAX_REPORT_IDS_PER_DESCRIPTOR (1)
@@ -85,7 +64,7 @@
 #define SPI_FLASH_MAX_BAUDRATE 24000000
 #define MICROPY_PY_BUILTINS_NOTIMPLEMENTED          (1)
 #define MICROPY_PY_FUNCTION_ATTRS                   (1)
-//      MICROPY_PY_UERRNO_LIST - Use the default
+//      MICROPY_PY_ERRNO_LIST - Use the default
 
 #endif // SAM_D5X_E5X
 
@@ -269,14 +248,3 @@
 // due to limitations of chips is handled in mpconfigboard.mk
 
 #include "peripherals/samd/dma.h"
-
-#if CIRCUITPY_AUDIOCORE
-#define MICROPY_PORT_ROOT_POINTERS \
-    CIRCUITPY_COMMON_ROOT_POINTERS \
-    mp_obj_t playing_audio[AUDIO_DMA_CHANNEL_COUNT];
-#else
-#define MICROPY_PORT_ROOT_POINTERS \
-    CIRCUITPY_COMMON_ROOT_POINTERS
-#endif
-
-#endif  // __INCLUDED_MPCONFIGPORT_H

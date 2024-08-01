@@ -1,28 +1,8 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2018 hathach for Adafruit Industries
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2018 hathach for Adafruit Industries
+//
+// SPDX-License-Identifier: MIT
 
 #include <stdbool.h>
 #include <string.h>
@@ -32,7 +12,6 @@
 #include "shared-bindings/usb_hid/Device.h"
 #include "shared-module/usb_hid/__init__.h"
 #include "shared-module/usb_hid/Device.h"
-#include "supervisor/shared/translate/translate.h"
 #include "supervisor/shared/tick.h"
 #include "tusb.h"
 
@@ -52,14 +31,14 @@ static const uint8_t keyboard_report_descriptor[] = {
     0x95, 0x01,        //   Report Count (1)
     0x75, 0x08,        //   Report Size (8)
     0x81, 0x01,        //   Input (Const,Array,Abs,No Wrap,Linear,Preferred State,No Null Position)
-    0x95, 0x03,        //   Report Count (3)
+    0x95, 0x05,        //   Report Count (5)
     0x75, 0x01,        //   Report Size (1)
     0x05, 0x08,        //   Usage Page (LEDs)
     0x19, 0x01,        //   Usage Minimum (Num Lock)
     0x29, 0x05,        //   Usage Maximum (Kana)
     0x91, 0x02,        //   Output (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
     0x95, 0x01,        //   Report Count (1)
-    0x75, 0x05,        //   Report Size (5)
+    0x75, 0x03,        //   Report Size (3)
     0x91, 0x01,        //   Output (Const,Array,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
     0x95, 0x06,        //   Report Count (6)
     0x75, 0x08,        //   Report Size (8)
@@ -165,7 +144,9 @@ const usb_hid_device_obj_t usb_hid_device_consumer_control_obj = {
     .out_report_lengths = { 0, },
 };
 
-STATIC size_t get_report_id_idx(usb_hid_device_obj_t *self, size_t report_id) {
+char *custom_usb_hid_interface_name;
+
+static size_t get_report_id_idx(usb_hid_device_obj_t *self, size_t report_id) {
     for (size_t i = 0; i < self->num_report_ids; i++) {
         if (report_id == self->report_ids[i]) {
             return i;
@@ -230,12 +211,16 @@ void common_hal_usb_hid_device_send_report(usb_hid_device_obj_t *self, uint8_t *
         RUN_BACKGROUND_TASKS;
     }
 
-    if (!tud_hid_ready()) {
-        mp_raise_msg(&mp_type_OSError, translate("USB busy"));
-    }
+    if (!tud_suspended()) {
+        if (!tud_hid_ready()) {
+            mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("USB busy"));
+        }
 
-    if (!tud_hid_report(report_id, report, len)) {
-        mp_raise_msg(&mp_type_OSError, translate("USB error"));
+        if (!tud_hid_report(report_id, report, len)) {
+            mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("USB error"));
+        }
+    } else {
+        tud_remote_wakeup();
     }
 }
 
@@ -297,7 +282,12 @@ void tud_hid_set_report_cb(uint8_t itf, uint8_t report_id, hid_report_type_t rep
     usb_hid_device_obj_t *hid_device = NULL;
     size_t id_idx;
 
-    if (report_id == 0 && report_type == HID_REPORT_TYPE_INVALID) {
+    // As of https://github.com/hathach/tinyusb/pull/2253, HID_REPORT_TYPE_INVALID reports are not
+    // sent to this callback, but are instead sent to tud_hid_report_fail_cb(), which we don't bother
+    // to implement.
+    // So this callback is only going to see HID_REPORT_TYPE_OUTPUT.
+    // HID_REPORT_TYPE_FEATURE is not used yet.
+    if (report_id == 0) {
         // This could be a report with a non-zero report ID in the first byte, or
         // it could be for report ID 0.
         // Heuristic: see if there's a device with report ID 0, and if its report length matches
@@ -314,12 +304,10 @@ void tud_hid_set_report_cb(uint8_t itf, uint8_t report_id, hid_report_type_t rep
             buffer++;
             bufsize--;
         }
-    } else if (report_type != HID_REPORT_TYPE_OUTPUT && report_type != HID_REPORT_TYPE_FEATURE) {
-        return;
     }
 
     // report_id might be changed due to parsing above, so test again.
-    if ((report_id == 0 && report_type == HID_REPORT_TYPE_INVALID) ||
+    if ((report_id == 0) ||
         // Fetch the matching device if we don't already have the report_id 0 device.
         (usb_hid_get_device_with_report_id(report_id, &hid_device, &id_idx) &&
          hid_device &&

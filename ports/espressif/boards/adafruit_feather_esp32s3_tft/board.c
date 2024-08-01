@@ -1,39 +1,18 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2020 Scott Shawcroft for Adafruit Industries
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2020 Scott Shawcroft for Adafruit Industries
+//
+// SPDX-License-Identifier: MIT
 
 #include "supervisor/board.h"
 #include "mpconfigboard.h"
 #include "shared-bindings/busio/SPI.h"
-#include "shared-bindings/displayio/FourWire.h"
+#include "shared-bindings/fourwire/FourWire.h"
 #include "shared-bindings/microcontroller/Pin.h"
 #include "shared-module/displayio/__init__.h"
 #include "shared-module/displayio/mipi_constants.h"
 #include "shared-bindings/board/__init__.h"
 
-displayio_fourwire_obj_t board_display_obj;
 
 #define DELAY 0x80
 
@@ -72,10 +51,10 @@ uint8_t display_init_sequence[] = {
 
 void board_init(void) {
     busio_spi_obj_t *spi = common_hal_board_create_spi(0);
-    displayio_fourwire_obj_t *bus = &allocate_display_bus()->fourwire_bus;
-    bus->base.type = &displayio_fourwire_type;
+    fourwire_fourwire_obj_t *bus = &allocate_display_bus()->fourwire_bus;
+    bus->base.type = &fourwire_fourwire_type;
 
-    common_hal_displayio_fourwire_construct(
+    common_hal_fourwire_fourwire_construct(
         bus,
         spi,
         &pin_GPIO39,    // DC
@@ -85,10 +64,10 @@ void board_init(void) {
         0,              // polarity
         0               // phase
         );
-    displayio_display_obj_t *display = &allocate_display()->display;
-    display->base.type = &displayio_display_type;
+    busdisplay_busdisplay_obj_t *display = &allocate_display()->display;
+    display->base.type = &busdisplay_busdisplay_type;
 
-    common_hal_displayio_display_construct(
+    common_hal_busdisplay_busdisplay_construct(
         display,
         bus,
         240,            // width (after rotation)
@@ -124,8 +103,8 @@ bool espressif_board_reset_pin_number(gpio_num_t pin_number) {
     // Override the I2C/TFT power pin reset to prevent resetting the display.
     if (pin_number == 21) {
         // Turn on TFT and I2C
-        gpio_set_direction(21, GPIO_MODE_DEF_OUTPUT);
-        gpio_set_level(21, true);
+        gpio_set_direction(pin_number, GPIO_MODE_DEF_OUTPUT);
+        gpio_set_level(pin_number, true);
         return true;
     }
     return false;

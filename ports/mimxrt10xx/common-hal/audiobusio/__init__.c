@@ -1,28 +1,8 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2020 Jeff Epler for Adafruit Industries
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2020 Jeff Epler for Adafruit Industries
+//
+// SPDX-License-Identifier: MIT
 
 #include <string.h>
 
@@ -320,13 +300,13 @@ void port_i2s_initialize(i2s_t *self, int instance, sai_transceiver_t *config) {
 
     I2S_Type *peripheral = SAI_GetPeripheral(instance);
     if (!peripheral) {
-        mp_raise_ValueError_varg(translate("Invalid %q"), MP_QSTR_I2SOut);
+        mp_raise_ValueError_varg(MP_ERROR_TEXT("Invalid %q"), MP_QSTR_I2SOut);
     }
     if (i2s_in_use & (1 << instance)) {
-        mp_raise_ValueError_varg(translate("%q in use"), MP_QSTR_I2SOut);
+        mp_raise_ValueError_varg(MP_ERROR_TEXT("%q in use"), MP_QSTR_I2SOut);
     }
     if (!i2s_clocking(peripheral)) {
-        mp_raise_ValueError_varg(translate("Invalid %q"), MP_QSTR_I2SOut);
+        mp_raise_ValueError_varg(MP_ERROR_TEXT("Invalid %q"), MP_QSTR_I2SOut);
     }
     for (size_t i = 0; i < MP_ARRAY_SIZE(self->buffers); i++) {
         self->buffers[i] = m_malloc(AUDIO_BUFFER_FRAME_COUNT * sizeof(uint32_t));

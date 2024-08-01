@@ -1,39 +1,19 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2023 n0xa
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2023 n0xa
+//
+// SPDX-License-Identifier: MIT
 
 #include "supervisor/board.h"
 #include "mpconfigboard.h"
 #include "shared-bindings/busio/SPI.h"
 #include "shared-bindings/busio/I2C.h"
-#include "shared-bindings/displayio/FourWire.h"
+#include "shared-bindings/fourwire/FourWire.h"
 #include "shared-module/displayio/__init__.h"
 #include "shared-module/displayio/mipi_constants.h"
 #include "shared-bindings/board/__init__.h"
 #include "shared-bindings/microcontroller/Pin.h"
-#include "components/driver/include/driver/gpio.h"
+#include "components/driver/gpio/include/driver/gpio.h"
 #include "components/hal/include/hal/gpio_hal.h"
 #include "common-hal/microcontroller/Pin.h"
 
@@ -165,14 +145,14 @@ static bool pmic_init(busio_i2c_obj_t *i2c) {
 }
 
 static bool display_init(void) {
-    displayio_fourwire_obj_t *bus = &allocate_display_bus()->fourwire_bus;
+    fourwire_fourwire_obj_t *bus = &allocate_display_bus()->fourwire_bus;
     busio_spi_obj_t *spi = &bus->inline_bus;
     common_hal_busio_spi_construct(spi, &pin_GPIO13, &pin_GPIO15, NULL, false);
     common_hal_busio_spi_never_reset(spi);
 
-    bus->base.type = &displayio_fourwire_type;
+    bus->base.type = &fourwire_fourwire_type;
 
-    common_hal_displayio_fourwire_construct(
+    common_hal_fourwire_fourwire_construct(
         bus,
         spi,
         &pin_GPIO23,    // DC
@@ -183,10 +163,10 @@ static bool display_init(void) {
         0               // phase
         );
 
-    displayio_display_obj_t *display = &allocate_display()->display;
-    display->base.type = &displayio_display_type;
+    busdisplay_busdisplay_obj_t *display = &allocate_display()->display;
+    display->base.type = &busdisplay_busdisplay_type;
 
-    common_hal_displayio_display_construct(
+    common_hal_busdisplay_busdisplay_construct(
         display,
         bus,
         135,             // width (after rotation)

@@ -1,28 +1,8 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * SPDX-FileCopyrightText: Copyright (c) 2016 Damien P. George
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2016 Damien P. George
+//
+// SPDX-License-Identifier: MIT
 
 #if CIRCUITPY_BUSIO_UART
 #include "shared-bindings/microcontroller/__init__.h"
@@ -35,7 +15,6 @@
 #include "py/mperrno.h"
 #include "py/runtime.h"
 #include "py/stream.h"
-#include "supervisor/shared/translate/translate.h"
 #include "supervisor/shared/tick.h"
 
 #include "hpl_sercom_config.h"
@@ -84,7 +63,7 @@ void common_hal_busio_uart_construct(busio_uart_obj_t *self,
     self->cts_pin = NO_PIN;
 
     if ((rs485_dir != NULL) || (rs485_invert)) {
-        mp_raise_NotImplementedError(translate("RS485"));
+        mp_raise_NotImplementedError(MP_ERROR_TEXT("RS485"));
     }
 
     mp_arg_validate_int_max(bits, 8, MP_QSTR_bits);
@@ -95,7 +74,7 @@ void common_hal_busio_uart_construct(busio_uart_obj_t *self,
     bool have_cts = cts != NULL;
 
     if (have_rx && receiver_buffer_size > 0 && (receiver_buffer_size & (receiver_buffer_size - 1)) != 0) {
-        mp_raise_ValueError_varg(translate("%q must be power of 2"), MP_QSTR_receiver_buffer_size);
+        mp_raise_ValueError_varg(MP_ERROR_TEXT("%q must be power of 2"), MP_QSTR_receiver_buffer_size);
     }
 
     self->baudrate = baudrate;
@@ -389,7 +368,7 @@ void common_hal_busio_uart_deinit(busio_uart_obj_t *self) {
 // Read characters.
 size_t common_hal_busio_uart_read(busio_uart_obj_t *self, uint8_t *data, size_t len, int *errcode) {
     if (self->rx_pin == NO_PIN) {
-        mp_raise_ValueError_varg(translate("No %q pin"), MP_QSTR_rx);
+        mp_raise_ValueError_varg(MP_ERROR_TEXT("No %q pin"), MP_QSTR_rx);
     }
 
     // This assignment is only here because the usart_async routines take a *const argument.
@@ -446,7 +425,7 @@ size_t common_hal_busio_uart_read(busio_uart_obj_t *self, uint8_t *data, size_t 
 // Write characters.
 size_t common_hal_busio_uart_write(busio_uart_obj_t *self, const uint8_t *data, size_t len, int *errcode) {
     if (self->tx_pin == NO_PIN) {
-        mp_raise_ValueError_varg(translate("No %q pin"), MP_QSTR_tx);
+        mp_raise_ValueError_varg(MP_ERROR_TEXT("No %q pin"), MP_QSTR_tx);
     }
 
     // This assignment is only here because the usart_async routines take a *const argument.

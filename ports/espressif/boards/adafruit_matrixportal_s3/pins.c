@@ -1,19 +1,25 @@
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2020 Scott Shawcroft for Adafruit Industries
+//
+// SPDX-License-Identifier: MIT
+
 #include "py/objtuple.h"
 #include "shared-bindings/board/__init__.h"
 
-STATIC const mp_rom_obj_tuple_t matrix_addr_tuple = {
+static const mp_rom_obj_tuple_t matrix_addr_tuple = {
     {&mp_type_tuple},
     5,
     {
-        MP_ROM_PTR(&pin_GPIO35),
+        MP_ROM_PTR(&pin_GPIO45),
         MP_ROM_PTR(&pin_GPIO36),
         MP_ROM_PTR(&pin_GPIO48),
-        MP_ROM_PTR(&pin_GPIO45),
+        MP_ROM_PTR(&pin_GPIO35),
         MP_ROM_PTR(&pin_GPIO21),
     }
 };
 
-STATIC const mp_rom_obj_tuple_t matrix_data_tuple = {
+static const mp_rom_obj_tuple_t matrix_data_tuple = {
     {&mp_type_tuple},
     6,
     {
@@ -27,7 +33,7 @@ STATIC const mp_rom_obj_tuple_t matrix_data_tuple = {
     }
 };
 
-STATIC const mp_rom_map_elem_t matrix_common_table[] = {
+static const mp_rom_map_elem_t matrix_common_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_rgb_pins), MP_ROM_PTR(&matrix_data_tuple) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_clock_pin), MP_ROM_PTR(&pin_GPIO2) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_latch_pin), MP_ROM_PTR(&pin_GPIO47) },
@@ -35,7 +41,7 @@ STATIC const mp_rom_map_elem_t matrix_common_table[] = {
 };
 MP_DEFINE_CONST_DICT(matrix_common_dict, matrix_common_table);
 
-STATIC const mp_rom_map_elem_t board_module_globals_table[] = {
+static const mp_rom_map_elem_t board_module_globals_table[] = {
     CIRCUITPYTHON_BOARD_DICT_STANDARD_ITEMS
 
     { MP_ROM_QSTR(MP_QSTR_BUTTON), MP_ROM_PTR(&pin_GPIO0) },
@@ -56,7 +62,7 @@ STATIC const mp_rom_map_elem_t board_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_A3), MP_ROM_PTR(&pin_GPIO10) },
     { MP_ROM_QSTR(MP_QSTR_A2), MP_ROM_PTR(&pin_GPIO9) },
     { MP_ROM_QSTR(MP_QSTR_A1), MP_ROM_PTR(&pin_GPIO3) },
-    { MP_ROM_QSTR(MP_QSTR_A0), MP_ROM_PTR(&pin_GPIO11) },
+    { MP_ROM_QSTR(MP_QSTR_A0), MP_ROM_PTR(&pin_GPIO12) },
 
     { MP_ROM_QSTR(MP_QSTR_NEOPIXEL), MP_ROM_PTR(&pin_GPIO4) },
 

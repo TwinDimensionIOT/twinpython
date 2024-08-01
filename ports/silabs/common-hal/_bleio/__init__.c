@@ -51,6 +51,9 @@ const osMutexAttr_t bluetooth_connection_mutex_attr = {
     .cb_size = osMutexCbSize
 };
 
+void common_hal_bleio_init(void) {
+}
+
 void bleio_user_reset() {
     // Stop any user scanning or advertising.
     common_hal_bleio_adapter_stop_scan(&common_hal_bleio_adapter_obj);
@@ -94,14 +97,14 @@ void check_ble_error(int error_code) {
             return;
         default:
             mp_raise_bleio_BluetoothError(
-                translate("Unknown BLE error: %d"), error_code);
+                MP_ERROR_TEXT("Unknown BLE error: %d"), error_code);
             break;
     }
 }
 
 void common_hal_bleio_check_connected(uint16_t conn_handle) {
     if (conn_handle == BLEIO_HANDLE_INVALID) {
-        mp_raise_ConnectionError(translate("Not connected"));
+        mp_raise_ConnectionError(MP_ERROR_TEXT("Not connected"));
     }
 }
 
@@ -192,7 +195,7 @@ void sl_bt_on_event(sl_bt_msg_t *evt) {
             if (NULL == uuid) {
                 osMutexRelease(bluetooth_connection_mutex_id);
                 mp_raise_bleio_BluetoothError(
-                    translate("Create new service uuid obj fail"));
+                    MP_ERROR_TEXT("Create new service uuid obj fail"));
                 break;
             }
             uuid->base.type = &bleio_uuid_type;

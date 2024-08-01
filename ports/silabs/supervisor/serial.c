@@ -27,7 +27,7 @@
 #include "py/mphal.h"
 #include "py/ringbuf.h"
 #include "supervisor/port.h"
-#include "supervisor/serial.h"
+#include "supervisor/shared/serial.h"
 #include "shared/readline/readline.h"
 #include "shared/runtime/interrupt_char.h"
 #include "shared-bindings/microcontroller/Pin.h"
@@ -59,7 +59,7 @@ void EUSART0_RX_IRQHandler(void) {
 
     received_data = EUSART0->RXDATA;
     if (1 != ringbuf_put_n(&con_uart_rx_ringbuf, (uint8_t *)&received_data, 1)) {
-        mp_raise_OverflowError_varg(translate("Console UART RX buffer overflow"));
+        mp_raise_OverflowError_varg(MP_ERROR_TEXT("Console UART RX buffer overflow"));
     }
 
     CORE_EXIT_ATOMIC();
@@ -141,9 +141,8 @@ char port_serial_read(void) {
     return (char)data;
 }
 
-// Checking ring buffer haves bytes available or not
-bool port_serial_bytes_available(void) {
-    return ringbuf_num_filled(&con_uart_rx_ringbuf) > 0 ? true : false;
+uint32_t port_serial_bytes_available(void) {
+    return ringbuf_num_filled(&con_uart_rx_ringbuf);
 }
 
 // Send n bytes data to serial by EUSART0

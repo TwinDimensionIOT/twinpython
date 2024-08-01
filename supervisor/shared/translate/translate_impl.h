@@ -1,28 +1,8 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2018 Scott Shawcroft for Adafruit Industries
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2018 Scott Shawcroft for Adafruit Industries
+//
+// SPDX-License-Identifier: MIT
 
 #pragma once
 
@@ -34,7 +14,7 @@
 
 #ifndef NO_QSTR
 #define QDEF(id, hash, len, str)
-#define TRANSLATION(english_id, number) extern compressed_string_t translation##number;
+#define TRANSLATION(english_id, number) extern struct compressed_string translation##number;
 #include "genhdr/qstrdefs.generated.h"
 #undef TRANSLATION
 #undef QDEF
@@ -50,10 +30,10 @@ __attribute__((always_inline))
 #endif
 // Prevent instrumenting this because that disables the inlining we rely of for code size
 // optimization.
-__attribute__((no_instrument_function)) const compressed_string_t *translate(const char *original) {
+__attribute__((no_instrument_function)) mp_rom_error_text_t MP_COMPRESSED_ROM_TEXT(const char *original) {
     #ifndef NO_QSTR
     #define QDEF(id, hash, len, str)
-    #define TRANSLATION(english_id, number) if (strcmp(original, english_id) == 0) { return &translation##number; } else
+    #define TRANSLATION(english_id, number) if (strcmp(original, english_id) == 0) { return (mp_rom_error_text_t)&translation##number; } else
     #include "genhdr/qstrdefs.generated.h"
 #undef TRANSLATION
 #undef QDEF

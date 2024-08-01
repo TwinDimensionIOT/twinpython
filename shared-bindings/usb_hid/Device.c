@@ -1,33 +1,12 @@
-/*
- * This file is part of the Micro Python project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2017 Scott Shawcroft for Adafruit Industries
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2017 Scott Shawcroft for Adafruit Industries
+//
+// SPDX-License-Identifier: MIT
 
 #include "py/objproperty.h"
 #include "shared-bindings/usb_hid/Device.h"
 #include "py/runtime.h"
-#include "supervisor/shared/translate/translate.h"
 
 //| class Device:
 //|     """HID Device specification"""
@@ -73,6 +52,9 @@
 //|                 in_report_lengths=(5, 2),
 //|                 out_report_lengths=(6, 0),
 //|             )
+//|
+//|         The HID device is able to wake up a suspended (sleeping) host computer.
+//|         See `send_report()` for details.
 //|         """
 //|         ...
 //|     KEYBOARD: Device
@@ -90,7 +72,7 @@
 //|     """Consumer Control device supporting sent values from 1-652, with no rollover.
 //|     Uses Report ID 3 for its IN report."""
 
-STATIC mp_obj_t usb_hid_device_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
+static mp_obj_t usb_hid_device_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
     usb_hid_device_obj_t *self = mp_obj_malloc(usb_hid_device_obj_t, &usb_hid_device_type);
     enum { ARG_report_descriptor, ARG_usage_page, ARG_usage, ARG_report_ids, ARG_in_report_lengths, ARG_out_report_lengths };
     static const mp_arg_t allowed_args[] = {
@@ -126,7 +108,7 @@ STATIC mp_obj_t usb_hid_device_make_new(const mp_obj_type_t *type, size_t n_args
 
     if ((size_t)MP_OBJ_SMALL_INT_VALUE(mp_obj_len(in_report_lengths)) != report_ids_count ||
         (size_t)MP_OBJ_SMALL_INT_VALUE(mp_obj_len(out_report_lengths)) != report_ids_count) {
-        mp_raise_ValueError_varg(translate("%q, %q, and %q must all be the same length"),
+        mp_raise_ValueError_varg(MP_ERROR_TEXT("%q, %q, and %q must all be the same length"),
             MP_QSTR_report_ids, MP_QSTR_in_report_lengths, MP_QSTR_out_report_lengths);
     }
 
@@ -154,7 +136,7 @@ STATIC mp_obj_t usb_hid_device_make_new(const mp_obj_type_t *type, size_t n_args
     }
 
     if (report_ids_array[0] == 0 && report_ids_count > 1) {
-        mp_raise_ValueError_varg(translate("%q length must be %d"), MP_QSTR_report_id_space_0, 1);
+        mp_raise_ValueError_varg(MP_ERROR_TEXT("%q length must be %d"), MP_QSTR_report_id_space_0, 1);
     }
 
     common_hal_usb_hid_device_construct(
@@ -167,9 +149,19 @@ STATIC mp_obj_t usb_hid_device_make_new(const mp_obj_type_t *type, size_t n_args
 //|         """Send an HID report. If the device descriptor specifies zero or one report id's,
 //|         you can supply `None` (the default) as the value of ``report_id``.
 //|         Otherwise you must specify which report id to use when sending the report.
+//|
+//|         If the USB host is suspended (sleeping), then `send_report()` will request that the host wake up.
+//|         The ``report`` itself will be discarded, to prevent unwanted extraneous characters,
+//|         mouse clicks, etc.
+//|
+//|         Note: Host operating systems allow enabling and disabling specific devices
+//|         and kinds of devices to do wakeup.
+//|         The defaults are different for different operating systems.
+//|         For instance, on Linux, only the primary keyboard may be enabled.
+//|         In addition, there may be USB wakeup settings in the host computer BIOS/UEFI.
 //|         """
 //|         ...
-STATIC mp_obj_t usb_hid_device_send_report(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+static mp_obj_t usb_hid_device_send_report(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     usb_hid_device_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
 
     enum { ARG_report, ARG_report_id };
@@ -203,7 +195,7 @@ MP_DEFINE_CONST_FUN_OBJ_KW(usb_hid_device_send_report_obj, 1, usb_hid_device_sen
 //|         will return `None` until next report is received.
 //|         """
 //|         ...
-STATIC mp_obj_t usb_hid_device_get_last_received_report(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+static mp_obj_t usb_hid_device_get_last_received_report(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     usb_hid_device_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
 
     enum { ARG_report_id };
@@ -226,7 +218,7 @@ MP_DEFINE_CONST_FUN_OBJ_KW(usb_hid_device_get_last_received_report_obj, 1, usb_h
 
 //|     usage_page: int
 //|     """The device usage page identifier, which designates a category of device. (read-only)"""
-STATIC mp_obj_t usb_hid_device_obj_get_usage_page(mp_obj_t self_in) {
+static mp_obj_t usb_hid_device_obj_get_usage_page(mp_obj_t self_in) {
     usb_hid_device_obj_t *self = MP_OBJ_TO_PTR(self_in);
     return MP_OBJ_NEW_SMALL_INT(common_hal_usb_hid_device_get_usage_page(self));
 }
@@ -241,7 +233,7 @@ MP_PROPERTY_GETTER(usb_hid_device_usage_page_obj,
 //|     For example, Keyboard is 0x06 within the generic desktop usage page 0x01.
 //|     Mouse is 0x02 within the same usage page."""
 //|
-STATIC mp_obj_t usb_hid_device_obj_get_usage(mp_obj_t self_in) {
+static mp_obj_t usb_hid_device_obj_get_usage(mp_obj_t self_in) {
     usb_hid_device_obj_t *self = MP_OBJ_TO_PTR(self_in);
     return MP_OBJ_NEW_SMALL_INT(common_hal_usb_hid_device_get_usage(self));
 }
@@ -251,7 +243,7 @@ MP_DEFINE_CONST_FUN_OBJ_1(usb_hid_device_get_usage_obj,
 MP_PROPERTY_GETTER(usb_hid_device_usage_obj,
     (mp_obj_t)&usb_hid_device_get_usage_obj);
 
-STATIC const mp_rom_map_elem_t usb_hid_device_locals_dict_table[] = {
+static const mp_rom_map_elem_t usb_hid_device_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_send_report),              MP_ROM_PTR(&usb_hid_device_send_report_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_last_received_report), MP_ROM_PTR(&usb_hid_device_get_last_received_report_obj) },
     { MP_ROM_QSTR(MP_QSTR_usage_page),               MP_ROM_PTR(&usb_hid_device_usage_page_obj) },
@@ -262,11 +254,12 @@ STATIC const mp_rom_map_elem_t usb_hid_device_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_CONSUMER_CONTROL),         MP_ROM_PTR(&usb_hid_device_consumer_control_obj) },
 };
 
-STATIC MP_DEFINE_CONST_DICT(usb_hid_device_locals_dict, usb_hid_device_locals_dict_table);
+static MP_DEFINE_CONST_DICT(usb_hid_device_locals_dict, usb_hid_device_locals_dict_table);
 
-const mp_obj_type_t usb_hid_device_type = {
-    { &mp_type_type },
-    .name = MP_QSTR_Device,
-    .make_new = usb_hid_device_make_new,
-    .locals_dict = (mp_obj_t)&usb_hid_device_locals_dict,
-};
+MP_DEFINE_CONST_OBJ_TYPE(
+    usb_hid_device_type,
+    MP_QSTR_Device,
+    MP_TYPE_FLAG_HAS_SPECIAL_ACCESSORS,
+    make_new, usb_hid_device_make_new,
+    locals_dict, &usb_hid_device_locals_dict
+    );

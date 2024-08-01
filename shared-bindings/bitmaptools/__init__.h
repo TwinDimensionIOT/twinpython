@@ -1,37 +1,17 @@
-/*
- * This file is part of the Micro Python project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2021 Kevin Matocha
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2021 Kevin Matocha
+//
+// SPDX-License-Identifier: MIT
 
-#ifndef MICROPY_INCLUDED_SHARED_BINDINGS_BITMAPTOOLS__INIT__H
-#define MICROPY_INCLUDED_SHARED_BINDINGS_BITMAPTOOLS__INIT__H
+#pragma once
 
 #include "shared-module/displayio/Bitmap.h"
 #include "shared-bindings/displayio/ColorConverter.h"
 #include "shared-bindings/displayio/__init__.h"
 #include "shared-module/displayio/Palette.h"
 #include "py/obj.h"
+#include "py/runtime.h"
 #include "extmod/vfs_fat.h"
 
 typedef enum {
@@ -88,4 +68,20 @@ void common_hal_bitmaptools_dither(displayio_bitmap_t *dest_bitmap, displayio_bi
 void common_hal_bitmaptools_alphablend(displayio_bitmap_t *destination, displayio_bitmap_t *source1, displayio_bitmap_t *source2, displayio_colorspace_t colorspace, mp_float_t factor1, mp_float_t factor2,
     bitmaptools_blendmode_t blendmode, uint32_t skip_source1_index, bool skip_source1_index_none, uint32_t skip_source2_index, bool skip_source2_index_none);
 
-#endif // MICROPY_INCLUDED_SHARED_BINDINGS_BITMAPTOOLS__INIT__H
+typedef struct {
+    union {
+        struct {
+            int16_t x1, y1, x2, y2;
+        };
+        int16_t arr[4];
+    };
+} bitmaptools_rect_t;
+
+#define ARGS_X1_Y1_X2_Y2 ARG_x1, ARG_y1, ARG_x2, ARG_y2
+#define ALLOWED_ARGS_X1_Y1_X2_Y2(if_required1, if_required2) \
+    {MP_QSTR_x1, if_required1 | MP_ARG_OBJ, {.u_obj = MP_ROM_INT(0)}}, \
+    {MP_QSTR_y1, if_required2 | MP_ARG_OBJ, {.u_obj = MP_ROM_INT(0)}}, \
+    {MP_QSTR_x2, if_required1 | MP_ARG_OBJ, {.u_obj = MP_ROM_NONE}}, \
+    {MP_QSTR_y2, if_required2 | MP_ARG_OBJ, {.u_obj = MP_ROM_NONE}}
+
+bitmaptools_rect_t bitmaptools_validate_coord_range_pair(const mp_arg_val_t in[4], int width, int height);

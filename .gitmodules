@@ -63,8 +63,8 @@
 [submodule "frozen/Adafruit_CircuitPython_Crickit"]
 	path = frozen/Adafruit_CircuitPython_Crickit
 	url = https://github.com/adafruit/Adafruit_CircuitPython_Crickit
-[submodule "ports/nrf/nrfx"]
-	path = ports/nrf/nrfx
+[submodule "ports/nordic/nrfx"]
+	path = ports/nordic/nrfx
 	url = https://github.com/adafruit/nrfx.git
 [submodule "lib/tinyusb"]
 	path = lib/tinyusb
@@ -143,10 +143,14 @@
 [submodule "ports/espressif/esp-idf"]
 	path = ports/espressif/esp-idf
 	url = https://github.com/adafruit/esp-idf.git
-	branch = release/v4.4-circuitpython
-[submodule "ports/espressif/certificates/nina-fw"]
-	path = lib/certificates/nina-fw
-	url = https://github.com/adafruit/nina-fw.git
+	branch = circuitpython-v5.2.2
+[submodule "ports/espressif/esp-protocols"]
+	path = ports/espressif/esp-protocols
+	url = https://github.com/espressif/esp-protocols.git
+[submodule "ports/espressif/esp-camera"]
+	path = ports/espressif/esp-camera
+	url = https://github.com/adafruit/esp32-camera.git
+	branch = circuitpython
 [submodule "frozen/Adafruit_CircuitPython_ST7789"]
 	path = frozen/Adafruit_CircuitPython_ST7789
 	url = https://github.com/adafruit/Adafruit_CircuitPython_ST7789
@@ -300,13 +304,10 @@
 [submodule "frozen/circuitpython_picoed"]
 	path = frozen/circuitpython_picoed
 	url = https://github.com/elecfreaks/circuitpython_picoed.git
-[submodule "ports/espressif/esp32-camera"]
-	path = ports/espressif/esp32-camera
-	url = https://github.com/adafruit/esp32-camera/
-        branch = circuitpython
 [submodule "ports/raspberrypi/lib/cyw43-driver"]
 	path = ports/raspberrypi/lib/cyw43-driver
-	url = https://github.com/georgerobotics/cyw43-driver.git
+	url = https://github.com/georgerobotics/cyw43-driver
+	branch = main
 [submodule "ports/raspberrypi/lib/lwip"]
 	path = ports/raspberrypi/lib/lwip
 	url = https://github.com/adafruit/lwip.git
@@ -340,8 +341,57 @@
 	url = https://github.com/bablokb/circuitpython-pcf85063a
 [submodule "frozen/Adafruit_CircuitPython_Wave"]
 	path = frozen/Adafruit_CircuitPython_Wave
-	url = http://github.com/adafruit/Adafruit_CircuitPython_Wave.git
+	url = https://github.com/adafruit/Adafruit_CircuitPython_Wave.git
 [submodule "ports/raspberrypi/lib/Pico-PIO-USB"]
 	path = ports/raspberrypi/lib/Pico-PIO-USB
 	url = https://github.com/sekigon-gonnoc/Pico-PIO-USB.git
 	branch = main
+[submodule "lib/micropython-lib"]
+	path = lib/micropython-lib
+	url = https://github.com/micropython/micropython-lib.git
+[submodule "lib/certificates"]
+	path = lib/certificates
+	url = https://github.com/adafruit/certificates
+[submodule "lib/tlsf"]
+	path = lib/tlsf
+	url = https://github.com/adafruit/tlsf.git
+	branch = circuitpython
+[submodule "frozen/CircuitPython_AXP313A"]
+	path = frozen/CircuitPython_AXP313A
+	url = https://github.com/bill88t/CircuitPython_AXP313A
+[submodule "frozen/Adafruit_CircuitPython_framebuf"]
+	path = frozen/Adafruit_CircuitPython_framebuf
+	url = https://github.com/adafruit/Adafruit_CircuitPython_framebuf
+[submodule "frozen/Adafruit_CircuitPython_SSD1306"]
+	path = frozen/Adafruit_CircuitPython_SSD1306
+	url = https://github.com/adafruit/Adafruit_CircuitPython_SSD1306
+[submodule "frozen/Adafruit_CircuitPython_DisplayIO_SSD1306"]
+	path = frozen/Adafruit_CircuitPython_DisplayIO_SSD1306
+	url = https://github.com/adafruit/Adafruit_CircuitPython_DisplayIO_SSD1306
+[submodule "frozen/Adafruit_CircuitPython_ImageLoad"]
+	path = frozen/Adafruit_CircuitPython_ImageLoad
+	url = https://github.com/adafruit/Adafruit_CircuitPython_ImageLoad
+[submodule "frozen/Adafruit_CircuitPython_AHTx0"]
+	path = frozen/Adafruit_CircuitPython_AHTx0
+	url = https://github.com/adafruit/Adafruit_CircuitPython_AHTx0
+[submodule "frozen/Adafruit_CircuitPython_HTTPServer"]
+	path = frozen/Adafruit_CircuitPython_HTTPServer
+	url = https://github.com/adafruit/Adafruit_CircuitPython_HTTPServer
+[submodule "frozen/Adafruit_CircuitPython_ConnectionManager"]
+	path = frozen/Adafruit_CircuitPython_ConnectionManager
+	url = https://github.com/adafruit/Adafruit_CircuitPython_ConnectionManager.git
+[submodule "frozen/Adafruit_CircuitPython_SHT4x"]
+	path = frozen/Adafruit_CircuitPython_SHT4x
+	url = https://github.com/adafruit/Adafruit_CircuitPython_SHT4x
+[submodule "frozen/Adafruit_CircuitPython_Bitmap_Font"]
+	path = frozen/Adafruit_CircuitPython_Bitmap_Font
+	url = https://github.com/adafruit/Adafruit_CircuitPython_Bitmap_Font
+[submodule "frozen/Adafruit_CircuitPython_MPU6050"]
+	path = frozen/Adafruit_CircuitPython_MPU6050
+	url = https://github.com/adafruit/Adafruit_CircuitPython_MPU6050
+[submodule "frozen/Adafruit_CircuitPython_Pixel_Framebuf"]
+	path = frozen/Adafruit_CircuitPython_Pixel_Framebuf
+	url = https://github.com/adafruit/Adafruit_CircuitPython_Pixel_Framebuf
+[submodule "frozen/Adafruit_CircuitPython_LED_Animation"]
+	path = frozen/Adafruit_CircuitPython_LED_Animation
+	url = https://github.com/adafruit/Adafruit_CircuitPython_LED_Animation

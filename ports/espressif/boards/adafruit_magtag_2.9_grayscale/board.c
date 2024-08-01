@@ -1,34 +1,14 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2020 Scott Shawcroft for Adafruit Industries
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2020 Scott Shawcroft for Adafruit Industries
+//
+// SPDX-License-Identifier: MIT
 
 #include "supervisor/board.h"
 
 #include "mpconfigboard.h"
 #include "shared-bindings/busio/SPI.h"
-#include "shared-bindings/displayio/FourWire.h"
+#include "shared-bindings/fourwire/FourWire.h"
 #include "shared-bindings/microcontroller/Pin.h"
 #include "shared-module/displayio/__init__.h"
 #include "supervisor/shared/board.h"
@@ -114,19 +94,13 @@ const uint8_t refresh_sequence[] = {
 };
 
 void board_init(void) {
-    // Debug UART
-    #ifdef DEBUG
-    common_hal_never_reset_pin(&pin_GPIO43);
-    common_hal_never_reset_pin(&pin_GPIO44);
-    #endif /* DEBUG */
-
-    displayio_fourwire_obj_t *bus = &allocate_display_bus()->fourwire_bus;
+    fourwire_fourwire_obj_t *bus = &allocate_display_bus()->fourwire_bus;
     busio_spi_obj_t *spi = &bus->inline_bus;
     common_hal_busio_spi_construct(spi, &pin_GPIO36, &pin_GPIO35, NULL, false);
     common_hal_busio_spi_never_reset(spi);
 
-    bus->base.type = &displayio_fourwire_type;
-    common_hal_displayio_fourwire_construct(bus,
+    bus->base.type = &fourwire_fourwire_type;
+    common_hal_fourwire_fourwire_construct(bus,
         spi,
         &pin_GPIO7, // EPD_DC Command or data
         &pin_GPIO8, // EPD_CS Chip select
@@ -135,9 +109,9 @@ void board_init(void) {
         0, // Polarity
         0); // Phase
 
-    displayio_epaperdisplay_obj_t *display = &allocate_display()->epaper_display;
-    display->base.type = &displayio_epaperdisplay_type;
-    common_hal_displayio_epaperdisplay_construct(
+    epaperdisplay_epaperdisplay_obj_t *display = &allocate_display()->epaper_display;
+    display->base.type = &epaperdisplay_epaperdisplay_type;
+    common_hal_epaperdisplay_epaperdisplay_construct(
         display,
         bus,
         display_start_sequence, sizeof(display_start_sequence),
@@ -195,10 +169,10 @@ bool espressif_board_reset_pin_number(gpio_num_t pin_number) {
 }
 
 void board_deinit(void) {
-    displayio_epaperdisplay_obj_t *display = &displays[0].epaper_display;
-    if (display->base.type == &displayio_epaperdisplay_type) {
+    epaperdisplay_epaperdisplay_obj_t *display = &displays[0].epaper_display;
+    if (display->base.type == &epaperdisplay_epaperdisplay_type) {
         size_t i = 0;
-        while (common_hal_displayio_epaperdisplay_get_busy(display)) {
+        while (common_hal_epaperdisplay_epaperdisplay_get_busy(display)) {
             RUN_BACKGROUND_TASKS;
             i++;
         }

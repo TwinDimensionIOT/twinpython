@@ -1,28 +1,8 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2022 Jeff Epler for Adafruit Industries
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2022 Jeff Epler for Adafruit Industries
+//
+// SPDX-License-Identifier: MIT
 
 #include "py/mperrno.h"
 #include "py/runtime.h"
@@ -35,7 +15,7 @@
 #include "shared-bindings/util.h"
 #include "common-hal/microcontroller/Pin.h"
 
-#include "esp32-camera/driver/private_include/cam_hal.h"
+#include "esp-camera/driver/private_include/cam_hal.h"
 
 #if !CONFIG_SPIRAM
 #error espcamera only works on boards configured with spiram, disable it in mpconfigboard.mk
@@ -77,10 +57,6 @@ void common_hal_espcamera_camera_construct(
     mp_int_t framebuffer_count,
     camera_grab_mode_t grab_mode) {
 
-    if (common_hal_espidf_get_reserved_psram() == 0) {
-        mp_raise_msg(&mp_type_MemoryError, translate(
-            "espcamera.Camera requires reserved PSRAM to be configured. See the documentation for instructions."));
-    }
     for (int i = 0; i < 8; i++) {
         claim_pin_number(data_pins[i]);
     }
@@ -161,6 +137,10 @@ extern void common_hal_espcamera_camera_deinit(espcamera_camera_obj_t *self) {
 
     esp_camera_deinit();
 
+    reset_pin_number(self->camera_config.pin_pclk);
+    reset_pin_number(self->camera_config.pin_vsync);
+    reset_pin_number(self->camera_config.pin_href);
+
     self->camera_config.xclk_freq_hz = 0;
 }
 
@@ -193,7 +173,7 @@ camera_fb_t *common_hal_espcamera_camera_take(espcamera_camera_obj_t *self, int 
         sensor_t *sensor = esp_camera_sensor_get(); \
         i2c_unlock(self); \
         if (!sensor->setter_function_name) { \
-            mp_raise_AttributeError(translate("no such attribute")); \
+            mp_raise_AttributeError(MP_ERROR_TEXT("no such attribute")); \
         } \
         return sensor->status_field_name; \
     }
@@ -204,10 +184,10 @@ camera_fb_t *common_hal_espcamera_camera_take(espcamera_camera_obj_t *self, int 
         sensor_t *sensor = esp_camera_sensor_get(); \
         i2c_unlock(self); \
         if (!sensor->setter_function_name) { \
-            mp_raise_AttributeError(translate("no such attribute")); \
+            mp_raise_AttributeError(MP_ERROR_TEXT("no such attribute")); \
         } \
         if (sensor->setter_function_name(sensor, value) < 0) { \
-            mp_raise_ValueError(translate("invalid setting")); \
+            mp_raise_ValueError(MP_ERROR_TEXT("invalid setting")); \
         } \
     }
 

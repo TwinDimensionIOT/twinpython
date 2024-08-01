@@ -1,29 +1,9 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2023 Scott Shawcroft for Adafruit Industries
- * Copyright (c) 2023 Jeff Epler for Adafruit Industries
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2023 Scott Shawcroft for Adafruit Industries
+// SPDX-FileCopyrightText: Copyright (c) 2023 Jeff Epler for Adafruit Industries
+//
+// SPDX-License-Identifier: MIT
 
 #include "tusb.h"
 
@@ -40,19 +20,19 @@
 
 // Buffer the incoming serial data in the background so that we can look for the
 // interrupt character.
-STATIC ringbuf_t _incoming_ringbuf;
-STATIC uint8_t _buf[16];
+static ringbuf_t _incoming_ringbuf;
+static uint8_t _buf[16];
 
-STATIC uint8_t _dev_addr;
-STATIC uint8_t _interface;
+static uint8_t _dev_addr;
+static uint8_t _interface;
 
 #define FLAG_SHIFT (1)
 #define FLAG_NUMLOCK (2)
 #define FLAG_CTRL (4)
 #define FLAG_STRING (8)
 
-STATIC uint8_t user_keymap[384];
-STATIC size_t user_keymap_len = 0;
+static uint8_t user_keymap[384];
+static size_t user_keymap_len = 0;
 
 void usb_keymap_set(const uint8_t *buf, size_t len) {
     user_keymap_len = len = MIN(len, sizeof(user_keymap));
@@ -78,7 +58,49 @@ struct keycode_mapper {
 #define CURSOR_INS "\e[2~"
 #define CURSOR_DEL "\e[3~"
 
-STATIC struct keycode_mapper keycode_to_ascii[] = {
+// https://learn.microsoft.com/ru-ru/windows/console/console-virtual-terminal-sequences
+// https://aperiodic.net/phil/archives/Geekery/term-function-keys/
+// https://www.microfocus.com/documentation/rumba/desktop951/RumbaSystemAdminGuide/GUID-5F92BA7F-107A-4101-B4E7-E0FC73F0CD99.html
+// showkey -a
+#define F1      "\eOP"
+#define F2      "\eOQ"
+#define F3      "\eOR"
+#define F4      "\eOS"
+#define F5      "\e[15~"
+#define F6      "\e[17~"
+#define F7      "\e[18~"
+#define F8      "\e[19~"
+#define F9      "\e[20~"
+#define F10     "\e[21~"
+#define F11     "\e[23~"
+#define F12     "\e[24~"
+
+#define PRINT_SCREEN     "\e[i"
+#define CTRL_UP "\e[1;5A"
+#define CTRL_DOWN "\e[1;5B"
+#define CTRL_RIGHT "\e[1;5C"
+#define CTRL_LEFT "\e[1;5D"
+#define CTRL_PGUP "\e[5;5~"
+#define CTRL_PGDN "\e[6;5~"
+#define CTRL_HOME "\e[1;5H"
+#define CTRL_END "\e[1;5F"
+#define CTRL_INS "\e[2;5~"
+#define CTRL_DEL "\e[3;5~"
+#define CTRL_F1      "\e[1;5P"
+#define CTRL_F2      "\e[1;5Q"
+#define CTRL_F3      "\e[1;5R"
+#define CTRL_F4      "\e[1;5S"
+#define CTRL_F5      "\e[15;5~"
+#define CTRL_F6      "\e[17;5~"
+#define CTRL_F7      "\e[18;5~"
+#define CTRL_F8      "\e[19;5~"
+#define CTRL_F9      "\e[20;5~"
+#define CTRL_F10     "\e[21;5~"
+#define CTRL_F11     "\e[23;5~"
+#define CTRL_F12     "\e[24;5~"
+
+
+static struct keycode_mapper keycode_to_ascii[] = {
     { HID_KEY_A, HID_KEY_Z, 'a', 0, NULL},
 
     { HID_KEY_1, HID_KEY_9, 0, FLAG_SHIFT, "!@#$%^&*()" },
@@ -90,17 +112,21 @@ STATIC struct keycode_mapper keycode_to_ascii[] = {
     { HID_KEY_ENTER, HID_KEY_SLASH, 0, FLAG_SHIFT, "\n\x1b\177\t _+{}|~:\"~<>?" },
     { HID_KEY_ENTER, HID_KEY_SLASH, 0, 0, "\r\x1b\10\t -=[]\\#;'`,./" },
 
-    { HID_KEY_F1, HID_KEY_F1, 0x1e, 0, }, // help key on xerox 820 kbd
-
     { HID_KEY_KEYPAD_DIVIDE, HID_KEY_KEYPAD_DECIMAL, 0, FLAG_NUMLOCK | FLAG_STRING,
-      "/\0" "*\0" "-\0" "+\0" "\n\0" CURSOR_END SEP CURSOR_DOWN SEP CURSOR_PGDN SEP CURSOR_LEFT SEP NOTHING SEP CURSOR_RIGHT SEP CURSOR_HOME SEP CURSOR_UP SEP CURSOR_PGDN SEP CURSOR_INS SEP CURSOR_DEL},
+      "/\0" "*\0" "-\0" "+\0" "\n\0" CURSOR_END SEP CURSOR_DOWN SEP CURSOR_PGDN SEP CURSOR_LEFT SEP NOTHING SEP CURSOR_RIGHT SEP CURSOR_HOME SEP CURSOR_UP SEP CURSOR_PGUP SEP CURSOR_INS SEP CURSOR_DEL},
     { HID_KEY_KEYPAD_DIVIDE, HID_KEY_KEYPAD_DECIMAL, 0, 0, "/*-+\n1234567890." },
 
-    { HID_KEY_ARROW_RIGHT, HID_KEY_ARROW_UP, 0, FLAG_STRING, CURSOR_RIGHT SEP CURSOR_LEFT SEP CURSOR_DOWN SEP CURSOR_UP },
+    { HID_KEY_INSERT, HID_KEY_ARROW_UP, 0, FLAG_STRING | FLAG_CTRL, CTRL_INS SEP CTRL_HOME SEP CTRL_PGUP SEP CTRL_DEL SEP CTRL_END SEP CTRL_PGDN SEP CTRL_RIGHT SEP CTRL_LEFT SEP CTRL_DOWN SEP CTRL_UP},
+    { HID_KEY_INSERT, HID_KEY_ARROW_UP, 0, FLAG_STRING, CURSOR_INS SEP CURSOR_HOME SEP CURSOR_PGUP SEP CURSOR_DEL SEP CURSOR_END SEP CURSOR_PGDN SEP CURSOR_RIGHT SEP CURSOR_LEFT SEP CURSOR_DOWN SEP CURSOR_UP},
+    { HID_KEY_F1, HID_KEY_F12, 0, FLAG_STRING | FLAG_CTRL, CTRL_F1 SEP CTRL_F2 SEP CTRL_F3 SEP CTRL_F4 SEP CTRL_F5 SEP CTRL_F6 SEP CTRL_F7 SEP CTRL_F8 SEP CTRL_F9 SEP CTRL_F10 SEP CTRL_F11 SEP CTRL_F12},
+    { HID_KEY_F1, HID_KEY_F12, 0, FLAG_STRING, F1 SEP F2 SEP F3 SEP F4 SEP F5 SEP F6 SEP F7 SEP F8 SEP F9 SEP F10 SEP F11 SEP F12},
+
+    { HID_KEY_PAUSE, HID_KEY_PAUSE, 0x1a, 0, },
+    { HID_KEY_PRINT_SCREEN, HID_KEY_PRINT_SCREEN, 0, FLAG_STRING, PRINT_SCREEN},
 
 };
 
-STATIC bool report_contains(const hid_keyboard_report_t *report, uint8_t key) {
+static bool report_contains(const hid_keyboard_report_t *report, uint8_t key) {
     for (int i = 0; i < 6; i++) {
         if (report->keycode[i] == key) {
             return true;
@@ -109,20 +135,20 @@ STATIC bool report_contains(const hid_keyboard_report_t *report, uint8_t key) {
     return false;
 }
 
-STATIC const char *old_buf = NULL;
-STATIC size_t buf_size = 0;
+static const char *old_buf = NULL;
+static size_t buf_size = 0;
 // this matches Linux default of 500ms to first repeat, 1/20s thereafter
 enum { initial_repeat_time = 500, default_repeat_time = 50 };
-STATIC uint64_t repeat_deadline;
-STATIC void repeat_f(void *unused);
+static uint64_t repeat_deadline;
+static void repeat_f(void *unused);
 background_callback_t repeat_cb = {repeat_f, NULL, NULL, NULL};
 
-STATIC void set_repeat_deadline(uint64_t new_deadline) {
+static void set_repeat_deadline(uint64_t new_deadline) {
     repeat_deadline = new_deadline;
     background_callback_add_core(&repeat_cb);
 }
 
-STATIC void send_bufn_core(const char *buf, size_t n) {
+static void send_bufn_core(const char *buf, size_t n) {
     old_buf = buf;
     buf_size = n;
     // repeat_timeout = millis() + repeat_time;
@@ -140,22 +166,22 @@ STATIC void send_bufn_core(const char *buf, size_t n) {
     }
 }
 
-STATIC void send_bufn(const char *buf, size_t n) {
+static void send_bufn(const char *buf, size_t n) {
     send_bufn_core(buf, n);
     set_repeat_deadline(supervisor_ticks_ms64() + initial_repeat_time);
 }
 
-STATIC void send_bufz(const char *buf) {
+static void send_bufz(const char *buf) {
     send_bufn(buf, strlen(buf));
 }
 
-STATIC void send_byte(uint8_t code) {
+static void send_byte(uint8_t code) {
     static char buf[1];
     buf[0] = code;
     send_bufn(buf, 1);
 }
 
-STATIC void send_repeat(void) {
+static void send_repeat(void) {
     if (old_buf) {
         uint64_t now = supervisor_ticks_ms64();
         if (now >= repeat_deadline) {
@@ -167,20 +193,20 @@ STATIC void send_repeat(void) {
     }
 }
 
-STATIC void repeat_f(void *unused) {
+static void repeat_f(void *unused) {
     send_repeat();
 }
 
 hid_keyboard_report_t old_report;
 
-STATIC const char *skip_nuls(const char *buf, size_t n) {
+static const char *skip_nuls(const char *buf, size_t n) {
     while (n--) {
         buf += strlen(buf) + 1;
     }
     return buf;
 }
 
-STATIC void process_event(uint8_t dev_addr, uint8_t instance, const hid_keyboard_report_t *report) {
+static void process_event(uint8_t dev_addr, uint8_t instance, const hid_keyboard_report_t *report) {
     bool has_altgr = (user_keymap_len > 256);
     bool altgr = has_altgr && report->modifier & 0x40;
     bool alt = has_altgr ? report->modifier & 0x4 : report->modifier & 0x44;
@@ -283,6 +309,10 @@ void usb_keyboard_detach(uint8_t dev_addr, uint8_t interface) {
     if (!usb_keyboard_in_use(dev_addr, interface)) {
         return;
     }
+    // No more key repeats
+    old_buf = NULL;
+
+    tuh_hid_receive_abort(dev_addr, interface);
     _dev_addr = 0;
     _interface = 0;
 }
@@ -318,11 +348,11 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
 }
 
 void usb_keyboard_init(void) {
-    ringbuf_init(&_incoming_ringbuf, _buf, sizeof(_buf) - 1);
+    ringbuf_init(&_incoming_ringbuf, _buf, sizeof(_buf));
 }
 
-bool usb_keyboard_chars_available(void) {
-    return ringbuf_num_filled(&_incoming_ringbuf) > 0;
+uint32_t usb_keyboard_chars_available(void) {
+    return ringbuf_num_filled(&_incoming_ringbuf);
 }
 
 char usb_keyboard_read_char(void) {

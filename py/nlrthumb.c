@@ -36,7 +36,7 @@
 // For reference, arm/thumb callee save regs are:
 //      r4-r11, r13=sp
 
-// CIRCUITPY: added returns_twice
+// CIRCUITPY-CHANGE: added returns_twice
 __attribute__((naked, returns_twice)) unsigned int nlr_push(nlr_buf_t *nlr) {
 
     __asm volatile (
@@ -133,7 +133,7 @@ NORETURN void nlr_jump(void *val) {
         "bx     lr                  \n" // return
         :                           // output operands
         : "r" (top)                 // input operands
-        :                           // clobbered registers
+        : "memory"                  // clobbered registers
         );
 
     MP_UNREACHABLE

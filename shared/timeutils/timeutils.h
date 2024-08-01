@@ -3,8 +3,8 @@
  *
  * The MIT License (MIT)
  *
- * SPDX-FileCopyrightText: Copyright (c) 2013, 2014 Damien P. George
- * SPDX-FileCopyrightText: Copyright (c) 2015 Daniel Campora
+ * Copyright (c) 2013, 2014 Damien P. George
+ * Copyright (c) 2015 Daniel Campora
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,6 +26,8 @@
  */
 #ifndef MICROPY_INCLUDED_LIB_TIMEUTILS_TIMEUTILS_H
 #define MICROPY_INCLUDED_LIB_TIMEUTILS_TIMEUTILS_H
+
+#include "mpconfigport.h" // CIRCUITPY-CHANGE for MICROPY_EPOCH_IS_1970
 
 // The number of seconds between 1970/1/1 and 2000/1/1 is calculated using:
 // time.mktime((2000,1,1,0,0,0,0,0,0)) - time.mktime((1970,1,1,0,0,0,0,0,0))

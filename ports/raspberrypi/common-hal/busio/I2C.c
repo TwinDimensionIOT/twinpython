@@ -1,28 +1,8 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2021 Scott Shawcroft for Adafruit Industries
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2021 Scott Shawcroft for Adafruit Industries
+//
+// SPDX-License-Identifier: MIT
 
 #include "py/mperrno.h"
 #include "py/mphal.h"
@@ -42,8 +22,8 @@
 // One second
 #define BUS_TIMEOUT_US 1000000
 
-STATIC bool never_reset_i2c[2];
-STATIC i2c_inst_t *i2c[2] = {i2c0, i2c1};
+static bool never_reset_i2c[2];
+static i2c_inst_t *i2c[2] = {i2c0, i2c1};
 
 void reset_i2c(void) {
     for (size_t i = 0; i < 2; i++) {
@@ -69,7 +49,7 @@ void common_hal_busio_i2c_construct(busio_i2c_obj_t *self,
         raise_ValueError_invalid_pins();
     }
     if ((i2c_get_hw(self->peripheral)->enable & I2C_IC_ENABLE_ENABLE_BITS) != 0) {
-        mp_raise_ValueError(translate("I2C peripheral in use"));
+        mp_raise_ValueError(MP_ERROR_TEXT("I2C peripheral in use"));
     }
 
     mp_arg_validate_int_max(frequency, 1000000, MP_QSTR_frequency);
@@ -96,7 +76,7 @@ void common_hal_busio_i2c_construct(busio_i2c_obj_t *self,
     if (!gpio_get(sda->number) || !gpio_get(scl->number)) {
         reset_pin_number(sda->number);
         reset_pin_number(scl->number);
-        mp_raise_RuntimeError(translate("No pull up found on SDA or SCL; check your wiring"));
+        mp_raise_RuntimeError(MP_ERROR_TEXT("No pull up found on SDA or SCL; check your wiring"));
     }
     #endif
 
@@ -166,7 +146,7 @@ void common_hal_busio_i2c_unlock(busio_i2c_obj_t *self) {
     self->has_lock = false;
 }
 
-STATIC uint8_t _common_hal_busio_i2c_write(busio_i2c_obj_t *self, uint16_t addr,
+static uint8_t _common_hal_busio_i2c_write(busio_i2c_obj_t *self, uint16_t addr,
     const uint8_t *data, size_t len, bool transmit_stop_bit) {
     if (len == 0) {
         // The RP2040 I2C peripheral will not perform 0 byte writes.

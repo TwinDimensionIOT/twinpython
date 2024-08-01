@@ -1,28 +1,8 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2020 Jeff Epler for Adafruit Industries
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2020 Jeff Epler for Adafruit Industries
+//
+// SPDX-License-Identifier: MIT
 
 #include <stdint.h>
 #include <string.h>
@@ -39,7 +19,6 @@
 #include "shared-bindings/audiobusio/I2SOut.h"
 #include "shared-bindings/audiocore/RawSample.h"
 #include "shared-bindings/microcontroller/Pin.h"
-#include "supervisor/shared/translate/translate.h"
 #include "supervisor/shared/tick.h"
 
 // Where required we use identifier names that are required by NXP's
@@ -47,7 +26,7 @@
 // strives to adhere to. https://www.adafruit.com/blacklivesmatter
 #include "sdk/drivers/sai/fsl_sai.h"
 
-STATIC void config_periph_pin(const mcu_periph_obj_t *periph) {
+static void config_periph_pin(const mcu_periph_obj_t *periph) {
     if (!periph) {
         return;
     }
@@ -74,12 +53,21 @@ STATIC void config_periph_pin(const mcu_periph_obj_t *periph) {
 // Caller validates that pins are free.
 void common_hal_audiobusio_i2sout_construct(audiobusio_i2sout_obj_t *self,
     const mcu_pin_obj_t *bit_clock, const mcu_pin_obj_t *word_select,
-    const mcu_pin_obj_t *data, bool left_justified) {
+    const mcu_pin_obj_t *data, const mcu_pin_obj_t *main_clock, bool left_justified) {
 
     int instance = -1;
     const mcu_periph_obj_t *bclk_periph = find_pin_function(mcu_i2s_tx_bclk_list, bit_clock, &instance, MP_QSTR_bit_clock);
     const mcu_periph_obj_t *sync_periph = find_pin_function(mcu_i2s_tx_sync_list, word_select, &instance, MP_QSTR_word_select);
     const mcu_periph_obj_t *data_periph = find_pin_function(mcu_i2s_tx_data0_list, data, &instance, MP_QSTR_data);
+
+    if (main_clock != NULL) {
+        const mcu_periph_obj_t *mclk_periph = find_pin_function(mcu_i2s_mclk_list, main_clock, &instance, MP_QSTR_main_clock);
+        self->mclk = main_clock;
+        claim_pin(main_clock);
+        config_periph_pin(mclk_periph);
+        IOMUXC_GPR->GPR1 |= IOMUXC_GPR_GPR1_SAI1_MCLK_DIR_MASK << (instance - 1);
+    }
+    self->instance = instance;
 
     sai_transceiver_t config;
     SAI_GetClassicI2SConfig(&config, 16, kSAI_Stereo, 1);
@@ -121,6 +109,13 @@ void common_hal_audiobusio_i2sout_deinit(audiobusio_i2sout_obj_t *self) {
 
     common_hal_reset_pin(self->data);
     self->data = NULL;
+
+    if (self->mclk != NULL) {
+        IOMUXC_GPR->GPR1 &= ~(IOMUXC_GPR_GPR1_SAI1_MCLK_DIR_MASK << (self->instance - 1));
+
+        common_hal_reset_pin(self->mclk);
+        self->mclk = NULL;
+    }
 }
 
 void common_hal_audiobusio_i2sout_play(audiobusio_i2sout_obj_t *self,

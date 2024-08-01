@@ -1,33 +1,15 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2018 Dan Halbert for Adafruit Industries
- * Copyright (c) 2018 Artur Pacholec
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// This file is part of the CircuitPython project: https://circuitpython.org
+//
+// SPDX-FileCopyrightText: Copyright (c) 2018 Dan Halbert for Adafruit Industries
+// SPDX-FileCopyrightText: Copyright (c) 2018 Artur Pacholec
+//
+// SPDX-License-Identifier: MIT
 
 #include <string.h>
 
+#include "py/obj.h"
 #include "py/objproperty.h"
+#include "py/objstr.h"
 #include "py/runtime.h"
 #include "shared-bindings/mdns/__init__.h"
 #include "shared-bindings/mdns/Server.h"
@@ -48,7 +30,7 @@
 //|         may already be using it.) Only native interfaces are currently supported.
 //|         """
 //|         ...
-STATIC mp_obj_t mdns_server_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
+static mp_obj_t mdns_server_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
     enum { ARG_network_interface };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_network_interface, MP_ARG_REQUIRED | MP_ARG_OBJ },
@@ -74,14 +56,14 @@ STATIC mp_obj_t mdns_server_make_new(const mp_obj_type_t *type, size_t n_args, s
 //|     def deinit(self) -> None:
 //|         """Stops the server"""
 //|         ...
-STATIC mp_obj_t mdns_server_obj_deinit(mp_obj_t self_in) {
+static mp_obj_t mdns_server_obj_deinit(mp_obj_t self_in) {
     mdns_server_obj_t *self = (mdns_server_obj_t *)self_in;
     common_hal_mdns_server_deinit(self);
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(mdns_server_deinit_obj, mdns_server_obj_deinit);
+static MP_DEFINE_CONST_FUN_OBJ_1(mdns_server_deinit_obj, mdns_server_obj_deinit);
 
-STATIC void check_for_deinit(mdns_server_obj_t *self) {
+static void check_for_deinit(mdns_server_obj_t *self) {
     if (common_hal_mdns_server_deinited(self)) {
         raise_deinited_error();
     }
@@ -91,7 +73,7 @@ STATIC void check_for_deinit(mdns_server_obj_t *self) {
 //|     """Hostname resolvable as ``<hostname>.local`` in addition to ``circuitpython.local``. Make
 //|        sure this is unique across all devices on the network. It defaults to ``cpy-######``
 //|        where ``######`` is the hex digits of the last three bytes of the mac address."""
-STATIC mp_obj_t mdns_server_get_hostname(mp_obj_t self) {
+static mp_obj_t mdns_server_get_hostname(mp_obj_t self) {
     check_for_deinit(self);
     const char *hostname = common_hal_mdns_server_get_hostname(self);
     return mp_obj_new_str(hostname, strlen(hostname));
@@ -104,7 +86,7 @@ static mp_obj_t mdns_server_set_hostname(mp_obj_t self, mp_obj_t hostname) {
 
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(mdns_server_set_hostname_obj, mdns_server_set_hostname);
+static MP_DEFINE_CONST_FUN_OBJ_2(mdns_server_set_hostname_obj, mdns_server_set_hostname);
 
 MP_PROPERTY_GETSET(mdns_server_hostname_obj,
     (mp_obj_t)&mdns_server_get_hostname_obj,
@@ -112,14 +94,14 @@ MP_PROPERTY_GETSET(mdns_server_hostname_obj,
 
 //|     instance_name: str
 //|     """Human readable name to describe the device."""
-STATIC mp_obj_t mdns_server_get_instance_name(mp_obj_t self) {
+static mp_obj_t mdns_server_get_instance_name(mp_obj_t self) {
     check_for_deinit(self);
     const char *instance_name = common_hal_mdns_server_get_instance_name(self);
     return mp_obj_new_str(instance_name, strlen(instance_name));
 }
 MP_DEFINE_CONST_FUN_OBJ_1(mdns_server_get_instance_name_obj, mdns_server_get_instance_name);
 
-STATIC mp_obj_t mdns_server_set_instance_name(mp_obj_t self, mp_obj_t new_instance_name) {
+static mp_obj_t mdns_server_set_instance_name(mp_obj_t self, mp_obj_t new_instance_name) {
     check_for_deinit(self);
     common_hal_mdns_server_set_instance_name(self, mp_obj_str_get_str(new_instance_name));
     return mp_const_none;
@@ -143,7 +125,7 @@ MP_PROPERTY_GETSET(mdns_server_instance_name_obj,
 //|         :param str protocol: The service protocol such as "_tcp"
 //|         :param float/int timeout: Time to wait for responses"""
 //|         ...
-STATIC mp_obj_t _mdns_server_find(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+static mp_obj_t _mdns_server_find(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     mdns_server_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
     check_for_deinit(self);
 
@@ -163,7 +145,7 @@ STATIC mp_obj_t _mdns_server_find(mp_uint_t n_args, const mp_obj_t *pos_args, mp
 
     return common_hal_mdns_server_find(self, service_type, protocol, timeout);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_KW(mdns_server_find_obj, 1, _mdns_server_find);
+static MP_DEFINE_CONST_FUN_OBJ_KW(mdns_server_find_obj, 1, _mdns_server_find);
 
 //|     def advertise_service(self, *, service_type: str, protocol: str, port: int) -> None:
 //|         """Respond to queries for the given service with the given port.
@@ -173,20 +155,26 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_KW(mdns_server_find_obj, 1, _mdns_server_find);
 //|
 //|         If web workflow is active, the port it uses can't also be used to advertise a service.
 //|
+//|         **Limitations**: Publishing up to 32 TXT records is only supported on the RP2040 Pico W board at
+//|         this time.
+//|
 //|         :param str service_type: The service type such as "_http"
 //|         :param str protocol: The service protocol such as "_tcp"
-//|         :param int port: The port used by the service"""
+//|         :param int port: The port used by the service
+//|         :param Sequence[str] txt_records: An optional sequence of strings to serve as TXT records along with the service
+//|         """
 //|         ...
 //|
-STATIC mp_obj_t mdns_server_advertise_service(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+static mp_obj_t mdns_server_advertise_service(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     mdns_server_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
     check_for_deinit(self);
 
-    enum { ARG_service_type, ARG_protocol, ARG_port };
+    enum { ARG_service_type, ARG_protocol, ARG_port, ARG_txt_records };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_service_type, MP_ARG_KW_ONLY | MP_ARG_REQUIRED | MP_ARG_OBJ },
         { MP_QSTR_protocol, MP_ARG_KW_ONLY | MP_ARG_REQUIRED | MP_ARG_OBJ },
         { MP_QSTR_port, MP_ARG_KW_ONLY | MP_ARG_REQUIRED | MP_ARG_INT },
+        { MP_QSTR_txt_records, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = mp_const_none} },
     };
 
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
@@ -195,12 +183,26 @@ STATIC mp_obj_t mdns_server_advertise_service(mp_uint_t n_args, const mp_obj_t *
     const char *service_type = mp_obj_str_get_str(args[ARG_service_type].u_obj);
     const char *protocol = mp_obj_str_get_str(args[ARG_protocol].u_obj);
 
-    common_hal_mdns_server_advertise_service(self, service_type, protocol, args[ARG_port].u_int);
+    const mp_obj_t txt_records = args[ARG_txt_records].u_obj;
+    const size_t num_txt_records = txt_records == mp_const_none
+        ? 0
+        : (size_t)MP_OBJ_SMALL_INT_VALUE(mp_obj_len(txt_records));
+
+    const char *txt_records_array[num_txt_records];
+    for (size_t i = 0; i < num_txt_records; i++) {
+        mp_obj_t txt_record = mp_obj_subscr(txt_records, MP_OBJ_NEW_SMALL_INT(i), MP_OBJ_SENTINEL);
+        if (!mp_obj_is_str_or_bytes(txt_record)) {
+            mp_raise_ValueError(MP_ERROR_TEXT("Failed to add service TXT record; non-string or bytes found in txt_records"));
+        }
+        txt_records_array[i] = mp_obj_str_get_str(txt_record);
+    }
+
+    common_hal_mdns_server_advertise_service(self, service_type, protocol, args[ARG_port].u_int, txt_records_array, num_txt_records);
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_KW(mdns_server_advertise_service_obj, 1, mdns_server_advertise_service);
+static MP_DEFINE_CONST_FUN_OBJ_KW(mdns_server_advertise_service_obj, 1, mdns_server_advertise_service);
 
-STATIC const mp_rom_map_elem_t mdns_server_locals_dict_table[] = {
+static const mp_rom_map_elem_t mdns_server_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_hostname),          MP_ROM_PTR(&mdns_server_hostname_obj) },
     { MP_ROM_QSTR(MP_QSTR_instance_name),     MP_ROM_PTR(&mdns_server_instance_name_obj) },
 
@@ -211,11 +213,12 @@ STATIC const mp_rom_map_elem_t mdns_server_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_deinit),            MP_ROM_PTR(&mdns_server_deinit_obj) },
 };
 
-STATIC MP_DEFINE_CONST_DICT(mdns_server_locals_dict, mdns_server_locals_dict_table);
+static MP_DEFINE_CONST_DICT(mdns_server_locals_dict, mdns_server_locals_dict_table);
 
-const mp_obj_type_t mdns_server_type = {
-    .base = { &mp_type_type },
-    .name = MP_QSTR_Server,
-    .make_new = mdns_server_make_new,
-    .locals_dict = (mp_obj_t)&mdns_server_locals_dict,
-};
+MP_DEFINE_CONST_OBJ_TYPE(
+    mdns_server_type,
+    MP_QSTR_Server,
+    MP_TYPE_FLAG_HAS_SPECIAL_ACCESSORS,
+    make_new, mdns_server_make_new,
+    locals_dict, &mdns_server_locals_dict
+    );
