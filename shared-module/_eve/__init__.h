@@ -8,6 +8,7 @@
 
 typedef struct _common_hal__eve_t {
     mp_obj_t dest[3];           // Own 'write' method, plus argument
+    int model;                  // 0 for unknown, or 810, 815, 817 for the three EVE generations
     int vscale;                 // fixed-point scaling used for Vertex2f
     size_t n;                   // Current size of command buffer
     uint8_t buf[512];           // Command buffer

@@ -25,6 +25,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+# CIRCUITPY-CHANGE: more imports
 import argparse
 import glob
 import fnmatch
@@ -36,8 +37,8 @@ import sys
 import subprocess
 
 # Relative to top-level repo dir.
+# CIRCUITPY-CHANGE: different directory trees
 PATHS = [
-    # C
     "main.c",
     "devices/**/*.[ch]",
     "extmod/*.[ch]",
@@ -50,26 +51,18 @@ PATHS = [
     "shared-bindings/**/*.[ch]",
     "shared-module/**/*.[ch]",
     "supervisor/**/*.[ch]",
-    # Python
-    "extmod/*.py",
-    "ports/**/*.py",
-    "py/**/*.py",
-    "tools/**/*.py",
-    "tests/circuitpython-*/**/*.py",
 ]
 
+# CIRCUITPY-CHANGE: different exclusions
 EXCLUSIONS = [
     # STM32 build includes generated Python code.
     "ports/*/build*",
-    # gitignore in ports/unix ignores *.py, so also do it here.
-    "ports/unix/*.py",
-    # not real python files
-    "tests/**/repl_*.py",
     # don't reindent this third-party code we vendored in
     "ports/raspberrypi/lwip_src",
 ]
 
 
+# CIRCUITPY-CHANGE
 # None of the standard Python path matching routines implement the matching
 # we want, which is most like git's "pathspec" version of globs.
 # In particular, we want "**/" to match all directories.
@@ -114,12 +107,6 @@ TOP = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 UNCRUSTIFY_CFG = os.path.join(TOP, "tools/uncrustify.cfg")
 
-C_EXTS = (
-    ".c",
-    ".h",
-)
-PY_EXTS = (".py",)
-
 
 def check_uncrustify_version():
     version = subprocess.check_output(
@@ -140,6 +127,7 @@ def list_files(args):
     return sorted(arg for arg in args if path_rx.match(relative_filename(arg)))
 
 
+# CIRCUITPY-CHANGE: handle inline documentation
 def fixup_c(filename):
     # Read file.
     with open(filename) as f:
@@ -188,6 +176,7 @@ def fixup_c(filename):
         assert not dedent_stack, filename
 
 
+# CIRCUITPY-CHANGE: different options and logic.
 def main():
     cmd_parser = argparse.ArgumentParser(
         description="Auto-format C and Python files -- to be used via pre-commit only."
@@ -209,14 +198,8 @@ def main():
     # Expand the arguments passed on the command line, subject to the PATHS and EXCLUSIONS
     files = list_files(args.files)
 
-    # Extract files matching a specific language.
-    def lang_files(exts):
-        for file in files:
-            if os.path.splitext(file)[1].lower() in exts:
-                yield file
-
     def bindings_files():
-        for file in lang_files(C_EXTS):
+        for file in files:
             if file.startswith("shared-bindings/") or "/bindings/" in file:
                 yield file
 
@@ -240,22 +223,23 @@ def main():
         command = ["uncrustify", "-c", UNCRUSTIFY_CFG, "-lC", "--no-backup"]
         if not args.v:
             command.append("-q")
-        batch(command, lang_files(C_EXTS))
-        for file in lang_files(C_EXTS):
+        batch(command, iter(files))
+        for file in files:
             fixup_c(file)
-        # Format bindings with black_bindings
+        # Format bindings with ruff_bindings
         if format_py:
-            command = ["python3", "tools/black_bindings.py"]
+            command = ["python3", "tools/ruff_bindings.py"]
             batch(command, bindings_files(), check=True)
 
     # Format Python files with black.
     if format_py:
-        command = ["black", "--fast", "--line-length=99"]
+        command = ["ruff", "format"]
         if args.v:
             command.append("-v")
         else:
             command.append("-q")
-        batch(command, lang_files(PY_EXTS))
+        command.append(".")
+        subprocess.check_call(command, cwd=TOP)
 
 
 if __name__ == "__main__":

@@ -16,6 +16,10 @@
 
 void common_hal_busio_i2c_construct(busio_i2c_obj_t *self, const mcu_pin_obj_t *scl,
     const mcu_pin_obj_t *sda, uint32_t frequency, uint32_t timeout) {
+
+    // Ensure the object starts in its deinit state.
+    common_hal_busio_i2c_mark_deinit(self);
+
     if (frequency != I2C_SPEED_STANDARD && frequency != I2C_SPEED_FAST) {
         mp_arg_error_invalid(MP_QSTR_frequency);
     }
@@ -44,13 +48,22 @@ void common_hal_busio_i2c_deinit(busio_i2c_obj_t *self) {
 
     reset_pin_number(self->scl_pin->number);
     reset_pin_number(self->sda_pin->number);
+
+    common_hal_busio_i2c_mark_deinit(self);
 }
 
 bool common_hal_busio_i2c_deinited(busio_i2c_obj_t *self) {
     return self->i2c_dev == NULL;
 }
 
+void common_hal_busio_i2c_mark_deinit(busio_i2c_obj_t *self) {
+    self->i2c_dev = NULL;
+}
+
 bool common_hal_busio_i2c_try_lock(busio_i2c_obj_t *self) {
+    if (common_hal_busio_i2c_deinited(self)) {
+        return false;
+    }
     bool grabbed_lock = false;
     if (!self->has_lock) {
         grabbed_lock = true;

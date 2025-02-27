@@ -43,6 +43,7 @@ extern void common_hal_mcu_enable_interrupts(void);
 // MicroPython-only options not used by CircuitPython, but present in various files
 // inherited from MicroPython, especially in extmod/
 #define MICROPY_ENABLE_DYNRUNTIME        (0)
+#define MICROPY_HW_ENABLE_USB_RUNTIME_DEVICE (0)
 #define MICROPY_PY_BLUETOOTH             (0)
 #define MICROPY_PY_LWIP_SLIP             (0)
 #define MICROPY_PY_OS_DUPTERM            (0)
@@ -142,6 +143,7 @@ extern void common_hal_mcu_enable_interrupts(void);
 #define MICROPY_PY_SYS                   (CIRCUITPY_SYS)
 #define MICROPY_PY_SYS_MAXSIZE           (1)
 #define MICROPY_PY_SYS_STDFILES          (1)
+#define MICROPY_PY_UCTYPES               (0)
 #define MICROPY_PY___FILE__              (1)
 
 #define MICROPY_QSTR_BYTES_IN_HASH       (1)
@@ -281,7 +283,7 @@ typedef long mp_off_t;
 #define MICROPY_PY_REVERSE_SPECIAL_METHODS    (CIRCUITPY_ULAB || CIRCUITPY_FULL_BUILD)
 #endif
 
-#if INTERNAL_FLASH_FILESYSTEM == 0 && QSPI_FLASH_FILESYSTEM == 0 && SPI_FLASH_FILESYSTEM == 0 && !DISABLE_FILESYSTEM
+#if !defined(__ZEPHYR__) && INTERNAL_FLASH_FILESYSTEM == 0 && QSPI_FLASH_FILESYSTEM == 0 && SPI_FLASH_FILESYSTEM == 0 && !DISABLE_FILESYSTEM
 #error No *_FLASH_FILESYSTEM set!
 #endif
 
@@ -326,9 +328,20 @@ typedef long mp_off_t;
 #define CIRCUITPY_CONSOLE_UART (1)
 #ifndef CIRCUITPY_CONSOLE_UART_BAUDRATE
 #define CIRCUITPY_CONSOLE_UART_BAUDRATE (115200)
+#if !defined(CIRCUITPY_CONSOLE_UART_PRINTF)
+#define CIRCUITPY_CONSOLE_UART_PRINTF(...) mp_printf(&console_uart_print, __VA_ARGS__)
+#endif
+#if !defined(CIRCUITPY_CONSOLE_UART_HEXDUMP)
+#define CIRCUITPY_CONSOLE_UART_HEXDUMP(pfx, buf, len) print_hexdump(&console_uart_print, pfx, (const uint8_t *)buf, len)
+#endif
+#if !defined(CIRCUITPY_CONSOLE_UART_TIMESTAMP)
+#define CIRCUITPY_CONSOLE_UART_TIMESTAMP (0)
+#endif
 #endif
 #else
 #define CIRCUITPY_CONSOLE_UART (0)
+#define CIRCUITPY_CONSOLE_UART_PRINTF(...) (void)0
+#define CIRCUITPY_CONSOLE_UART_HEXDUMP(...) (void)0
 #endif
 
 // These CIRCUITPY_xxx values should all be defined in the *.mk files as being on or off.
@@ -356,6 +369,11 @@ extern const struct _mp_obj_module_t nvm_module;
 
 #ifndef ULAB_SUPPORTS_COMPLEX
 #define ULAB_SUPPORTS_COMPLEX (0)
+#endif
+
+// The random module is fairly large.
+#ifndef ULAB_NUMPY_HAS_RANDOM_MODULE
+#define ULAB_NUMPY_HAS_RANDOM_MODULE (0)
 #endif
 
 #if CIRCUITPY_ULAB
@@ -592,3 +610,19 @@ void background_callback_run_all(void);
 // Enable compiler functionality.
 #define MICROPY_ENABLE_COMPILER (1)
 #define MICROPY_PY_BUILTINS_COMPILE (1)
+
+#ifndef CIRCUITPY_MIN_GCC_VERSION
+#define CIRCUITPY_MIN_GCC_VERSION 13
+#endif
+
+#if defined(__GNUC__) && !defined(__ZEPHYR__)
+#if __GNUC__ < CIRCUITPY_MIN_GCC_VERSION
+// (the 3 level scheme here is required to get expansion & stringization
+// correct)
+#define DO_PRAGMA(x) _Pragma(#x)
+#define DO_ERROR_HELPER(x) DO_PRAGMA(GCC error #x)
+#define DO_ERROR(x) DO_ERROR_HELPER(Minimum GCC version x \
+    -- older versions are known to miscompile CircuitPython)
+DO_ERROR(CIRCUITPY_MIN_GCC_VERSION);
+#endif
+#endif

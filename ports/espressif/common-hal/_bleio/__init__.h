@@ -43,3 +43,6 @@ void check_notify(BaseType_t result);
 #define UNIT_1_MS  (1000)
 #define UNIT_1_25_MS  (1250)
 #define UNIT_10_MS    (10000)
+
+int bleio_gattc_read(uint16_t conn_handle, uint16_t value_handle, uint8_t *buf, size_t len);
+void bleio_gattc_write(uint16_t conn_handle, uint16_t value_handle, uint8_t *buf, size_t len);

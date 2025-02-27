@@ -33,10 +33,9 @@ void mdns_server_construct(mdns_server_obj_t *self, bool workflow) {
     }
     _active_object = self;
 
-    uint8_t mac[6];
-    esp_netif_get_mac(common_hal_wifi_radio_obj.netif, mac);
-    snprintf(self->default_hostname, sizeof(self->default_hostname), "cpy-%02x%02x%02x", mac[3], mac[4], mac[5]);
-    common_hal_mdns_server_set_hostname(self, self->default_hostname);
+    // Match the netif hostname set when `import wifi` was called.
+    esp_netif_get_hostname(common_hal_wifi_radio_obj.netif, &self->hostname);
+    common_hal_mdns_server_set_hostname(self, self->hostname);
 
     self->inited = true;
 

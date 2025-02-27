@@ -12,6 +12,7 @@
 #include "py/runtime.h"
 #include "src/rp2_common/hardware_flash/include/hardware/flash.h"
 #include "shared-bindings/microcontroller/__init__.h"
+#include "supervisor/internal_flash.h"
 
 extern uint32_t __flash_binary_start;
 static const uint32_t flash_binary_start = (uint32_t)&__flash_binary_start;
@@ -28,14 +29,18 @@ static void write_page(uint32_t page_addr, uint32_t offset, uint32_t len, uint8_
     if (offset == 0 && len == FLASH_PAGE_SIZE) {
         // disable interrupts to prevent core hang on rp2040
         common_hal_mcu_disable_interrupts();
+        supervisor_flash_pre_write();
         flash_range_program(RMV_OFFSET(page_addr), bytes, FLASH_PAGE_SIZE);
+        supervisor_flash_post_write();
         common_hal_mcu_enable_interrupts();
     } else {
         uint8_t buffer[FLASH_PAGE_SIZE];
         memcpy(buffer, (uint8_t *)page_addr, FLASH_PAGE_SIZE);
         memcpy(buffer + offset, bytes, len);
         common_hal_mcu_disable_interrupts();
+        supervisor_flash_pre_write();
         flash_range_program(RMV_OFFSET(page_addr), buffer, FLASH_PAGE_SIZE);
+        supervisor_flash_post_write();
         common_hal_mcu_enable_interrupts();
     }
 
@@ -57,8 +62,10 @@ static void erase_and_write_sector(uint32_t address, uint32_t len, uint8_t *byte
     memcpy(buffer + address, bytes, len);
     // disable interrupts to prevent core hang on rp2040
     common_hal_mcu_disable_interrupts();
+    supervisor_flash_pre_write();
     flash_range_erase(RMV_OFFSET(CIRCUITPY_INTERNAL_NVM_START_ADDR), FLASH_SECTOR_SIZE);
     flash_range_program(RMV_OFFSET(CIRCUITPY_INTERNAL_NVM_START_ADDR), buffer, FLASH_SECTOR_SIZE);
+    supervisor_flash_post_write();
     common_hal_mcu_enable_interrupts();
 }
 

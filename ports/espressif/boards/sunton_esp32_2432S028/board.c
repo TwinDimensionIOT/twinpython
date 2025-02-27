@@ -10,10 +10,9 @@
 #include "shared-bindings/microcontroller/Pin.h"
 #include "shared-module/displayio/__init__.h"
 #include "shared-module/displayio/mipi_constants.h"
-#include "components/driver/gpio/include/driver/gpio.h"
-#include "components/hal/include/hal/gpio_hal.h"
+#include "driver/gpio.h"
 #include "common-hal/microcontroller/Pin.h"
-
+#include "shared-module/os/__init__.h"
 
 uint8_t display_init_sequence[] = {
     0x01, 0x80, 0x80, //   # Software reset then delay 0x80 (128ms)
@@ -44,6 +43,7 @@ uint8_t display_init_sequence[] = {
 static void display_init(void) {
     fourwire_fourwire_obj_t *bus = &allocate_display_bus()->fourwire_bus;
     busio_spi_obj_t *spi = &bus->inline_bus;
+    mp_int_t rotation;
     common_hal_busio_spi_construct(spi, &pin_GPIO14, &pin_GPIO13, &pin_GPIO12, false);
     common_hal_busio_spi_never_reset(spi);
 
@@ -59,13 +59,18 @@ static void display_init(void) {
 
     busdisplay_busdisplay_obj_t *display = &allocate_display()->display;
     display->base.type = &busdisplay_busdisplay_type;
+    os_getenv_err_t result = common_hal_os_getenv_int("CIRCUITPY_DISPLAY_ROTATION", &rotation);
+    if (result != GETENV_OK) {
+        rotation = 0;
+    }
+
     common_hal_busdisplay_busdisplay_construct(display,
         bus,
         320, // Width
         240, // Height
         0, // column start
         0, // row start
-        270, // rotation
+        rotation, // rotation
         16, // Color depth
         false, // Grayscale
         false, // pixels in a byte share a row. Only valid for depths < 8
@@ -97,8 +102,7 @@ bool espressif_board_reset_pin_number(gpio_num_t pin_number) {
     // Pull the speaker pin low to reduce noise on reset
     if (pin_number == 26) {
         // Turn on TFT
-        gpio_set_direction(pin_number, GPIO_MODE_DEF_OUTPUT);
-        gpio_set_level(pin_number, false);
+        config_pin_as_output_with_level(pin_number, false);
         return true;
     }
     return false;

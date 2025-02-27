@@ -153,7 +153,7 @@ static void check_for_deinit(sdioio_sdcard_obj_t *self) {
 
 static void check_whole_block(mp_buffer_info_t *bufinfo) {
     if (bufinfo->len % 512) {
-        mp_raise_ValueError(MP_ERROR_TEXT("Buffer length must be a multiple of 512"));
+        mp_raise_ValueError_varg(MP_ERROR_TEXT("Buffer must be a multiple of %d bytes"), 512);
     }
 }
 

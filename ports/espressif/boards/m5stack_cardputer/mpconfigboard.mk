@@ -12,3 +12,5 @@ CIRCUITPY_ESPCAMERA = 0
 
 CIRCUITPY_GIFIO = 1
 CIRCUITPY_MAX3421E = 0
+
+SRC_C += boards/$(BOARD)/cardputer_keyboard.c

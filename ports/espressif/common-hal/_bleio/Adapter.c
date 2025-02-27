@@ -85,7 +85,7 @@ void common_hal_bleio_adapter_set_enabled(bleio_adapter_obj_t *self, bool enable
 
         // ble_hs_cfg.reset_cb = blecent_on_reset;
         ble_hs_cfg.sync_cb = _on_sync;
-        // ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
+        ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
         ble_hs_cfg.sm_io_cap = BLE_SM_IO_CAP_NO_IO;
         ble_hs_cfg.sm_bonding = 1;

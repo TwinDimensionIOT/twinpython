@@ -122,22 +122,22 @@ if tile_y == 16:
     c_file.write(
         """\
 const uint32_t blinka_bitmap_data[32] = {
-    0x00000011, 0x11000000,
-    0x00000111, 0x53100000,
-    0x00000111, 0x56110000,
-    0x00000111, 0x11140000,
-    0x00000111, 0x20002000,
-    0x00000011, 0x13000000,
-    0x00000001, 0x11200000,
-    0x00000000, 0x11330000,
-    0x00000000, 0x01122000,
-    0x00001111, 0x44133000,
-    0x00032323, 0x24112200,
-    0x00111114, 0x44113300,
-    0x00323232, 0x34112200,
-    0x11111144, 0x44443300,
-    0x11111111, 0x11144401,
-    0x23232323, 0x21111110
+    0x11000000, 0x00000011,
+    0x11010000, 0x00001053,
+    0x11010000, 0x00001156,
+    0x11010000, 0x00001411,
+    0x11010000, 0x00200020,
+    0x11000000, 0x00000013,
+    0x01000000, 0x00002011,
+    0x00000000, 0x00003311,
+    0x00000000, 0x00201201,
+    0x11110000, 0x00301344,
+    0x23230300, 0x00221124,
+    0x14111100, 0x00331144,
+    0x32323200, 0x00221134,
+    0x44111111, 0x00334444,
+    0x11111111, 0x01441411,
+    0x23232323, 0x10111121
 };
 """
     )
@@ -146,18 +146,18 @@ else:
     c_file.write(
         """\
 const uint32_t blinka_bitmap_data[28] = {
-    0x00000111, 0x00000000,
-    0x00001153, 0x10000000,
-    0x00001156, 0x11000000,
-    0x00001111, 0x14000000,
-    0x00000112, 0x00200000,
-    0x00000011, 0x30000000,
-    0x00000011, 0x20000000,
-    0x00011144, 0x13000000,
-    0x00232324, 0x12000000,
-    0x01111444, 0x13000000,
-    0x32323234, 0x12010000,
-    0x11111144, 0x44100000
+    0x11010000, 0x00000000,
+    0x53110000, 0x00000010,
+    0x56110000, 0x00000011,
+    0x11110000, 0x00000014,
+    0x12010000, 0x00002000,
+    0x11000000, 0x00000030,
+    0x11000000, 0x00000020,
+    0x44110100, 0x00000013,
+    0x24232300, 0x00000012,
+    0x44141101, 0x00000013,
+    0x34323232, 0x00000112,
+    0x44111111, 0x00001044
 };
 """
     )
@@ -171,9 +171,9 @@ const displayio_bitmap_t blinka_bitmap = {{
     .data = (uint32_t*) blinka_bitmap_data,
     .stride = 2,
     .bits_per_value = 4,
-    .x_shift = 3,
-    .x_mask = 0x7,
-    .bitmask = 0xf,
+    .x_shift = 1,
+    .x_mask = 0x01,
+    .bitmask = 0x0f,
     .read_only = true
 }};
 
@@ -234,9 +234,7 @@ displayio_tilegrid_t supervisor_blinka_sprite = {{
     .in_group = true
 }};
 #endif
-""".format(
-        blinka_size
-    )
+""".format(blinka_size)
 )
 
 c_file.write(
@@ -285,9 +283,7 @@ displayio_tilegrid_t supervisor_terminal_scroll_area_text_grid = {{
     .inline_tiles = false,
     .in_group = true
 }};
-""".format(
-        len(all_characters), tile_x, tile_y
-    )
+""".format(len(all_characters), tile_x, tile_y)
 )
 
 c_file.write(
@@ -315,20 +311,16 @@ displayio_tilegrid_t supervisor_terminal_status_bar_text_grid = {{
     .inline_tiles = false,
     .in_group = true
 }};
-""".format(
-        len(all_characters), tile_x, tile_y
-    )
+""".format(len(all_characters), tile_x, tile_y)
 )
 
 c_file.write(
     """\
 const uint32_t font_bitmap_data[{}] = {{
-""".format(
-        bytes_per_row * tile_y // 4
-    )
+""".format(bytes_per_row * tile_y // 4)
 )
 
-for i, word in enumerate(struct.iter_unpack(">I", b)):
+for i, word in enumerate(struct.iter_unpack("<I", b)):
     c_file.write("0x{:08x}, ".format(word[0]))
     if (i + 1) % (bytes_per_row // 4) == 0:
         c_file.write("\n")
@@ -348,14 +340,12 @@ displayio_bitmap_t supervisor_terminal_font_bitmap = {{
     .data = (uint32_t*) font_bitmap_data,
     .stride = {},
     .bits_per_value = 1,
-    .x_shift = 5,
-    .x_mask = 0x1f,
-    .bitmask = 0x1,
+    .x_shift = 3,
+    .x_mask = 0x07,
+    .bitmask = 0x01,
     .read_only = true
 }};
-""".format(
-        len(all_characters) * tile_x, tile_y, bytes_per_row / 4
-    )
+""".format(len(all_characters) * tile_x, tile_y, bytes_per_row / 4)
 )
 
 
@@ -369,9 +359,7 @@ const fontio_builtinfont_t supervisor_terminal_font = {{
     .unicode_characters = (const uint8_t*) "{}",
     .unicode_characters_len = {}
 }};
-""".format(
-        tile_x, tile_y, extra_characters, len(extra_characters.encode("utf-8"))
-    )
+""".format(tile_x, tile_y, extra_characters, len(extra_characters.encode("utf-8")))
 )
 
 c_file.write(

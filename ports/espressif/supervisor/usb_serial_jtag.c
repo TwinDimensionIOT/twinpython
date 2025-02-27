@@ -46,6 +46,7 @@ static void _copy_out_of_fifo(void) {
     for (size_t i = 0; i < len; ++i) {
         if (rx_buf[i] == mp_interrupt_char) {
             mp_sched_keyboard_interrupt();
+            ringbuf_clear(&ringbuf);
         } else {
             ringbuf_put(&ringbuf, rx_buf[i]);
         }

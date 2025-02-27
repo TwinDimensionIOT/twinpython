@@ -17,7 +17,7 @@ Functions
 
 .. function:: print_exception(exc, file=sys.stdout, /)
 
-   This function is being deprecated and will be removed starting in
+   This function is deprecated and will be removed starting in
    CircuitPython 10.x, `traceback.print_exception()` should be used instead.
 
    Print exception with a traceback to a file-like object *file* (or
@@ -66,7 +66,7 @@ Constants
 .. data:: maxsize
 
    Maximum value which a native integer type can hold on the current platform,
-   or maximum value representable by CircuitPython integer type, if it's smaller
+   or maximum value representable by the CircuitPython integer type, if it's smaller
    than platform max value (that is the case for CircuitPython ports without
    long int support).
 

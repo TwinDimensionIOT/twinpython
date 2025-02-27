@@ -15,6 +15,7 @@ import sys
 import multiprocessing, multiprocessing.dummy
 
 
+# CIRCUITPY-CHANGE
 from html.entities import name2codepoint
 
 # add some custom names to map characters that aren't in HTML
@@ -64,6 +65,10 @@ _MODE_MODULE = "module"
 _MODE_ROOT_POINTER = "root_pointer"
 
 
+class PreprocessorError(Exception):
+    pass
+
+
 def is_c_source(fname):
     return os.path.splitext(fname)[1] in [".c"]
 
@@ -93,10 +98,10 @@ def preprocess():
 
     def pp(flags):
         def run(files):
-            completed = subprocess.run(args.pp + flags + files, stdout=subprocess.PIPE)
-            if completed.returncode != 0:
-                raise RuntimeError(" ".join(args.pp + flags + files))
-            return completed.stdout
+            try:
+                return subprocess.check_output(args.pp + flags + files)
+            except subprocess.CalledProcessError as er:
+                raise PreprocessorError(str(er))
 
         return run
 
@@ -124,6 +129,7 @@ def write_out(fname, output):
             f.write("\n".join(output) + "\n")
 
 
+# CIRCUITPY-CHANGE: added
 def qstr_unescape(qstr):
     for name in name2codepoint:
         if "__" + name + "__" in qstr:
@@ -133,7 +139,7 @@ def qstr_unescape(qstr):
     return qstr
 
 
-def process_file(f):
+def process_file(f, output_filename=None):
     # match gcc-like output (# n "file") and msvc-like output (#line n "file")
     re_line = re.compile(r"^#(?:line)?\s+\d+\s\"([^\"]+)\"")
     if args.mode == _MODE_QSTR:
@@ -146,6 +152,7 @@ def process_file(f):
         )
     elif args.mode == _MODE_ROOT_POINTER:
         re_match = re.compile(r"MP_REGISTER_ROOT_POINTER\(.*?\);")
+    # CIRCUITPY-CHANGE: added
     re_translate = re.compile(r"MP_COMPRESSED_ROM_TEXT\(\"((?:(?=(\\?))\2.)*?)\"\)")
     output = []
     last_fname = None
@@ -157,7 +164,7 @@ def process_file(f):
             fname = m.group(1)
             if not is_c_source(fname) and not is_cxx_source(fname):
                 continue
-            if fname != last_fname:
+            if fname != last_fname and output_filename is None:
                 write_out(last_fname, output)
                 output = []
                 last_fname = fname
@@ -170,10 +177,14 @@ def process_file(f):
             elif args.mode in (_MODE_COMPRESS, _MODE_MODULE, _MODE_ROOT_POINTER):
                 output.append(match)
 
+        # CIRCUITPY-CHANGE: added
         for match in re_translate.findall(line):
             output.append('TRANSLATE("' + match[0] + '")')
 
-    if last_fname:
+    if output_filename is not None:
+        with open(output_filename, "w") as f:
+            f.write("\n".join(output) + "\n")
+    elif last_fname:
         write_out(last_fname, output)
     return ""
 
@@ -184,13 +195,20 @@ def cat_together():
 
     hasher = hashlib.md5()
     all_lines = []
+    # CIRCUITPY-CHANGE: added
     outf = open(args.output_dir + "/out", "wb")
     for fname in glob.glob(args.output_dir + "/*." + args.mode):
         with open(fname, "rb") as f:
             lines = f.readlines()
             all_lines += lines
+    # CIRCUITPY-CHANGE: Check for subdirectories as well.
+    for fname in glob.glob(args.output_dir + "/**/*." + args.mode):
+        with open(fname, "rb") as f:
+            lines = f.readlines()
+            all_lines += lines
     all_lines.sort()
     all_lines = b"\n".join(all_lines)
+    # CIRCUITPY-CHANGE: added
     outf.write(all_lines)
     outf.close()
     hasher.update(all_lines)
@@ -209,6 +227,7 @@ def cat_together():
         mode_full = "Module registrations"
     elif args.mode == _MODE_ROOT_POINTER:
         mode_full = "Root pointer registrations"
+    # CIRCUITPY-CHANGE
     if old_hash != new_hash:
         print(mode_full, "updated")
         try:
@@ -261,13 +280,20 @@ if __name__ == "__main__":
         for k, v in named_args.items():
             setattr(args, k, v)
 
-        preprocess()
+        try:
+            preprocess()
+        except PreprocessorError as er:
+            print(er)
+            sys.exit(1)
+
         sys.exit(0)
 
     args.mode = sys.argv[2]
     args.input_filename = sys.argv[3]  # Unused for command=cat
     args.output_dir = sys.argv[4]
     args.output_file = None if len(sys.argv) == 5 else sys.argv[5]  # Unused for command=split
+    if args.output_file == "_":
+        args.output_file = None
 
     if args.mode not in (_MODE_QSTR, _MODE_COMPRESS, _MODE_MODULE, _MODE_ROOT_POINTER):
         print("error: mode %s unrecognised" % sys.argv[2])
@@ -280,7 +306,7 @@ if __name__ == "__main__":
 
     if args.command == "split":
         with io.open(args.input_filename, encoding="utf-8") as infile:
-            process_file(infile)
+            process_file(infile, args.output_file)
 
     if args.command == "cat":
         cat_together()

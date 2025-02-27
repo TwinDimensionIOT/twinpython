@@ -9,6 +9,9 @@ on:
       cp-version:
         required: true
         type: string
+      port:
+        required: true
+        type: string
     secrets:
       AWS_ACCESS_KEY_ID:
         required: false
@@ -17,7 +20,7 @@ on:
 
 jobs:
   board:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     env:
       CP_VERSION: ${{ inputs.cp-version }}
     strategy:
@@ -31,6 +34,7 @@ jobs:
         submodules: false
         show-progress: false
         fetch-depth: 1
+        persist-credentials: false
 
     - name: Set up python
       uses: actions/setup-python@v5
@@ -42,6 +46,7 @@ jobs:
       uses: ./.github/actions/deps/ports
       with:
         board: ${{ matrix.board }}
+        port: ${{ inputs.port }}
 
     - name: Set up submodules
       id: set-up-submodules
@@ -50,7 +55,7 @@ jobs:
     - name: Set up external
       uses: ./.github/actions/deps/external
       with:
-        port: ${{ steps.set-up-port.outputs.port }}
+        port: ${{ inputs.port }}
     - name: Set up mpy-cross
       if: steps.set-up-submodules.outputs.frozen == 'True'
       uses: ./.github/actions/mpy_cross

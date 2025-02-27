@@ -46,21 +46,23 @@ void common_hal_audiobusio_pdmin_construct(audiobusio_pdmin_obj_t *self,
         sample_rate * 32 * 2, // Frequency based on sample rate
         NULL, 0,
         NULL, 0, // may_exec
-        NULL, 1, 0, 0xffffffff, // out pin
+        NULL, 1, PIO_PINMASK32_NONE, PIO_PINMASK32_ALL, // out pin
         data_pin, 1, // in pins
-        0, 0, // in pulls
-        NULL, 0, 0, 0x1f, // set pins
-        clock_pin, 1, 0, 0x1f, // sideset pins
+        PIO_PINMASK32_NONE, PIO_PINMASK32_NONE, // in pulls
+        NULL, 0, PIO_PINMASK32_NONE, PIO_PINMASK32_FROM_VALUE(0x1f), // set pins
+        clock_pin, 1, false, PIO_PINMASK32_NONE, PIO_PINMASK32_FROM_VALUE(0x1f), // sideset pins
         false, // No sideset enable
         NULL, PULL_NONE, // jump pin
-        0, // wait gpio pins
+        PIO_PINMASK_NONE, // wait gpio pins
         true, // exclusive pin use
         false, 32, false, // out settings
         false, // Wait for txstall
         false, 32, true, // in settings
         false, // Not user-interruptible.
         0, -1, // wrap settings
-        PIO_ANY_OFFSET);
+        PIO_ANY_OFFSET,
+        PIO_FIFO_TYPE_DEFAULT,
+        PIO_MOV_STATUS_DEFAULT, PIO_MOV_N_DEFAULT);
     uint32_t actual_frequency = common_hal_rp2pio_statemachine_get_frequency(&self->state_machine);
     if (actual_frequency < MIN_MIC_CLOCK) {
         mp_raise_ValueError(MP_ERROR_TEXT("sampling rate out of range"));

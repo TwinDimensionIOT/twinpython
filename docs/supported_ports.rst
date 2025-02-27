@@ -12,6 +12,7 @@ Additional testing is limited.
 .. toctree::
     :maxdepth: 2
 
+    ../ports/analog/README
     ../ports/atmel-samd/README
     ../ports/broadcom/README
     ../ports/cxd56/README
@@ -24,3 +25,4 @@ Additional testing is limited.
     ../ports/silabs/README
     ../ports/stm/README
     ../ports/unix/README
+    ../ports/zephyr-cp/README

@@ -155,8 +155,9 @@ static void send_bufn_core(const char *buf, size_t n) {
     for (; n--; buf++) {
         int code = *buf;
         if (code == mp_interrupt_char) {
+            ringbuf_clear(&_incoming_ringbuf);
             mp_sched_keyboard_interrupt();
-            return;
+            continue;
         }
         if (ringbuf_num_empty(&_incoming_ringbuf) == 0) {
             // Drop on the floor

@@ -10,6 +10,7 @@
 #include "py/runtime.h"
 
 #include "shared-bindings/_bleio/__init__.h"
+#include "shared-bindings/_bleio/Attribute.h"
 #include "shared-bindings/_bleio/Descriptor.h"
 #include "shared-bindings/_bleio/Service.h"
 #include "shared-bindings/_bleio/UUID.h"
@@ -23,6 +24,31 @@ void common_hal_bleio_descriptor_construct(bleio_descriptor_obj_t *self, bleio_c
     self->read_perm = read_perm;
     self->write_perm = write_perm;
     self->initial_value = mp_obj_new_bytes(initial_value_bufinfo->buf, initial_value_bufinfo->len);
+
+    // Map CP's property values to Nimble's flag values.
+    self->flags = 0;
+    if (read_perm != SECURITY_MODE_NO_ACCESS) {
+        self->flags |= BLE_ATT_F_READ;
+    }
+    if (write_perm != SECURITY_MODE_NO_ACCESS) {
+        self->flags |= BLE_ATT_F_WRITE;
+    }
+    if (read_perm == SECURITY_MODE_ENC_WITH_MITM || write_perm == SECURITY_MODE_ENC_WITH_MITM ||
+        read_perm == SECURITY_MODE_SIGNED_WITH_MITM || write_perm == SECURITY_MODE_SIGNED_WITH_MITM) {
+        mp_raise_NotImplementedError(MP_ERROR_TEXT("MITM security not supported"));
+    }
+    if (read_perm == SECURITY_MODE_ENC_NO_MITM) {
+        self->flags |= BLE_ATT_F_READ_ENC;
+    }
+    if (read_perm == SECURITY_MODE_SIGNED_NO_MITM) {
+        self->flags |= BLE_ATT_F_READ_AUTHEN;
+    }
+    if (write_perm == SECURITY_MODE_ENC_NO_MITM) {
+        self->flags |= BLE_ATT_F_WRITE_ENC;
+    }
+    if (write_perm == SECURITY_MODE_SIGNED_NO_MITM) {
+        self->flags |= BLE_ATT_F_WRITE_AUTHEN;
+    }
 
     const mp_int_t max_length_max = BLE_ATT_ATTR_MAX_LEN;
     if (max_length < 0 || max_length > max_length_max) {
@@ -42,38 +68,35 @@ bleio_characteristic_obj_t *common_hal_bleio_descriptor_get_characteristic(bleio
 }
 
 size_t common_hal_bleio_descriptor_get_value(bleio_descriptor_obj_t *self, uint8_t *buf, size_t len) {
-    // Do GATT operations only if this descriptor has been registered
-    if (self->handle != BLEIO_HANDLE_INVALID) {
-        uint16_t conn_handle = bleio_connection_get_conn_handle(self->characteristic->service->connection);
-        (void)conn_handle;
+    if (self->characteristic == NULL) {
+        return 0;
     }
-
-    // TODO: Implement this.
+    if (common_hal_bleio_service_get_is_remote(self->characteristic->service)) {
+        uint16_t conn_handle = bleio_connection_get_conn_handle(self->characteristic->service->connection);
+        return bleio_gattc_read(conn_handle, self->handle, buf, len);
+    } else {
+        mp_buffer_info_t bufinfo;
+        mp_get_buffer(self->initial_value, &bufinfo, MP_BUFFER_READ);
+        len = MIN(bufinfo.len, len);
+        memcpy(buf, bufinfo.buf, len);
+        return len;
+    }
 
     return 0;
 }
 
 void common_hal_bleio_descriptor_set_value(bleio_descriptor_obj_t *self, mp_buffer_info_t *bufinfo) {
-    // TODO: Implement this.
-    // Do GATT operations only if this descriptor has been registered.
-    if (self->handle != BLEIO_HANDLE_INVALID) {
-        // uint16_t conn_handle = bleio_connection_get_conn_handle(self->characteristic->service->connection);
-        if (common_hal_bleio_service_get_is_remote(self->characteristic->service)) {
-            // false means WRITE_REQ, not write-no-response
-            // common_hal_bleio_gattc_write(self->handle, conn_handle, bufinfo, false);
-        } else {
-            // Validate data length for local descriptors only.
-            if (self->fixed_length && bufinfo->len != self->max_length) {
-                mp_raise_ValueError(MP_ERROR_TEXT("Value length != required fixed length"));
-            }
-            if (bufinfo->len > self->max_length) {
-                mp_raise_ValueError(MP_ERROR_TEXT("Value length > max_length"));
-            }
-
-            // common_hal_bleio_gatts_write(self->handle, conn_handle, bufinfo);
-        }
+    if (self->characteristic == NULL) {
+        return;
     }
 
+    if (common_hal_bleio_service_get_is_remote(self->characteristic->service)) {
+        uint16_t conn_handle = bleio_connection_get_conn_handle(self->characteristic->service->connection);
+        bleio_gattc_write(conn_handle, self->handle, bufinfo->buf, bufinfo->len);
+    } else {
+        // Descriptor values should be set via the initial_value when used locally.
+        mp_raise_NotImplementedError(NULL);
+    }
 }
 
 int bleio_descriptor_access_cb(uint16_t conn_handle, uint16_t attr_handle,

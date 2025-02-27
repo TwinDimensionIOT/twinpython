@@ -1,10 +1,11 @@
 """This script updates the sdkconfigs based on the menuconfig results in a given
-   build."""
+build."""
 
 import pathlib
 import click
 import copy
 import kconfiglib
+import kconfiglib.core
 import os
 
 OPT_SETTINGS = [
@@ -75,9 +76,7 @@ FLASH_MODE_SETTINGS = [
     "CONFIG_ESPTOOLPY_FLASH_SAMBLE_MODE_",
 ]
 
-FLASH_FREQ_SETTINGS = [
-    "CONFIG_ESPTOOLPY_FLASHFREQ_",
-]
+FLASH_FREQ_SETTINGS = ["CONFIG_ESPTOOLPY_FLASHFREQ_", "CONFIG_SPI_FLASH_UNDER_HIGH_FREQ"]
 
 PSRAM_SETTINGS = ["CONFIG_SPIRAM"]
 
@@ -127,7 +126,7 @@ def sym_default(sym):
     # Skip symbols that cannot be changed. Only check
     # non-choice symbols, as selects don't affect choice
     # symbols.
-    if not sym.choice and sym.visibility <= kconfiglib.expr_value(sym.rev_dep):
+    if not sym.choice and sym.visibility <= kconfiglib.core.expr_value(sym.rev_dep):
         return True
 
     # Skip symbols whose value matches their default
@@ -140,10 +139,9 @@ def sym_default(sym):
     # to n or the symbol to m in those cases).
     if (
         sym.choice
-        and not sym.choice.is_optional
         and sym.choice._selection_from_defaults() is sym
-        and sym.orig_type is kconfiglib.BOOL
-        and sym.tri_value == 2
+        and sym.orig_type == kconfiglib.core.BOOL
+        and sym.bool_value == 2
     ):
         return True
 
@@ -159,7 +157,7 @@ def sym_default(sym):
     default=False,
     help="Updates the sdkconfigs outside of the board directory.",
 )
-def update(debug, board, update_all):
+def update(debug, board, update_all):  # noqa: C901: too complex
     """Updates related sdkconfig files based on the build directory version that
     was likely modified by menuconfig."""
 
@@ -204,7 +202,7 @@ def update(debug, board, update_all):
 
     kconfig_path = pathlib.Path(f"build-{board}/esp-idf/kconfigs.in")
 
-    kconfig_path = pathlib.Path(f"esp-idf/Kconfig")
+    kconfig_path = pathlib.Path("esp-idf/Kconfig")
     kconfig = kconfiglib.Kconfig(kconfig_path)
 
     input_config = pathlib.Path(f"build-{board}/esp-idf/sdkconfig")
@@ -232,7 +230,7 @@ def update(debug, board, update_all):
     sdkconfigs.extend((flash_size_config, flash_mode_config, flash_freq_config))
 
     if psram_size != "0":
-        psram_config = pathlib.Path(f"esp-idf-config/sdkconfig-psram.defaults")
+        psram_config = pathlib.Path("esp-idf-config/sdkconfig-psram.defaults")
         psram_size_config = pathlib.Path(f"esp-idf-config/sdkconfig-psram-{psram_size}.defaults")
         psram_mode_config = pathlib.Path(f"esp-idf-config/sdkconfig-psram-{psram_mode}.defaults")
         psram_freq_config = pathlib.Path(f"esp-idf-config/sdkconfig-psram-{psram_freq}.defaults")
@@ -240,7 +238,7 @@ def update(debug, board, update_all):
     target_config = pathlib.Path(f"esp-idf-config/sdkconfig-{target}.defaults")
     sdkconfigs.append(target_config)
     if ble_enabled:
-        ble_config = pathlib.Path(f"esp-idf-config/sdkconfig-ble.defaults")
+        ble_config = pathlib.Path("esp-idf-config/sdkconfig-ble.defaults")
         sdkconfigs.append(ble_config)
     board_config = pathlib.Path(f"boards/{board}/sdkconfig")
     # Don't include the board file in cp defaults. The board may have custom
@@ -288,7 +286,7 @@ def update(debug, board, update_all):
             current_group.pop()
             continue
 
-        if node.item is kconfiglib.MENU:
+        if node.item is kconfiglib.core.MENU:
             if node.prompt:
                 print("  " * len(current_group), i, node.prompt[0])
         i += 1
@@ -300,7 +298,7 @@ def update(debug, board, update_all):
 
         # We have a configuration item.
         item = node.item
-        if isinstance(item, kconfiglib.Symbol):
+        if isinstance(item, kconfiglib.core.Symbol):
             if item._visited:
                 continue
             item._visited = True
@@ -459,14 +457,14 @@ def update(debug, board, update_all):
                     default_settings.append(config_string)
 
         else:
-            if item is kconfiglib.COMMENT:
+            if item is kconfiglib.core.COMMENT:
                 print("comment", repr(item))
-            elif item is kconfiglib.MENU:
+            elif item is kconfiglib.core.MENU:
                 if node.list:
                     current_group.append(node.prompt[0])
                     pending_nodes.append(None)
                     pending_nodes.append(node.list)
-            elif isinstance(item, kconfiglib.Choice):
+            elif isinstance(item, kconfiglib.core.Choice):
                 # Choices are made up of individual symbols that we need to check.
                 pending_nodes.append(node.list)
             else:

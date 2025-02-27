@@ -148,10 +148,15 @@ void supervisor_stop_bluetooth_serial(void) {
         return;
     }
     common_hal_bleio_packet_buffer_flush(&_tx_packet_buffer);
+    common_hal_bleio_packet_buffer_deinit(&_tx_packet_buffer);
+    common_hal_bleio_characteristic_deinit(&supervisor_ble_circuitpython_rx_characteristic);
+    common_hal_bleio_characteristic_deinit(&supervisor_ble_circuitpython_tx_characteristic);
+    common_hal_bleio_characteristic_deinit(&supervisor_ble_circuitpython_version_characteristic);
+    common_hal_bleio_service_deinit(&supervisor_ble_circuitpython_service);
 }
 
 bool ble_serial_connected(void) {
-    return _tx_packet_buffer.conn_handle != BLEIO_HANDLE_INVALID;
+    return common_hal_bleio_packet_buffer_connected(&_tx_packet_buffer);
 }
 
 uint32_t ble_serial_available(void) {

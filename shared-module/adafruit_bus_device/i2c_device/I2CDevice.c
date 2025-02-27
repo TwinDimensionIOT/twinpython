@@ -41,30 +41,14 @@ void common_hal_adafruit_bus_device_i2cdevice_unlock(adafruit_bus_device_i2cdevi
 void common_hal_adafruit_bus_device_i2cdevice_probe_for_device(adafruit_bus_device_i2cdevice_obj_t *self) {
     common_hal_adafruit_bus_device_i2cdevice_lock(self);
 
-    mp_buffer_info_t write_bufinfo;
-    mp_obj_t write_buffer = mp_obj_new_bytearray_of_zeros(0);
-    mp_get_buffer_raise(write_buffer, &write_bufinfo, MP_BUFFER_READ);
-
-    mp_obj_t dest[4];
-
-    /* catch exceptions that may be thrown while probing for the device */
-    nlr_buf_t nlr;
-    if (nlr_push(&nlr) == 0) {
-        mp_load_method(self->i2c, MP_QSTR_writeto, dest);
-        dest[2] = MP_OBJ_NEW_SMALL_INT(self->device_address);
-        dest[3] = write_buffer;
-        mp_call_method_n_kw(2, 0, dest);
-        nlr_pop();
-    } else {
-        common_hal_adafruit_bus_device_i2cdevice_unlock(self);
-
-        if (mp_obj_is_subclass_fast(MP_OBJ_FROM_PTR(((mp_obj_base_t *)nlr.ret_val)->type), MP_OBJ_FROM_PTR(&mp_type_OSError))) {
-            mp_raise_ValueError_varg(MP_ERROR_TEXT("No I2C device at address: 0x%x"), self->device_address);
-        } else {
-            /* In case we receive an unrelated exception pass it up */
-            nlr_raise(MP_OBJ_FROM_PTR(nlr.ret_val));
-        }
-    }
+    mp_obj_t dest[3];
+    mp_load_method(self->i2c, MP_QSTR_probe, dest);
+    dest[2] = MP_OBJ_NEW_SMALL_INT(self->device_address);
+    const bool found = mp_obj_is_true(mp_call_method_n_kw(1, 0, dest));
 
     common_hal_adafruit_bus_device_i2cdevice_unlock(self);
+
+    if (!found) {
+        mp_raise_ValueError_varg(MP_ERROR_TEXT("No I2C device at address: 0x%x"), self->device_address);
+    }
 }

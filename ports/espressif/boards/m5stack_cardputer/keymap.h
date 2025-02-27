@@ -95,7 +95,7 @@
 #define KEY_RIGHT (34 | FN_MOD)
 #define KEY_ESC (49 | FN_MOD)
 
-int keymap[56] = {
+const char keymap[56] = {
     0,   // KEY_OPT
     'z', // KEY_Z
     'c', // KEY_C
@@ -154,7 +154,7 @@ int keymap[56] = {
     '='  // KEY_EQUALS
 };
 
-int keymap_shifted[56] = {
+const char keymap_shifted[56] = {
     0,   // KEY_OPT
     'Z', // KEY_Z
     'C', // KEY_C

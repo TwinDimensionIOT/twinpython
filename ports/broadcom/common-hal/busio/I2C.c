@@ -47,9 +47,14 @@ void reset_i2c(void) {
 
 void common_hal_busio_i2c_construct(busio_i2c_obj_t *self,
     const mcu_pin_obj_t *scl, const mcu_pin_obj_t *sda, uint32_t frequency, uint32_t timeout) {
+
+    // Ensure the object starts in its deinit state.
+    common_hal_busio_i2c_mark_deinit(self);
+
     size_t instance_index = NUM_I2C;
     uint8_t scl_alt = 0;
     uint8_t sda_alt = 0;
+
     for (scl_alt = 0; scl_alt < 6; scl_alt++) {
         if (scl->functions[scl_alt].type != PIN_FUNCTION_I2C ||
             i2c_in_use[scl->functions[scl_alt].index] ||
@@ -90,17 +95,19 @@ bool common_hal_busio_i2c_deinited(busio_i2c_obj_t *self) {
     return self->sda_pin == NULL;
 }
 
+void common_hal_busio_i2c_mark_deinit(busio_i2c_obj_t *self) {
+    self->sda_pin = NULL;
+}
+
 void common_hal_busio_i2c_deinit(busio_i2c_obj_t *self) {
     if (common_hal_busio_i2c_deinited(self)) {
         return;
     }
-    never_reset_i2c[self->index] = false;
     i2c_in_use[self->index] = false;
 
     common_hal_reset_pin(self->sda_pin);
     common_hal_reset_pin(self->scl_pin);
-    self->sda_pin = NULL;
-    self->scl_pin = NULL;
+    common_hal_busio_i2c_mark_deinit(self);
 }
 
 bool common_hal_busio_i2c_probe(busio_i2c_obj_t *self, uint8_t addr) {
@@ -109,6 +116,9 @@ bool common_hal_busio_i2c_probe(busio_i2c_obj_t *self, uint8_t addr) {
 }
 
 bool common_hal_busio_i2c_try_lock(busio_i2c_obj_t *self) {
+    if (common_hal_busio_i2c_deinited(self)) {
+        return false;
+    }
     bool grabbed_lock = false;
     if (!self->has_lock) {
         grabbed_lock = true;

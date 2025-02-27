@@ -5,7 +5,6 @@ CIRCUITPY_OPTIMIZE_PROPERTY_FLASH_SIZE ?= 1
 # CYW43 support does not provide settable MAC addresses for station or AP.
 CIRCUITPY_WIFI_RADIO_SETTABLE_MAC_ADDRESS = 0
 
-CIRCUITPY_ALARM ?= 1
 CIRCUITPY_RP2PIO ?= 1
 CIRCUITPY_NEOPIXEL_WRITE ?= $(CIRCUITPY_RP2PIO)
 CIRCUITPY_FLOPPYIO ?= 1
@@ -22,7 +21,7 @@ CIRCUITPY_PWMIO ?= 1
 CIRCUITPY_RGBMATRIX ?= $(CIRCUITPY_DISPLAYIO)
 CIRCUITPY_ROTARYIO ?= 1
 CIRCUITPY_ROTARYIO_SOFTENCODER = 1
-CIRCUITPY_SYNTHIO_MAX_CHANNELS = 12
+CIRCUITPY_SYNTHIO_MAX_CHANNELS = 24
 CIRCUITPY_USB_HOST ?= 1
 CIRCUITPY_USB_VIDEO ?= 1
 
@@ -46,6 +45,35 @@ CIRCUITPY_AUDIOCORE ?= 1
 CIRCUITPY_AUDIOPWMIO ?= 1
 
 CIRCUITPY_AUDIOMIXER ?= 1
+
+ifeq ($(CHIP_VARIANT),RP2040)
+CIRCUITPY_ALARM ?= 1
+
+# Default PICODVI off because it uses RAM to store code run on the second CPU for RP2040.
+CIRCUITPY_PICODVI ?= 0
+
+CIRCUITPY_TOUCHIO ?= 1
+
+# delay in ms before calling cyw43_arch_init_with_country
+CIRCUITPY_CYW43_INIT_DELAY ?= 1000
+endif
+
+ifeq ($(CHIP_VARIANT),RP2350)
+# This needs to be implemented.
+CIRCUITPY_ALARM = 0
+# Default PICODVI on because it doesn't require much code in RAM to talk to HSTX.
+CIRCUITPY_PICODVI ?= 1
+
+# Our generic touchio uses a pull down and RP2350 A2 hardware doesn't work correctly.
+# So, turn touchio off because it doesn't work.
+CIRCUITPY_TOUCHIO = 0
+
+# delay in ms before calling cyw43_arch_init_with_country
+CIRCUITPY_CYW43_INIT_DELAY ?= 0
+
+# Audio effects
+CIRCUITPY_AUDIOEFFECTS ?= 1
+endif
 
 INTERNAL_LIBM = 1
 

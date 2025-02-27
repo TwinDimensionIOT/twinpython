@@ -101,6 +101,13 @@ void supervisor_start_bluetooth_file_transfer(void) {
         &static_handler_entry);
 }
 
+void supervisor_stop_bluetooth_file_transfer(void) {
+    common_hal_bleio_packet_buffer_deinit(&_transfer_packet_buffer);
+    common_hal_bleio_characteristic_deinit(&supervisor_ble_transfer_characteristic);
+    common_hal_bleio_characteristic_deinit(&supervisor_ble_version_characteristic);
+    common_hal_bleio_service_deinit(&supervisor_ble_service);
+}
+
 #define COMMAND_SIZE 1024
 
 #define ANY_COMMAND 0x00

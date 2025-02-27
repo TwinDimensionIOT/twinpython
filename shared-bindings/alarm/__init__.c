@@ -44,6 +44,7 @@
 //| For more information about working with alarms and light/deep sleep in CircuitPython,
 //| see `this Learn guide <https://learn.adafruit.com/deep-sleep-with-circuitpython>`_.
 //| """
+//|
 
 //| sleep_memory: SleepMemory
 //| """Memory that persists during deep sleep.
@@ -53,6 +54,7 @@
 //| """The most recently triggered alarm. If CircuitPython was sleeping, the alarm that woke it from sleep.
 //| If no alarm occurred since the last hard reset or soft restart, value is ``None``.
 //| """
+//|
 //|
 
 // wake_alarm is implemented as a dictionary entry, so there's no code here.
@@ -89,6 +91,7 @@ static void validate_objs_are_alarms(size_t n_args, const mp_obj_t *objs) {
 //|     it may be necessary to disconnect from the host.
 //|     """
 //|     ...
+//|
 //|
 static mp_obj_t alarm_light_sleep_until_alarms(size_t n_args, const mp_obj_t *args) {
     if (n_args == 0) {
@@ -172,6 +175,7 @@ MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(alarm_light_sleep_until_alarms_obj, 1, MP_OB
 //|     """
 //|     ...
 //|
+//|
 static mp_obj_t alarm_exit_and_deep_sleep_until_alarms(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     enum { ARG_preserve_dios };
     static const mp_arg_t allowed_args[] = {
@@ -196,7 +200,7 @@ static mp_obj_t alarm_exit_and_deep_sleep_until_alarms(size_t n_args, const mp_o
     common_hal_alarm_set_deep_sleep_alarms(n_args, pos_args, num_dios, dios_array);
 
     // Raise an exception, which will be processed in main.c.
-    mp_raise_type_arg(&mp_type_DeepSleepRequest, NULL);
+    mp_raise_type(&mp_type_DeepSleepRequest);
 
     // Doesn't get here.
     return mp_const_none;

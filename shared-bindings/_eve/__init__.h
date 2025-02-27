@@ -21,6 +21,7 @@ void common_hal__eve_BitmapLayout(common_hal__eve_t *eve, uint32_t format, uint3
 void common_hal__eve_BitmapSizeH(common_hal__eve_t *eve, uint32_t width, uint32_t height);
 void common_hal__eve_BitmapSize(common_hal__eve_t *eve, uint32_t filter, uint32_t wrapx, uint32_t wrapy, uint32_t width, uint32_t height);
 void common_hal__eve_BitmapSource(common_hal__eve_t *eve, uint32_t addr);
+void common_hal__eve_BitmapSourceH(common_hal__eve_t *eve, uint32_t addr);
 void common_hal__eve_BitmapSwizzle(common_hal__eve_t *eve, uint32_t r, uint32_t g, uint32_t b, uint32_t a);
 void common_hal__eve_BitmapTransformA(common_hal__eve_t *eve, uint32_t p, uint32_t v);
 void common_hal__eve_BitmapTransformB(common_hal__eve_t *eve, uint32_t p, uint32_t v);
@@ -46,6 +47,7 @@ void common_hal__eve_LineWidth(common_hal__eve_t *eve, mp_float_t width);
 void common_hal__eve_Macro(common_hal__eve_t *eve, uint32_t m);
 void common_hal__eve_Nop(common_hal__eve_t *eve);
 void common_hal__eve_PaletteSource(common_hal__eve_t *eve, uint32_t addr);
+void common_hal__eve_PaletteSourceH(common_hal__eve_t *eve, uint32_t addr);
 void common_hal__eve_PointSize(common_hal__eve_t *eve, mp_float_t size);
 void common_hal__eve_RestoreContext(common_hal__eve_t *eve);
 void common_hal__eve_Return(common_hal__eve_t *eve);

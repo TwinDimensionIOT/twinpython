@@ -10,8 +10,8 @@
 
 #include "py/mphal.h"
 
-#include "components/driver/gpio/include/driver/gpio.h"
-#include "components/hal/include/hal/gpio_hal.h"
+#include "driver/gpio.h"
+#include "soc/gpio_periph.h"
 
 static uint64_t _never_reset_pin_mask;
 static uint64_t _skip_reset_once_pin_mask;
@@ -170,6 +170,26 @@ static const uint64_t pin_mask_reset_forbidden =
     GPIO_SEL_24 |
     #endif
     #endif // ESP32H2
+
+    #if defined(CONFIG_IDF_TARGET_ESP32P4)
+    // Never ever reset pins used to communicate with the SPI flash.
+    GPIO_SEL_28 |
+    GPIO_SEL_29 |
+    GPIO_SEL_30 |
+    GPIO_SEL_32 |
+    GPIO_SEL_33 |
+    GPIO_SEL_34 |
+    #if CIRCUITPY_ESP_USB_SERIAL_JTAG
+    // Never ever reset serial/JTAG communication pins.
+    GPIO_SEL_50 |         // USB D-
+    GPIO_SEL_51 |         // USB D+
+    #endif
+    #if defined(CONFIG_ESP_CONSOLE_UART_DEFAULT) && CONFIG_ESP_CONSOLE_UART_DEFAULT && CONFIG_ESP_CONSOLE_UART_NUM == 0
+    // Never reset debug UART/console pins.
+    GPIO_SEL_37 |
+    GPIO_SEL_38 |
+    #endif
+    #endif // ESP32P4
 
     #if defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32S3)
     #if CIRCUITPY_USB_DEVICE
@@ -392,4 +412,17 @@ bool common_hal_mcu_pin_is_free(const mcu_pin_obj_t *pin) {
 
 uint8_t common_hal_mcu_pin_number(const mcu_pin_obj_t *pin) {
     return pin ? pin->number : NO_PIN;
+}
+
+void config_pin_as_output_with_level(gpio_num_t pin_number, bool level) {
+    gpio_config_t cfg = {
+        .pin_bit_mask = BIT64(pin_number),
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = false,
+        .pull_down_en = false,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    gpio_config(&cfg);
+
+    gpio_set_level(pin_number, level);
 }

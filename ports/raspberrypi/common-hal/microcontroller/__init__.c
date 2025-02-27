@@ -23,12 +23,14 @@
 #include "src/rp2_common/hardware_sync/include/hardware/sync.h"
 
 #include "hardware/watchdog.h"
+#include "hardware/irq.h"
 
 void common_hal_mcu_delay_us(uint32_t delay) {
     mp_hal_delay_us(delay);
 }
 
 volatile uint32_t nesting_count = 0;
+#ifdef PICO_RP2040
 void common_hal_mcu_disable_interrupts(void) {
     // We don't use save_and_disable_interrupts() from the sdk because we don't want to worry about PRIMASK.
     // This is what we do on the SAMD21 via CMSIS.
@@ -48,6 +50,38 @@ void common_hal_mcu_enable_interrupts(void) {
     __dmb();
     asm volatile ("cpsie i" : : : "memory");
 }
+#else
+#include "src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Include/RP2350.h"
+#define PICO_ELEVATED_IRQ_PRIORITY (0x60) // between PICO_DEFAULT and PIOCO_HIGHEST_IRQ_PRIORITY
+static uint32_t oldBasePri = 0; // 0 (default) masks nothing, other values mask equal-or-larger priority values
+void common_hal_mcu_disable_interrupts(void) {
+    if (nesting_count == 0) {
+        // We must keep DMA_IRQ_1 (reserved for pico dvi) enabled at all times,
+        // including during flash writes. Do this by setting the priority mask (BASEPRI
+        // register).
+        // grab old base priority
+        oldBasePri = __get_BASEPRI();
+        // and set the new one
+        __set_BASEPRI_MAX(PICO_ELEVATED_IRQ_PRIORITY);
+        __isb(); // Instruction synchronization barrier
+    }
+    nesting_count++;
+}
+
+void common_hal_mcu_enable_interrupts(void) {
+    uint32_t my_interrupts = save_and_disable_interrupts();
+    if (nesting_count == 0) {
+        reset_into_safe_mode(SAFE_MODE_INTERRUPT_ERROR);
+    }
+    nesting_count--;
+    if (nesting_count == 0) {
+        // return to the old priority setting
+        __set_BASEPRI(oldBasePri);
+        __isb(); // Instruction synchronization barrier
+    }
+    restore_interrupts(my_interrupts);
+}
+#endif
 
 static bool next_reset_to_bootloader = false;
 
@@ -165,6 +199,26 @@ const mp_rom_map_elem_t mcu_pin_global_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_GPIO27), MP_ROM_PTR(&pin_GPIO27) },
     { MP_ROM_QSTR(MP_QSTR_GPIO28), MP_ROM_PTR(&pin_GPIO28) },
     { MP_ROM_QSTR(MP_QSTR_GPIO29), MP_ROM_PTR(&pin_GPIO29) },
+    #if NUM_BANK0_GPIOS == 48
+    { MP_ROM_QSTR(MP_QSTR_GPIO30), MP_ROM_PTR(&pin_GPIO30) },
+    { MP_ROM_QSTR(MP_QSTR_GPIO31), MP_ROM_PTR(&pin_GPIO31) },
+    { MP_ROM_QSTR(MP_QSTR_GPIO32), MP_ROM_PTR(&pin_GPIO32) },
+    { MP_ROM_QSTR(MP_QSTR_GPIO33), MP_ROM_PTR(&pin_GPIO33) },
+    { MP_ROM_QSTR(MP_QSTR_GPIO34), MP_ROM_PTR(&pin_GPIO34) },
+    { MP_ROM_QSTR(MP_QSTR_GPIO35), MP_ROM_PTR(&pin_GPIO35) },
+    { MP_ROM_QSTR(MP_QSTR_GPIO36), MP_ROM_PTR(&pin_GPIO36) },
+    { MP_ROM_QSTR(MP_QSTR_GPIO37), MP_ROM_PTR(&pin_GPIO37) },
+    { MP_ROM_QSTR(MP_QSTR_GPIO38), MP_ROM_PTR(&pin_GPIO38) },
+    { MP_ROM_QSTR(MP_QSTR_GPIO39), MP_ROM_PTR(&pin_GPIO39) },
+    { MP_ROM_QSTR(MP_QSTR_GPIO40), MP_ROM_PTR(&pin_GPIO40) },
+    { MP_ROM_QSTR(MP_QSTR_GPIO41), MP_ROM_PTR(&pin_GPIO41) },
+    { MP_ROM_QSTR(MP_QSTR_GPIO42), MP_ROM_PTR(&pin_GPIO42) },
+    { MP_ROM_QSTR(MP_QSTR_GPIO43), MP_ROM_PTR(&pin_GPIO43) },
+    { MP_ROM_QSTR(MP_QSTR_GPIO44), MP_ROM_PTR(&pin_GPIO44) },
+    { MP_ROM_QSTR(MP_QSTR_GPIO45), MP_ROM_PTR(&pin_GPIO45) },
+    { MP_ROM_QSTR(MP_QSTR_GPIO46), MP_ROM_PTR(&pin_GPIO46) },
+    { MP_ROM_QSTR(MP_QSTR_GPIO47), MP_ROM_PTR(&pin_GPIO47) },
+    #endif
     #if CIRCUITPY_CYW43
     { MP_ROM_QSTR(MP_QSTR_CYW0), MP_ROM_PTR(&pin_CYW0) },
     { MP_ROM_QSTR(MP_QSTR_CYW1), MP_ROM_PTR(&pin_CYW1) },

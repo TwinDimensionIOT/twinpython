@@ -6,6 +6,7 @@
 
 #include "py/objtuple.h"
 #include "shared-bindings/board/__init__.h"
+#include "shared-module/displayio/__init__.h"
 
 static const mp_rom_obj_tuple_t tft_r_pins = {
     {&mp_type_tuple},
@@ -120,10 +121,11 @@ static const mp_rom_map_elem_t board_module_globals_table[] = {
 
     // IO10 <> SD_CS is cut at factory (non-placed resistor position R34) and pulled up.
     // Permanent SDIO 1-bit mode?
-    // Until SDIO 1-bit mode is support on Espressif ports these pins aren't useful
-    // { MP_ROM_QSTR(MP_QSTR_SDIO_CMD), MP_ROM_PTR(&pin_GPIO11) },
-    // { MP_ROM_QSTR(MP_QSTR_SDIO_D0), MP_ROM_PTR(&pin_GPIO13) },
-    // { MP_ROM_QSTR(MP_QSTR_SDIO_CLK), MP_ROM_PTR(&pin_GPIO12) },
+    { MP_ROM_QSTR(MP_QSTR_SDIO_CLK), MP_ROM_PTR(&pin_GPIO12) },
+    { MP_ROM_QSTR(MP_QSTR_SDIO_CMD), MP_ROM_PTR(&pin_GPIO11) },
+    { MP_ROM_QSTR(MP_QSTR_SDIO_D0), MP_ROM_PTR(&pin_GPIO13) },
+
+    { MP_ROM_QSTR(MP_QSTR_DISPLAY), MP_ROM_PTR(&displays[0].display) },
 
     // boot mode button can be used in SW as well
     { MP_ROM_QSTR(MP_QSTR_BUTTON), MP_ROM_PTR(&pin_GPIO1) },

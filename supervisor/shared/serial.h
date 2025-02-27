@@ -11,6 +11,7 @@
 #include <stdio.h>
 
 #include "py/mpconfig.h"
+#include "py/mpprint.h"
 
 #ifdef CIRCUITPY_BOOT_OUTPUT_FILE
 #include "py/misc.h"
@@ -23,7 +24,7 @@ void serial_early_init(void);
 void serial_init(void);
 void serial_write(const char *text);
 // Only writes up to given length. Does not check for null termination at all.
-void serial_write_substring(const char *text, uint32_t length);
+uint32_t serial_write_substring(const char *text, uint32_t length);
 char serial_read(void);
 uint32_t serial_bytes_available(void);
 bool serial_connected(void);
@@ -47,4 +48,8 @@ char board_serial_read(void);
 uint32_t board_serial_bytes_available(void);
 void board_serial_write_substring(const char *text, uint32_t length);
 
-int console_uart_printf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+extern const mp_print_t console_uart_print;
+
+int console_uart_printf(const char *fmt, ...);
+
+void print_hexdump(const mp_print_t *printer, const char *prefix, const uint8_t *buf, size_t len);

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"PO-Revision-Date: 2024-07-29 17:55+0000\n"
+"PO-Revision-Date: 2025-01-13 14:00+0000\n"
 "Last-Translator: gfbdrgng <hnaofegnp@hldrive.com>\n"
 "Language-Team: none\n"
 "Language: ru\n"
@@ -16,7 +16,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
-"X-Generator: Weblate 5.7-dev\n"
+"X-Generator: Weblate 5.10-dev\n"
 
 #: main.c
 msgid ""
@@ -124,7 +124,8 @@ msgstr "%q в %q должно быть типа %q, а не %q"
 #: ports/espressif/common-hal/espulp/ULP.c
 #: ports/mimxrt10xx/common-hal/audiobusio/__init__.c
 #: ports/mimxrt10xx/common-hal/usb_host/Port.c
-#: ports/raspberrypi/common-hal/picodvi/Framebuffer.c
+#: ports/raspberrypi/common-hal/picodvi/Framebuffer_RP2040.c
+#: ports/raspberrypi/common-hal/picodvi/Framebuffer_RP2350.c
 #: ports/raspberrypi/common-hal/rp2pio/StateMachine.c
 #: ports/raspberrypi/common-hal/usb_host/Port.c
 #: shared-bindings/digitalio/DigitalInOut.c
@@ -168,7 +169,7 @@ msgstr "Длинна %q должна быть <= %d"
 msgid "%q length must be >= %d"
 msgstr "Длинна %q должна быть >= %d"
 
-#: py/objmodule.c py/runtime.c
+#: py/modsys.c py/objmodule.c py/runtime.c
 msgid "%q moved from %q to %q"
 msgstr "%q переместился из %q в %q"
 
@@ -201,6 +202,10 @@ msgstr "%q должно быть <= %u"
 msgid "%q must be >= %d"
 msgstr "%q должно быть >= %d"
 
+#: shared-module/audiofilters/Filter.c
+msgid "%q must be a %q object, %q, or %q"
+msgstr "%q должен быть объектом %q, %q или %q"
+
 #: shared-bindings/analogbufio/BufferedIn.c
 msgid "%q must be a bytearray or array of type 'H' or 'B'"
 msgstr "%q должен быть массивом байтов или массивом типа «H» или «B»"
@@ -228,7 +233,7 @@ msgstr "%q должно быть кратно 8."
 #: ports/raspberrypi/bindings/cyw43/__init__.c py/argcheck.c py/objexcept.c
 #: shared-bindings/bitmapfilter/__init__.c shared-bindings/canio/CAN.c
 #: shared-bindings/digitalio/Pull.c shared-bindings/supervisor/__init__.c
-#: shared-module/synthio/Synthesizer.c
+#: shared-module/synthio/Biquad.c shared-module/synthio/Synthesizer.c
 msgid "%q must be of type %q or %q, not %q"
 msgstr "%q должно быть типа%q или%q, а не%q"
 
@@ -282,7 +287,8 @@ msgstr "%q() без %q()"
 msgid "%q, %q, and %q must all be the same length"
 msgstr "%q, %q, и %q должны быть одной длинны"
 
-#: py/objint.c shared-bindings/storage/__init__.c
+#: py/objint.c shared-bindings/_bleio/Connection.c
+#: shared-bindings/storage/__init__.c
 msgid "%q=%q"
 msgstr "%q=%q"
 
@@ -428,6 +434,10 @@ msgstr "«данные» требуют целочисленных аргуме�
 msgid "'label' requires 1 argument"
 msgstr "«метка» требует 1 аргумент"
 
+#: py/emitnative.c
+msgid "'not' not implemented"
+msgstr "'не' не реализовано"
+
 #: py/compile.c
 msgid "'return' outside function"
 msgstr "«возврат» внешняя функция"
@@ -524,7 +534,7 @@ msgid "All event channels in use"
 msgstr "Все каналы событий уже используются"
 
 #: ports/raspberrypi/common-hal/floppyio/__init__.c
-#: ports/raspberrypi/common-hal/picodvi/Framebuffer.c
+#: ports/raspberrypi/common-hal/picodvi/Framebuffer_RP2040.c
 #: ports/raspberrypi/common-hal/rp2pio/StateMachine.c
 #: ports/raspberrypi/common-hal/usb_host/Port.c
 msgid "All state machines in use"
@@ -534,7 +544,7 @@ msgstr "Все машины состояний уже используются"
 msgid "All sync event channels in use"
 msgstr "Все каналы событий синхронизации уже используются"
 
-#: ports/raspberrypi/common-hal/picodvi/Framebuffer.c
+#: ports/raspberrypi/common-hal/picodvi/Framebuffer_RP2040.c
 msgid "All timers for this pin are in use"
 msgstr "Все таймеры для этого пина уже используются"
 
@@ -559,6 +569,10 @@ msgstr "Уже реклама."
 #: ports/atmel-samd/common-hal/canio/Listener.c
 msgid "Already have all-matches listener"
 msgstr "Уже есть универсальный слушатель"
+
+#: ports/espressif/common-hal/_bleio/__init__.c
+msgid "Already in progress"
+msgstr "Уже в процессе"
 
 #: ports/espressif/bindings/espnow/ESPNow.c
 #: ports/espressif/common-hal/espulp/ULP.c
@@ -595,6 +609,10 @@ msgstr "Массив должен содержать полуслова (тип 
 msgid "Array values should be single bytes."
 msgstr "Значения массива должны быть однобайтовыми."
 
+#: ports/atmel-samd/common-hal/spitarget/SPITarget.c
+msgid "Async SPI transfer in progress on this bus, keep awaiting."
+msgstr ""
+
 #: shared-module/memorymonitor/AllocationAlarm.c
 #, c-format
 msgid "Attempt to allocate %d blocks"
@@ -603,6 +621,11 @@ msgstr "Попытка выделения %d блоков"
 #: ports/raspberrypi/audio_dma.c
 msgid "Audio conversion not implemented"
 msgstr "Преобразование звука не реализовано"
+
+#: ports/raspberrypi/common-hal/audiobusio/I2SOut.c
+#: ports/raspberrypi/common-hal/audiopwmio/PWMAudioOut.c
+msgid "Audio source error"
+msgstr ""
 
 #: shared-bindings/wifi/Radio.c
 msgid "AuthMode.OPEN is not used with password"
@@ -674,13 +697,13 @@ msgid "Buffer length %d too big. It must be less than %d"
 msgstr "Размер буфера %d слишком большой. Он должен быть меньше чем %d"
 
 #: ports/atmel-samd/common-hal/sdioio/SDCard.c
-#: ports/cxd56/common-hal/sdioio/SDCard.c shared-module/sdcardio/SDCard.c
-msgid "Buffer length must be a multiple of 512"
-msgstr "Размер буфера должен быть кратен 512"
-
+#: ports/cxd56/common-hal/sdioio/SDCard.c
+#: ports/espressif/common-hal/sdioio/SDCard.c
 #: ports/stm/common-hal/sdioio/SDCard.c shared-bindings/floppyio/__init__.c
-msgid "Buffer must be a multiple of 512 bytes"
-msgstr "Буфер должен быть кратен 512"
+#: shared-module/sdcardio/SDCard.c
+#, c-format
+msgid "Buffer must be a multiple of %d bytes"
+msgstr "Буфер должен быть кратен %d байт"
 
 #: shared-bindings/_bleio/PacketBuffer.c
 #, c-format
@@ -740,6 +763,10 @@ msgstr ""
 msgid "Can only alarm on two low pins from deep sleep."
 msgstr ""
 "Из глубокого сна может сигнализировать только по двум низким контактам."
+
+#: ports/espressif/common-hal/audioio/AudioOut.c
+msgid "Can't construct AudioOut because continuous channel already open"
+msgstr ""
 
 #: ports/espressif/common-hal/_bleio/Characteristic.c
 #: ports/nordic/common-hal/_bleio/Characteristic.c
@@ -803,6 +830,10 @@ msgstr "Невозможно указать RTS или CTS в режиме RS485
 #: py/objslice.c
 msgid "Cannot subclass slice"
 msgstr "Невозможно создать подкласс среза"
+
+#: ports/raspberrypi/common-hal/rp2pio/StateMachine.c
+msgid "Cannot use GPIO0..15 together with GPIO32..47"
+msgstr "Невозможно использовать GPIO0..15 вместе с GPIO32..47"
 
 #: ports/nordic/common-hal/alarm/pin/PinAlarm.c
 msgid "Cannot wake on pin edge, only level"
@@ -1009,14 +1040,42 @@ msgstr "Не удалось подключиться: внутренняя ош�
 msgid "Failed to connect: timeout"
 msgstr "Не удалось подключиться: таймаут"
 
+#: ports/espressif/common-hal/audioio/AudioOut.c
+msgid "Failed to create continuous channels: invalid arg"
+msgstr ""
+
+#: ports/espressif/common-hal/audioio/AudioOut.c
+msgid "Failed to create continuous channels: invalid state"
+msgstr ""
+
+#: ports/espressif/common-hal/audioio/AudioOut.c
+msgid "Failed to create continuous channels: no mem"
+msgstr ""
+
+#: ports/espressif/common-hal/audioio/AudioOut.c
+msgid "Failed to create continuous channels: not found"
+msgstr ""
+
+#: ports/espressif/common-hal/audioio/AudioOut.c
+msgid "Failed to enable continuous"
+msgstr ""
+
 #: shared-module/audiomp3/MP3Decoder.c
 msgid "Failed to parse MP3 file"
 msgstr "Не удалось распарсить файл MP3"
+
+#: ports/espressif/common-hal/audioio/AudioOut.c
+msgid "Failed to register continuous events callback"
+msgstr ""
 
 #: ports/nordic/sd_mutex.c
 #, c-format
 msgid "Failed to release mutex, err 0x%04x"
 msgstr "Не удалось освободить mutex, ошибка 0x%04x"
+
+#: ports/espressif/common-hal/audioio/AudioOut.c
+msgid "Failed to start async audio"
+msgstr ""
 
 #: supervisor/shared/safe_mode.c
 msgid "Failed to write internal flash."
@@ -1032,6 +1091,7 @@ msgstr "Файл не найден"
 
 #: ports/atmel-samd/common-hal/canio/Listener.c
 #: ports/espressif/common-hal/canio/Listener.c
+#: ports/mimxrt10xx/common-hal/canio/Listener.c
 #: ports/stm/common-hal/canio/Listener.c
 msgid "Filters too complex"
 msgstr "Фильтры слишком сложные"
@@ -1201,7 +1261,9 @@ msgstr "Внутренняя ошибка #%d"
 #: ports/atmel-samd/common-hal/ps2io/Ps2.c
 #: ports/atmel-samd/common-hal/pulseio/PulseIn.c
 #: ports/atmel-samd/common-hal/rotaryio/IncrementalEncoder.c
-#: ports/cxd56/common-hal/pulseio/PulseIn.c shared-bindings/pwmio/PWMOut.c
+#: ports/cxd56/common-hal/pulseio/PulseIn.c
+#: ports/raspberrypi/common-hal/picodvi/Framebuffer_RP2350.c
+#: shared-bindings/pwmio/PWMOut.c
 msgid "Internal resource(s) in use"
 msgstr "Используемые внутренние ресурсы"
 
@@ -1217,16 +1279,24 @@ msgstr "Прерванная ошибка."
 msgid "Interrupted by output function"
 msgstr "Прерывается функцией выхода"
 
+#: ports/espressif/common-hal/_bleio/Service.c
 #: ports/espressif/common-hal/espulp/ULP.c
 #: ports/espressif/common-hal/microcontroller/Processor.c
 #: ports/mimxrt10xx/common-hal/audiobusio/__init__.c
 #: ports/mimxrt10xx/common-hal/pwmio/PWMOut.c
 #: ports/raspberrypi/bindings/picodvi/Framebuffer.c
-#: ports/raspberrypi/common-hal/picodvi/Framebuffer.c py/argcheck.c
+#: ports/raspberrypi/bindings/rp2pio/StateMachine.c
+#: ports/raspberrypi/common-hal/picodvi/Framebuffer_RP2040.c py/argcheck.c
 #: shared-bindings/digitalio/DigitalInOut.c
 #: shared-bindings/epaperdisplay/EPaperDisplay.c shared-bindings/pwmio/PWMOut.c
+#: shared-module/aurora_epaper/aurora_framebuffer.c
 msgid "Invalid %q"
 msgstr "Недопустимый %q"
+
+#: ports/raspberrypi/common-hal/picodvi/Framebuffer_RP2350.c
+#: shared-module/aurora_epaper/aurora_framebuffer.c
+msgid "Invalid %q and %q"
+msgstr "Недопустимые %q и %q"
 
 #: ports/atmel-samd/common-hal/microcontroller/Pin.c
 #: ports/espressif/common-hal/dotclockframebuffer/DotClockFramebuffer.c
@@ -1295,6 +1365,7 @@ msgid "Invalid socket for TLS"
 msgstr "Неверный сокет для TLS"
 
 #: ports/espressif/common-hal/espidf/__init__.c
+#: ports/nordic/common-hal/_bleio/__init__.c
 msgid "Invalid state"
 msgstr "Неверное состояние"
 
@@ -1335,6 +1406,7 @@ msgid "MAC address was invalid"
 msgstr "MAC адрес был недействительным"
 
 #: ports/espressif/common-hal/_bleio/Characteristic.c
+#: ports/espressif/common-hal/_bleio/Descriptor.c
 msgid "MITM security not supported"
 msgstr "Защита от MITM не поддерживается"
 
@@ -1411,10 +1483,6 @@ msgstr "Ошибка NVS"
 #: shared-bindings/socketpool/SocketPool.c
 msgid "Name or service not known"
 msgstr "Имя или услуга не известны"
-
-#: py/qstr.c
-msgid "Name too long"
-msgstr "Имя слишком длинное"
 
 #: shared-bindings/displayio/TileGrid.c
 msgid "New bitmap must be same size as old bitmap"
@@ -1573,9 +1641,10 @@ msgid "Not supported JPEG standard"
 msgstr "Не поддерживается Стандарт JPEG"
 
 #: ports/espressif/common-hal/paralleldisplaybus/ParallelBus.c
+#: ports/espressif/common-hal/sdioio/SDCard.c
 #, c-format
-msgid "Number of data_pins must be 8 or 16, not %d"
-msgstr "Количество data_pins должно быть 8 или 16, а не %d"
+msgid "Number of data_pins must be %d or %d, not %d"
+msgstr "Количество выводов_данных должно быть %d или %d, а не %d"
 
 #: shared-bindings/util.c
 msgid ""
@@ -1708,6 +1777,10 @@ msgstr "PWM уже используется"
 #: ports/raspberrypi/common-hal/countio/Counter.c
 msgid "PWM slice channel A already in use"
 msgstr "PWM канал среза A уже используется"
+
+#: shared-bindings/spitarget/SPITarget.c
+msgid "Packet buffers for an SPI transfer must have the same length."
+msgstr ""
 
 #: shared-module/jpegio/JpegDecoder.c
 msgid "Parameter error"
@@ -1910,10 +1983,11 @@ msgstr "Инициализация SD-карты"
 msgid "SDIO GetCardInfo Error %d"
 msgstr "Ошибка получения информации о карте SDIO %d"
 
+#: ports/espressif/common-hal/sdioio/SDCard.c
 #: ports/stm/common-hal/sdioio/SDCard.c
 #, c-format
-msgid "SDIO Init Error %d"
-msgstr "Ошибка инициализации SDIO %d"
+msgid "SDIO Init Error %x"
+msgstr "Ошибка инициализации SDIO %x"
 
 #: ports/espressif/common-hal/busio/SPI.c
 msgid "SPI configuration failed"
@@ -2009,21 +2083,10 @@ msgstr ""
 msgid "The length of rgb_pins must be 6, 12, 18, 24, or 30"
 msgstr "Длина rgb_pins должна быть 6, 12, 18, 24 или 30"
 
-#: shared-module/audiomixer/MixerVoice.c
-msgid "The sample's bits_per_sample does not match the mixer's"
-msgstr "Bits_per_sample сэмпла не соответствует битам микшера"
-
-#: shared-module/audiomixer/MixerVoice.c
-msgid "The sample's channel count does not match the mixer's"
-msgstr "Количество каналов образца не совпадает с количеством каналов микшера"
-
-#: shared-module/audiomixer/MixerVoice.c
-msgid "The sample's sample rate does not match the mixer's"
-msgstr "Частота дискретизации семпла не соответствует частоте микшера"
-
-#: shared-module/audiomixer/MixerVoice.c
-msgid "The sample's signedness does not match the mixer's"
-msgstr "Подпись семпла не совпадает с подписью микшера"
+#: shared-module/audiodelays/Echo.c shared-module/audiofilters/Distortion.c
+#: shared-module/audiofilters/Filter.c shared-module/audiomixer/MixerVoice.c
+msgid "The sample's %q does not match"
+msgstr "%q образца не совпадает"
 
 #: supervisor/shared/safe_mode.c
 msgid "Third-party firmware fatal error."
@@ -2183,6 +2246,10 @@ msgstr "Не удается инициировать синтаксически�
 msgid "Unable to read color palette data"
 msgstr "Не удается прочитать данные цветовой палитры"
 
+#: ports/mimxrt10xx/common-hal/canio/CAN.c
+msgid "Unable to send CAN Message: all Tx message buffers are busy"
+msgstr ""
+
 #: ports/espressif/common-hal/mdns/Server.c
 #: ports/raspberrypi/common-hal/mdns/Server.c
 msgid "Unable to start mDNS query"
@@ -2296,14 +2363,12 @@ msgid "Update failed"
 msgstr "Обновление не удалось"
 
 #: ports/espressif/common-hal/_bleio/Characteristic.c
-#: ports/espressif/common-hal/_bleio/Descriptor.c
 #: ports/nordic/common-hal/_bleio/Characteristic.c
 #: ports/nordic/common-hal/_bleio/Descriptor.c
 msgid "Value length != required fixed length"
 msgstr "Длина значения! = требуемая фиксированная длина"
 
 #: ports/espressif/common-hal/_bleio/Characteristic.c
-#: ports/espressif/common-hal/_bleio/Descriptor.c
 #: ports/nordic/common-hal/_bleio/Characteristic.c
 #: ports/nordic/common-hal/_bleio/Descriptor.c
 msgid "Value length > max_length"
@@ -2370,6 +2435,7 @@ msgstr "Вы нажали обе кнопки при запуске."
 #: ports/espressif/boards/m5stack_core_fire/mpconfigboard.h
 #: ports/espressif/boards/m5stack_stick_c/mpconfigboard.h
 #: ports/espressif/boards/m5stack_stick_c_plus/mpconfigboard.h
+#: ports/espressif/boards/m5stack_stick_c_plus2/mpconfigboard.h
 msgid "You pressed button A at start up."
 msgstr "Вы нажали кнопку A при запуске."
 
@@ -2383,6 +2449,7 @@ msgstr "Вы нажали кнопку BOOT при запуске"
 
 #: ports/espressif/boards/adafruit_feather_esp32c6_4mbflash_nopsram/mpconfigboard.h
 #: ports/espressif/boards/adafruit_itsybitsy_esp32/mpconfigboard.h
+#: ports/espressif/boards/waveshare_esp32_c6_lcd_1_47/mpconfigboard.h
 msgid "You pressed the BOOT button at start up."
 msgstr "При запуске вы нажали кнопку BOOT."
 
@@ -2399,6 +2466,7 @@ msgid "You pressed the SW38 button at start up."
 msgstr "Вы нажали кнопку SW38 при запуске."
 
 #: ports/espressif/boards/hardkernel_odroid_go/mpconfigboard.h
+#: ports/espressif/boards/vidi_x/mpconfigboard.h
 msgid "You pressed the VOLUME button at start up."
 msgstr "Вы нажали кнопку ГРОМКОСТЬ при запуске."
 
@@ -2442,6 +2510,10 @@ msgstr "Требуется байтоподобный объект"
 msgid "addresses is empty"
 msgstr "адреса пусты"
 
+#: ports/espressif/common-hal/audioio/AudioOut.c
+msgid "already playing"
+msgstr ""
+
 #: py/compile.c
 msgid "annotation must be an identifier"
 msgstr "Аннотация должна быть идентификатором"
@@ -2465,6 +2537,10 @@ msgstr "аргумент сортировки должен быть аргуме
 #: extmod/ulab/code/numpy/numerical.c
 msgid "argsort is not implemented for flattened arrays"
 msgstr "сортировка arg не реализована для сглаженных массивов"
+
+#: extmod/ulab/code/numpy/random/random.c
+msgid "argument must be None, an integer or a tuple of integers"
+msgstr "аргумент должен быть None, целым числом или кортежем целых чисел"
 
 #: py/compile.c
 msgid "argument name reused"
@@ -2520,6 +2596,10 @@ msgstr ""
 msgid "attributes not supported"
 msgstr "Атрибуты не поддерживаются"
 
+#: ports/espressif/common-hal/audioio/AudioOut.c
+msgid "audio format not supported"
+msgstr ""
+
 #: extmod/ulab/code/ulab_tools.c
 msgid "axis is out of bounds"
 msgstr "Ось выходит за пределы"
@@ -2556,6 +2636,10 @@ msgstr "Неверный шрифт"
 msgid "binary op %q not implemented"
 msgstr "двоичная операция %q не реализована"
 
+#: ports/espressif/common-hal/audiobusio/PDMIn.c
+msgid "bit_depth must be 8, 16, 24, or 32."
+msgstr "Глубина_бита должна быть равна 8, 16, 24 или 32."
+
 #: shared-module/bitmapfilter/__init__.c
 msgid "bitmap size and depth must match"
 msgstr "Размер и глубина растрового изображения должны совпадать"
@@ -2568,7 +2652,8 @@ msgstr "Размеры растровых изображений должны с
 msgid "bits must be 32 or less"
 msgstr "биты должны быть 32 или менее"
 
-#: shared-bindings/audiomixer/Mixer.c
+#: shared-bindings/audiodelays/Echo.c shared-bindings/audiofilters/Distortion.c
+#: shared-bindings/audiofilters/Filter.c shared-bindings/audiomixer/Mixer.c
 msgid "bits_per_sample must be 8 or 16"
 msgstr "bits_per_sample должно быть 8 или 16"
 
@@ -2650,7 +2735,7 @@ msgstr "Не удается назначить выражение"
 msgid "can't cancel self"
 msgstr "Не могу отменить себя"
 
-#: shared-module/adafruit_pixelbuf/PixelBuf.c
+#: py/obj.c shared-module/adafruit_pixelbuf/PixelBuf.c
 msgid "can't convert %q to %q"
 msgstr "Не удается преобразовать %q в %q"
 
@@ -2704,6 +2789,10 @@ msgstr "Не удается удалить выражение"
 #: py/emitnative.c
 msgid "can't do binary op between '%q' and '%q'"
 msgstr "Не могу выполнить двоичную операцию между '%q' и '%q'"
+
+#: py/emitnative.c
+msgid "can't do unary op of '%q'"
+msgstr "Невозможно выполнить унарную операцию '%q'"
 
 #: py/emitnative.c
 msgid "can't implicitly convert '%q' to 'bool'"
@@ -2770,10 +2859,6 @@ msgstr "не может переключаться с ручного поля н
 #: py/objcomplex.c
 msgid "can't truncate-divide a complex number"
 msgstr "нельзя усекать и делить комплексное число"
-
-#: extmod/moductypes.c
-msgid "can't unambiguously get sizeof scalar"
-msgstr "Невозможно однозначно получить sizeof скаляра"
 
 #: extmod/modasyncio.c
 msgid "can't wait"
@@ -3169,7 +3254,8 @@ msgstr "В функции отсутствует обязательный арг
 msgid "function missing required positional argument #%d"
 msgstr "В функции отсутствует обязательный позиционный аргумент #%d"
 
-#: py/argcheck.c py/bc.c py/objnamedtuple.c shared-bindings/time/__init__.c
+#: py/argcheck.c py/bc.c py/objnamedtuple.c shared-bindings/_eve/__init__.c
+#: shared-bindings/time/__init__.c
 #, c-format
 msgid "function takes %d positional arguments but %d were given"
 msgstr "функция принимает %d позиционные аргументы, но %d были заданы"
@@ -3252,10 +3338,6 @@ msgstr "индексы должны быть целыми числами"
 msgid "indices must be integers, slices, or Boolean lists"
 msgstr "индексы должны быть целыми числами, срезами или логическими списками"
 
-#: ports/espressif/common-hal/busio/I2C.c
-msgid "init I2C"
-msgstr "инициализация I2C"
-
 #: extmod/ulab/code/scipy/optimize/optimize.c
 msgid "initial values must be iterable"
 msgstr "Начальные значения должны быть итерируемыми"
@@ -3321,7 +3403,7 @@ msgstr "Ввод должен быть 1D массивом ndarray"
 msgid "input must be a dense ndarray"
 msgstr "Ввод должен быть плотным массивом ndarray"
 
-#: extmod/ulab/code/user/user.c
+#: extmod/ulab/code/user/user.c shared-bindings/_eve/__init__.c
 msgid "input must be an ndarray"
 msgstr "Ввод должен быть массивом ndarray"
 
@@ -3454,10 +3536,6 @@ msgstr "Метка '%q' не определена"
 msgid "label redefined"
 msgstr "Метка переопределена"
 
-#: shared-bindings/audiomixer/MixerVoice.c
-msgid "level must be between 0 and 1"
-msgstr "уровень должен быть между 0 и 1"
-
 #: py/objarray.c
 msgid "lhs and rhs should be compatible"
 msgstr "lhs и rhs должны быть совместимыми"
@@ -3513,7 +3591,7 @@ msgstr "матрица не является положительно опред
 msgid "max_length must be 0-%d when fixed_length is %s"
 msgstr "максимальная_длина должна быть 0-%d когда фиксированная длина %s"
 
-#: extmod/ulab/code/ndarray.c
+#: extmod/ulab/code/ndarray.c extmod/ulab/code/numpy/random/random.c
 msgid "maximum number of dimensions is "
 msgstr "Максимальное количество измерений составляет "
 
@@ -3598,6 +3676,10 @@ msgstr "Имя '%q' не определено"
 msgid "name not defined"
 msgstr "Имя не определено"
 
+#: py/qstr.c
+msgid "name too long"
+msgstr "слишком длинное имя"
+
 #: py/persistentcode.c
 msgid "native code in .mpy unsupported"
 msgstr "Нативный код в .mpy не поддерживается"
@@ -3651,7 +3733,7 @@ msgstr "Привязка для нелокальных не найдена"
 msgid "no default packer"
 msgstr "Нет упаковщика по умолчанию"
 
-#: extmod/modrandom.c
+#: extmod/modrandom.c extmod/ulab/code/numpy/random/random.c
 msgid "no default seed"
 msgstr "Нет начального числа по умолчанию"
 
@@ -3862,6 +3944,10 @@ msgstr "ord() ожидал символ, но строка длины %d най�
 msgid "out array is too small"
 msgstr "Наш массив слишком мал"
 
+#: extmod/ulab/code/numpy/random/random.c
+msgid "out has wrong type"
+msgstr "out имеет неправильный тип"
+
 #: extmod/ulab/code/numpy/vector.c
 msgid "out keyword is not supported for complex dtype"
 msgstr "Ключевое слово out не поддерживается для сложного типа d"
@@ -3885,6 +3971,14 @@ msgstr "Выход должен быть поплавкового типа"
 #: shared-bindings/bitmaptools/__init__.c
 msgid "out of range of target"
 msgstr "вне досягаемости цели"
+
+#: extmod/ulab/code/numpy/random/random.c
+msgid "output array has wrong type"
+msgstr "Выходной массив имеет неправильный тип"
+
+#: extmod/ulab/code/numpy/random/random.c
+msgid "output array must be contiguous"
+msgstr "выходной массив должен быть непрерывным"
 
 #: py/objint_mpz.c
 msgid "overflow converting long int to machine word"
@@ -4012,6 +4106,10 @@ msgstr "Компиляция скриптов не поддерживается"
 msgid "set unsupported"
 msgstr "Установить не поддерживается"
 
+#: extmod/ulab/code/numpy/random/random.c
+msgid "shape must be None, and integer or a tuple of integers"
+msgstr "форма должна быть None, целым числом или кортежем целых чисел"
+
 #: extmod/ulab/code/ndarray.c
 msgid "shape must be integer or tuple of integers"
 msgstr "фигура должна быть целым числом или кортежом целых чисел"
@@ -4031,6 +4129,10 @@ msgstr "Знак не разрешен со спецификатором цел�
 #: extmod/ulab/code/ulab_tools.c
 msgid "size is defined for ndarrays only"
 msgstr "размер определен только для массива ndarrays"
+
+#: extmod/ulab/code/numpy/random/random.c
+msgid "size must match out.shape when used together"
+msgstr "Размер должен соответствовать out.shape при совместном использовании"
 
 #: py/nativeglue.c
 msgid "slice unsupported"
@@ -4105,18 +4207,6 @@ msgstr "индекс строки выходит за пределы диапа�
 msgid "string indices must be integers, not %s"
 msgstr "Индексы строк должны быть целыми числами, а не %s"
 
-#: extmod/moductypes.c
-msgid "struct: can't index"
-msgstr "структура: невозможно индексировать"
-
-#: extmod/moductypes.c
-msgid "struct: index out of range"
-msgstr "структура: индекс вне диапазона"
-
-#: extmod/moductypes.c
-msgid "struct: no fields"
-msgstr "Структура: Нет полей"
-
 #: py/objarray.c py/objstr.c
 msgid "substring not found"
 msgstr "Подстрока не найдена"
@@ -4128,10 +4218,6 @@ msgstr "super() не может найти себя"
 #: extmod/modjson.c
 msgid "syntax error in JSON"
 msgstr "синтаксис ошибка в JSON"
-
-#: extmod/moductypes.c
-msgid "syntax error in uctypes descriptor"
-msgstr "Синтаксическая ошибка в дескрипторе UCTYPES"
 
 #: extmod/modtime.c
 msgid "ticks interval overflow"
@@ -4242,10 +4328,6 @@ msgstr "тип занимает 1 или 3 аргумента"
 #: py/objint_longlong.c
 msgid "ulonglong too large"
 msgstr "голова длинная слишком большая"
-
-#: py/emitnative.c
-msgid "unary op %q not implemented"
-msgstr "унарная операция %q не реализована"
 
 #: py/parse.c
 msgid "unexpected indent"
@@ -4364,8 +4446,8 @@ msgid ""
 "weights must be a sequence with an odd square number of elements (usually 9 "
 "or 25)"
 msgstr ""
-"Весом должна быть последовательность с нечетным квадратным числом элементов ("
-"обычно 9 или 25)"
+"Весом должна быть последовательность с нечетным квадратным числом элементов "
+"(обычно 9 или 25)"
 
 #: shared-bindings/bitmapfilter/__init__.c
 msgid "weights must be an object of type %q, %q, %q, or %q, not %q "
@@ -4441,6 +4523,60 @@ msgstr "zi должно быть типа float"
 #: extmod/ulab/code/scipy/signal/signal.c
 msgid "zi must be of shape (n_section, 2)"
 msgstr "zi должен иметь форму (n_section, 2)"
+
+#~ msgid "level must be between 0 and 1"
+#~ msgstr "уровень должен быть между 0 и 1"
+
+#~ msgid "init I2C"
+#~ msgstr "инициализация I2C"
+
+#~ msgid "The sample's bits_per_sample does not match the mixer's"
+#~ msgstr "Bits_per_sample сэмпла не соответствует битам микшера"
+
+#~ msgid "The sample's channel count does not match the mixer's"
+#~ msgstr ""
+#~ "Количество каналов образца не совпадает с количеством каналов микшера"
+
+#~ msgid "The sample's sample rate does not match the mixer's"
+#~ msgstr "Частота дискретизации семпла не соответствует частоте микшера"
+
+#~ msgid "The sample's signedness does not match the mixer's"
+#~ msgstr "Подпись семпла не совпадает с подписью микшера"
+
+#~ msgid "Buffer length must be a multiple of 512"
+#~ msgstr "Размер буфера должен быть кратен 512"
+
+#~ msgid "Buffer must be a multiple of 512 bytes"
+#~ msgstr "Буфер должен быть кратен 512"
+
+#, c-format
+#~ msgid "Number of data_pins must be 8 or 16, not %d"
+#~ msgstr "Количество data_pins должно быть 8 или 16, а не %d"
+
+#, c-format
+#~ msgid "SDIO Init Error %d"
+#~ msgstr "Ошибка инициализации SDIO %d"
+
+#~ msgid "can't unambiguously get sizeof scalar"
+#~ msgstr "Невозможно однозначно получить sizeof скаляра"
+
+#~ msgid "struct: can't index"
+#~ msgstr "структура: невозможно индексировать"
+
+#~ msgid "struct: index out of range"
+#~ msgstr "структура: индекс вне диапазона"
+
+#~ msgid "struct: no fields"
+#~ msgstr "Структура: Нет полей"
+
+#~ msgid "syntax error in uctypes descriptor"
+#~ msgstr "Синтаксическая ошибка в дескрипторе UCTYPES"
+
+#~ msgid "unary op %q not implemented"
+#~ msgstr "унарная операция %q не реализована"
+
+#~ msgid "Name too long"
+#~ msgstr "Имя слишком длинное"
 
 #~ msgid "Update Failed"
 #~ msgstr "Ошибка обновления"

@@ -260,8 +260,7 @@ socketpool_socket_obj_t *common_hal_socketpool_socket(socketpool_socketpool_obj_
             mp_raise_NotImplementedError(MP_ERROR_TEXT("Unsupported socket type"));
     }
 
-    socketpool_socket_obj_t *sock = m_new_obj_with_finaliser(socketpool_socket_obj_t);
-    sock->base.type = &socketpool_socket_type;
+    socketpool_socket_obj_t *sock = mp_obj_malloc_with_finaliser(socketpool_socket_obj_t, &socketpool_socket_type);
 
     if (!_socketpool_socket(self, family, type, proto, sock)) {
         mp_raise_RuntimeError(MP_ERROR_TEXT("Out of sockets"));
@@ -326,7 +325,9 @@ int socketpool_socket_accept(socketpool_socket_obj_t *self, mp_obj_t *peer_out, 
 }
 
 socketpool_socket_obj_t *common_hal_socketpool_socket_accept(socketpool_socket_obj_t *self, mp_obj_t *peer_out) {
-    socketpool_socket_obj_t *sock = m_new_obj_with_finaliser(socketpool_socket_obj_t);
+    // Set the socket type only after the socketpool_socket_accept succeeds, so that the
+    // finaliser is not called on a bad socket.
+    socketpool_socket_obj_t *sock = mp_obj_malloc_with_finaliser(socketpool_socket_obj_t, NULL);
     int newsoc = socketpool_socket_accept(self, peer_out, NULL);
 
     if (newsoc > 0) {

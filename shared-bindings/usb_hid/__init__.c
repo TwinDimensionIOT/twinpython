@@ -14,6 +14,7 @@
 //| """USB Human Interface Device
 //|
 //| The `usb_hid` module allows you to output data as a HID device."""
+//|
 
 //| devices: Tuple[Device, ...]
 //| """Tuple of all active HID device interfaces.
@@ -26,6 +27,7 @@
 //| The request for a boot device overrides any other HID devices.
 //| """
 //|
+//|
 
 //| def disable() -> None:
 //|     """Do not present any USB HID devices to the host computer.
@@ -35,6 +37,7 @@
 //|     it is disabled by default. You must turn off another USB device such
 //|     as `usb_cdc` or `storage` to free up endpoints for use by `usb_hid`.
 //|     """
+//|
 //|
 static mp_obj_t usb_hid_disable(void) {
     if (!common_hal_usb_hid_disable()) {
@@ -65,15 +68,16 @@ MP_DEFINE_CONST_FUN_OBJ_0(usb_hid_disable_obj, usb_hid_disable);
 //|
 //|     **Boot Devices**
 //|
-//|     Boot devices implement a fixed, predefined report descriptor, defined in
-//|     https://www.usb.org/sites/default/files/hid1_12.pdf, Appendix B. A USB host
-//|     can request to use the boot device if the USB device says it is available.
-//|     Usually only a BIOS or other kind of limited-functionality
-//|     host needs boot keyboard support.
+//|     A USB HID boot device implements a fixed, predefined report descriptor,
+//|     as defined in https://www.usb.org/sites/default/files/hid1_12.pdf, Appendix B.
+//|     Currently the only HID boot devices defined in the USB specification are a keyboard and a mouse.
+//|     A USB host can ask a USB device to use a boot device if the USB device says it is available.
+//|     Usually only a limited-functionality host like a BIOS or other boot-time software
+//|     needs boot device support.
 //|
 //|     For example, to make a boot keyboard available, you can use this code::
 //|
-//|       usb_hid.enable((Device.KEYBOARD), boot_device=1)  # 1 for a keyboard
+//|       usb_hid.enable((Device.KEYBOARD,), boot_device=1)  # 1 for a keyboard, 2 for a mouse
 //|
 //|     If the host requests the boot keyboard, the report descriptor provided by `Device.KEYBOARD`
 //|     will be ignored, and the predefined report descriptor will be used.
@@ -87,6 +91,7 @@ MP_DEFINE_CONST_FUN_OBJ_0(usb_hid_disable_obj, usb_hid_disable);
 //|     will enter safe mode to report this error.
 //|     """
 //|     ...
+//|
 //|
 static mp_obj_t usb_hid_enable(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     enum { ARG_devices, ARG_boot_device };
@@ -130,6 +135,7 @@ MP_DEFINE_CONST_FUN_OBJ_KW(usb_hid_enable_obj, 1, usb_hid_enable);
 //|     :rtype int:
 //|     """
 //|
+//|
 static mp_obj_t usb_hid_get_boot_device(void) {
     return MP_OBJ_NEW_SMALL_INT(common_hal_usb_hid_get_boot_device());
 }
@@ -146,6 +152,7 @@ MP_DEFINE_CONST_FUN_OBJ_0(usb_hid_get_boot_device_obj, usb_hid_get_boot_device);
 //|     Not available on boards without native USB support.
 //|     """
 //|     ...
+//|
 //|
 static mp_obj_t usb_hid_set_interface_name(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     static const mp_arg_t allowed_args[] = {

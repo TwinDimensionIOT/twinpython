@@ -227,6 +227,7 @@ void websocket_background(void) {
     while (ringbuf_num_empty(&_incoming_ringbuf) > 0 &&
            _read_next_payload_byte(&c)) {
         if (c == mp_interrupt_char) {
+            ringbuf_clear(&_incoming_ringbuf);
             mp_sched_keyboard_interrupt();
             continue;
         }

@@ -339,6 +339,10 @@ void supervisor_stop_bluetooth(void) {
 
     ble_started = false;
 
+    #if CIRCUITPY_BLE_FILE_SERVICE
+    supervisor_stop_bluetooth_file_transfer();
+    #endif
+
     #if CIRCUITPY_SERIAL_BLE
     supervisor_stop_bluetooth_serial();
     #endif

@@ -131,11 +131,20 @@ endif
 ifeq ($(CIRCUITPY_AUDIOCORE),1)
 SRC_PATTERNS += audiocore/%
 endif
+ifeq ($(CIRCUITPY_AUDIODELAYS),1)
+SRC_PATTERNS += audiodelays/%
+endif
+ifeq ($(CIRCUITPY_AUDIOFILTERS),1)
+SRC_PATTERNS += audiofilters/%
+endif
 ifeq ($(CIRCUITPY_AUDIOMIXER),1)
 SRC_PATTERNS += audiomixer/%
 endif
 ifeq ($(CIRCUITPY_AUDIOMP3),1)
 SRC_PATTERNS += audiomp3/%
+endif
+ifeq ($(CIRCUITPY_AURORA_EPAPER),1)
+SRC_PATTERNS += aurora_epaper/%
 endif
 ifeq ($(CIRCUITPY_BITBANGIO),1)
 SRC_PATTERNS += bitbangio/%
@@ -360,6 +369,9 @@ endif
 ifeq ($(CIRCUITPY_SOCKETPOOL),1)
 SRC_PATTERNS += socketpool/%
 endif
+ifeq ($(CIRCUITPY_SPITARGET),1)
+SRC_PATTERNS += spitarget/%
+endif
 ifeq ($(CIRCUITPY_SSL),1)
 SRC_PATTERNS += ssl/%
 endif
@@ -530,6 +542,8 @@ SRC_COMMON_HAL_ALL = \
 	socketpool/__init__.c \
 	socketpool/SocketPool.c \
 	socketpool/Socket.c \
+	spitarget/SPITarget.c \
+	spitarget/__init__.c \
 	usb_host/__init__.c \
 	usb_host/Port.c \
 	watchdog/WatchDogMode.c \
@@ -614,6 +628,11 @@ SRC_SHARED_MODULE_ALL = \
 	audiocore/RawSample.c \
 	audiocore/WaveFile.c \
 	audiocore/__init__.c \
+	audiodelays/Echo.c \
+	audiodelays/__init__.c \
+	audiofilters/Distortion.c \
+	audiofilters/Filter.c \
+	audiofilters/__init__.c \
 	audioio/__init__.c \
 	audiomixer/Mixer.c \
 	audiomixer/MixerVoice.c \
@@ -621,6 +640,8 @@ SRC_SHARED_MODULE_ALL = \
 	audiomp3/MP3Decoder.c \
 	audiomp3/__init__.c \
 	audiopwmio/__init__.c \
+	aurora_epaper/aurora_framebuffer.c \
+	aurora_epaper/__init__.c \
 	bitbangio/I2C.c \
 	bitbangio/SPI.c \
 	bitbangio/__init__.c \
@@ -702,6 +723,7 @@ SRC_SHARED_MODULE_ALL = \
 	supervisor/__init__.c \
 	supervisor/StatusBar.c \
 	synthio/Biquad.c \
+	synthio/BlockBiquad.c \
 	synthio/LFO.c \
 	synthio/Math.c \
 	synthio/MidiTrack.c \

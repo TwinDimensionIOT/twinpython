@@ -509,7 +509,7 @@ class Pyboard:
         def repr_consumer(b):
             buf.extend(b.replace(b"\x04", b""))
 
-        cmd = "import os\nfor f in os.ilistdir(%s):\n" " print(repr(f), end=',')" % (
+        cmd = "import os\nfor f in os.ilistdir(%s):\n print(repr(f), end=',')" % (
             ("'%s'" % src) if src else ""
         )
         try:
@@ -527,7 +527,7 @@ class Pyboard:
     def fs_stat(self, src):
         try:
             self.exec_("import os")
-            return os.stat_result(self.eval("os.stat(%s)" % (("'%s'" % src)), parse=True))
+            return os.stat_result(self.eval("os.stat(%s)" % ("'%s'" % src), parse=True))
         except PyboardError as e:
             raise e.convert(src)
 

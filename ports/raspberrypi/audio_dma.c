@@ -16,6 +16,8 @@
 #include "py/runtime.h"
 
 #include "src/rp2_common/hardware_irq/include/hardware/irq.h"
+#include "hardware/regs/intctrl.h" // For isr_ macro.
+
 
 #if CIRCUITPY_AUDIOCORE
 
@@ -116,6 +118,7 @@ static size_t audio_dma_convert_samples(audio_dma_t *dma, uint8_t *input, uint32
 
 // buffer_idx is 0 or 1.
 static void audio_dma_load_next_block(audio_dma_t *dma, size_t buffer_idx) {
+    assert(dma->channel[buffer_idx] < NUM_DMA_CHANNELS);
     size_t dma_channel = dma->channel[buffer_idx];
 
     audioio_get_buffer_result_t get_buffer_result;
@@ -126,6 +129,7 @@ static void audio_dma_load_next_block(audio_dma_t *dma, size_t buffer_idx) {
 
     if (get_buffer_result == GET_BUFFER_ERROR) {
         audio_dma_stop(dma);
+        dma->dma_result = AUDIO_DMA_SOURCE_ERROR;
         return;
     }
 
@@ -155,10 +159,10 @@ static void audio_dma_load_next_block(audio_dma_t *dma, size_t buffer_idx) {
                 !dma_channel_is_busy(dma->channel[1])) {
                 // No data has been read, and both DMA channels have now finished, so it's safe to stop.
                 audio_dma_stop(dma);
-                dma->playing_in_progress = false;
             }
         }
     }
+    dma->dma_result = AUDIO_DMA_OK;
 }
 
 // Playback should be shutdown before calling this.
@@ -199,7 +203,7 @@ audio_dma_result audio_dma_setup_playback(
     dma->output_signed = output_signed;
     dma->sample_spacing = 1;
     dma->output_resolution = output_resolution;
-    dma->sample_resolution = audiosample_bits_per_sample(sample);
+    dma->sample_resolution = audiosample_get_bits_per_sample(sample);
     dma->output_register_address = output_register_address;
     dma->swap_channel = swap_channel;
 
@@ -223,15 +227,27 @@ audio_dma_result audio_dma_setup_playback(
         max_buffer_length /= dma->sample_spacing;
     }
 
-    dma->buffer[0] = (uint8_t *)m_realloc(dma->buffer[0], max_buffer_length);
+    dma->buffer[0] = (uint8_t *)m_realloc(dma->buffer[0],
+        #if MICROPY_MALLOC_USES_ALLOCATED_SIZE
+        dma->buffer_length[0], // Old size
+        #endif
+        max_buffer_length);
+
     dma->buffer_length[0] = max_buffer_length;
+
     if (dma->buffer[0] == NULL) {
         return AUDIO_DMA_MEMORY_ERROR;
     }
 
     if (!single_buffer) {
-        dma->buffer[1] = (uint8_t *)m_realloc(dma->buffer[1], max_buffer_length);
+        dma->buffer[1] = (uint8_t *)m_realloc(dma->buffer[1],
+            #if MICROPY_MALLOC_USES_ALLOCATED_SIZE
+            dma->buffer_length[1], // Old size
+            #endif
+            max_buffer_length);
+
         dma->buffer_length[1] = max_buffer_length;
+
         if (dma->buffer[1] == NULL) {
             return AUDIO_DMA_MEMORY_ERROR;
         }
@@ -246,7 +262,7 @@ audio_dma_result audio_dma_setup_playback(
         dma->output_size = 1;
     }
     // Transfer both channels at once.
-    if (!single_channel_output && audiosample_channel_count(sample) == 2) {
+    if (!single_channel_output && audiosample_get_channel_count(sample) == 2) {
         dma->output_size *= 2;
     }
     enum dma_channel_transfer_size dma_size = DMA_SIZE_8;
@@ -277,8 +293,14 @@ audio_dma_result audio_dma_setup_playback(
 
     // Load the first two blocks up front.
     audio_dma_load_next_block(dma, 0);
+    if (dma->dma_result != AUDIO_DMA_OK) {
+        return dma->dma_result;
+    }
     if (!single_buffer) {
         audio_dma_load_next_block(dma, 1);
+        if (dma->dma_result != AUDIO_DMA_OK) {
+            return dma->dma_result;
+        }
     }
 
     // Special case the DMA for a single buffer. It's commonly used for a single wave length of sound
@@ -409,16 +431,31 @@ void audio_dma_init(audio_dma_t *dma) {
     dma->buffer[0] = NULL;
     dma->buffer[1] = NULL;
 
+    dma->buffer_length[0] = 0;
+    dma->buffer_length[1] = 0;
+
     dma->channel[0] = NUM_DMA_CHANNELS;
     dma->channel[1] = NUM_DMA_CHANNELS;
 }
 
 void audio_dma_deinit(audio_dma_t *dma) {
+    #if MICROPY_MALLOC_USES_ALLOCATED_SIZE
+    m_free(dma->buffer[0], dma->buffer_length[0]);
+    #else
     m_free(dma->buffer[0]);
-    dma->buffer[0] = NULL;
+    #endif
 
+    dma->buffer[0] = NULL;
+    dma->buffer_length[0] = 0;
+
+    #if MICROPY_MALLOC_USES_ALLOCATED_SIZE
+    m_free(dma->buffer[1], dma->buffer_length[1]);
+    #else
     m_free(dma->buffer[1]);
+    #endif
+
     dma->buffer[1] = NULL;
+    dma->buffer_length[1] = 0;
 }
 
 bool audio_dma_get_playing(audio_dma_t *dma) {
@@ -459,10 +496,10 @@ static void dma_callback_fun(void *arg) {
     }
 }
 
-void isr_dma_0(void) {
+void __not_in_flash_func(isr_dma_0)(void) {
     for (size_t i = 0; i < NUM_DMA_CHANNELS; i++) {
         uint32_t mask = 1 << i;
-        if ((dma_hw->intr & mask) == 0) {
+        if ((dma_hw->ints0 & mask) == 0) {
             continue;
         }
         // acknowledge interrupt early. Doing so late means that you could lose an
@@ -476,9 +513,13 @@ void isr_dma_0(void) {
             dma->channels_to_load_mask |= mask;
             background_callback_add(&dma->callback, dma_callback_fun, (void *)dma);
         }
-        if (MP_STATE_PORT(background_pio)[i] != NULL) {
-            rp2pio_statemachine_obj_t *pio = MP_STATE_PORT(background_pio)[i];
-            rp2pio_statemachine_dma_complete(pio, i);
+        if (MP_STATE_PORT(background_pio_read)[i] != NULL) {
+            rp2pio_statemachine_obj_t *pio = MP_STATE_PORT(background_pio_read)[i];
+            rp2pio_statemachine_dma_complete_read(pio, i);
+        }
+        if (MP_STATE_PORT(background_pio_write)[i] != NULL) {
+            rp2pio_statemachine_obj_t *pio = MP_STATE_PORT(background_pio_write)[i];
+            rp2pio_statemachine_dma_complete_write(pio, i);
         }
     }
 }

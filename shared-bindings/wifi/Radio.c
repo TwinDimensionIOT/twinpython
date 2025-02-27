@@ -73,6 +73,7 @@ static void validate_hex_password(const uint8_t *buf, size_t len) {
 //|         """You cannot create an instance of `wifi.Radio`.
 //|         Use `wifi.radio` to access the sole instance available."""
 //|         ...
+//|
 
 //|     enabled: bool
 //|     """``True`` when the wifi radio is enabled.
@@ -186,12 +187,41 @@ MP_PROPERTY_GETSET(wifi_radio_tx_power_obj,
     (mp_obj_t)&wifi_radio_get_tx_power_obj,
     (mp_obj_t)&wifi_radio_set_tx_power_obj);
 
+//|     listen_interval: int
+//|     """Wifi power save listen interval, in DTIM periods, or 100ms intervals if TWT is supported."""
+static mp_obj_t wifi_radio_get_listen_interval(mp_obj_t self_in) {
+    #if CIRCUITPY_WIFI_RADIO_SETTABLE_LISTEN_INTERVAL
+    wifi_radio_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    return mp_obj_new_int(common_hal_wifi_radio_get_listen_interval(self));
+    #else
+    return mp_obj_new_int(0);
+    #endif
+}
+MP_DEFINE_CONST_FUN_OBJ_1(wifi_radio_get_listen_interval_obj, wifi_radio_get_listen_interval);
+
+static mp_obj_t wifi_radio_set_listen_interval(mp_obj_t self_in, mp_obj_t listen_interval_in) {
+    #if CIRCUITPY_WIFI_RADIO_SETTABLE_LISTEN_INTERVAL
+    mp_int_t listen_interval = mp_obj_get_int(listen_interval_in);
+    wifi_radio_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    common_hal_wifi_radio_set_listen_interval(self, listen_interval);
+    #else
+    mp_raise_NotImplementedError(NULL);
+    #endif
+    return mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_2(wifi_radio_set_listen_interval_obj, wifi_radio_set_listen_interval);
+
+MP_PROPERTY_GETSET(wifi_radio_listen_interval_obj,
+    (mp_obj_t)&wifi_radio_get_listen_interval_obj,
+    (mp_obj_t)&wifi_radio_set_listen_interval_obj);
+
 //|     mac_address_ap: ReadableBuffer
 //|     """MAC address for the AP. When the address is altered after interface is started
 //|        the changes would only be reflected once the interface restarts.
 //|
 //|     **Limitations:** Not settable on RP2040 CYW43 boards, such as Pi Pico W.
 //|     """
+//|
 static mp_obj_t wifi_radio_get_mac_address_ap(mp_obj_t self_in) {
     wifi_radio_obj_t *self = MP_OBJ_TO_PTR(self_in);
     return MP_OBJ_FROM_PTR(common_hal_wifi_radio_get_mac_address_ap(self));
@@ -234,6 +264,7 @@ MP_PROPERTY_GETTER(wifi_radio_mac_address_ap_obj,
 //|             In the raspberrypi port (RP2040 CYW43), ``start_channel`` and ``stop_channel`` are ignored.
 //|         """
 //|         ...
+//|
 static mp_obj_t wifi_radio_start_scanning_networks(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     enum { ARG_start_channel, ARG_stop_channel };
     static const mp_arg_t allowed_args[] = {
@@ -263,6 +294,7 @@ static MP_DEFINE_CONST_FUN_OBJ_KW(wifi_radio_start_scanning_networks_obj, 1, wif
 //|     def stop_scanning_networks(self) -> None:
 //|         """Stop scanning for Wifi networks and free any resources used to do it."""
 //|         ...
+//|
 static mp_obj_t wifi_radio_stop_scanning_networks(mp_obj_t self_in) {
     wifi_radio_obj_t *self = MP_OBJ_TO_PTR(self_in);
 
@@ -275,6 +307,7 @@ static MP_DEFINE_CONST_FUN_OBJ_1(wifi_radio_stop_scanning_networks_obj, wifi_rad
 //|     def start_station(self) -> None:
 //|         """Starts a Station."""
 //|         ...
+//|
 static mp_obj_t wifi_radio_start_station(mp_obj_t self) {
     common_hal_wifi_radio_start_station(self);
     return mp_const_none;
@@ -284,6 +317,7 @@ MP_DEFINE_CONST_FUN_OBJ_1(wifi_radio_start_station_obj, wifi_radio_start_station
 //|     def stop_station(self) -> None:
 //|         """Stops the Station."""
 //|         ...
+//|
 static mp_obj_t wifi_radio_stop_station(mp_obj_t self) {
     common_hal_wifi_radio_stop_station(self);
     return mp_const_none;
@@ -327,6 +361,7 @@ MP_DEFINE_CONST_FUN_OBJ_1(wifi_radio_stop_station_obj, wifi_radio_stop_station);
 //|             In the raspberrypi port (RP2040 CYW43), ``max_connections`` is ignored.
 //|         """
 //|         ...
+//|
 static mp_obj_t wifi_radio_start_ap(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     enum { ARG_ssid, ARG_password, ARG_channel, ARG_authmode, ARG_max_connections };
     static const mp_arg_t allowed_args[] = {
@@ -384,6 +419,7 @@ static MP_DEFINE_CONST_FUN_OBJ_KW(wifi_radio_start_ap_obj, 1, wifi_radio_start_a
 //|     def stop_ap(self) -> None:
 //|         """Stops the access point."""
 //|         ...
+//|
 static mp_obj_t wifi_radio_stop_ap(mp_obj_t self) {
     common_hal_wifi_radio_stop_ap(self);
     return mp_const_none;
@@ -392,6 +428,7 @@ MP_DEFINE_CONST_FUN_OBJ_1(wifi_radio_stop_ap_obj, wifi_radio_stop_ap);
 
 //|     ap_active: bool
 //|     """True if running as an access point. (read-only)"""
+//|
 static mp_obj_t wifi_radio_get_ap_active(mp_obj_t self) {
     return mp_obj_new_bool(common_hal_wifi_radio_get_ap_active(self));
 }
@@ -425,6 +462,7 @@ MP_PROPERTY_GETTER(wifi_radio_ap_active_obj,
 //|         If ``bssid`` is given and not None, the scan will start at the first channel or the one given and
 //|         connect to the AP with the given ``bssid`` and ``ssid``."""
 //|         ...
+//|
 static mp_obj_t wifi_radio_connect(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     enum { ARG_ssid, ARG_password, ARG_channel, ARG_bssid, ARG_timeout };
     static const mp_arg_t allowed_args[] = {
@@ -528,6 +566,7 @@ MP_PROPERTY_GETTER(wifi_radio_ipv4_subnet_obj,
 
 //|     ipv4_subnet_ap: Optional[ipaddress.IPv4Address]
 //|     """IP v4 Address of the access point subnet, when enabled. None otherwise. (read-only)"""
+//|
 static mp_obj_t wifi_radio_get_ipv4_subnet_ap(mp_obj_t self) {
     return common_hal_wifi_radio_get_ipv4_subnet_ap(self);
 }
@@ -552,6 +591,7 @@ MP_PROPERTY_GETTER(wifi_radio_ipv4_subnet_ap_obj,
 //|             In the raspberrypi port (RP2040 CYW43), the access point needs to be started before the IP v4 address can be set.
 //|         """
 //|         ...
+//|
 static mp_obj_t wifi_radio_set_ipv4_address(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     enum { ARG_ipv4, ARG_netmask, ARG_gateway, ARG_ipv4_dns };
     static const mp_arg_t allowed_args[] = {
@@ -579,6 +619,7 @@ static MP_DEFINE_CONST_FUN_OBJ_KW(wifi_radio_set_ipv4_address_obj, 1, wifi_radio
 //|     ) -> None:
 //|         """Sets the IP v4 address of the access point. Must include the netmask and gateway."""
 //|         ...
+//|
 static mp_obj_t wifi_radio_set_ipv4_address_ap(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     enum { ARG_ipv4, ARG_netmask, ARG_gateway };
     static const mp_arg_t allowed_args[] = {
@@ -684,6 +725,7 @@ MP_DEFINE_CONST_FUN_OBJ_1(wifi_radio_get_ap_info_obj, wifi_radio_get_ap_info);
 //|      mac: bytearray (read-only)
 //|      rssi: int (read-only, None on Raspberry Pi Pico W)
 //|      ipv4_address: ipv4_address  (read-only, None if station connected but no address assigned yet or self-assigned address)"""
+//|
 static mp_obj_t wifi_radio_get_stations_ap(mp_obj_t self) {
     return common_hal_wifi_radio_get_stations_ap(self);
 }
@@ -701,11 +743,12 @@ MP_PROPERTY_GETTER(wifi_radio_stations_ap_obj,
 //|         then the corresponding DHCP client is stopped if it was active.
 //|         """
 //|         ...
+//|
 static mp_obj_t wifi_radio_start_dhcp_client(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     enum { ARG_ipv4, ARG_ipv6 };
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_ipv4, MP_ARG_KW_ONLY | MP_ARG_BOOL, { .u_bool = MP_ROM_TRUE } },
-        { MP_QSTR_ipv6, MP_ARG_KW_ONLY | MP_ARG_BOOL, { .u_bool = MP_ROM_FALSE } },
+        { MP_QSTR_ipv4, MP_ARG_KW_ONLY | MP_ARG_BOOL, { .u_bool = true } },
+        { MP_QSTR_ipv6, MP_ARG_KW_ONLY | MP_ARG_BOOL, { .u_bool = false } },
     };
 
     wifi_radio_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
@@ -720,6 +763,7 @@ static MP_DEFINE_CONST_FUN_OBJ_KW(wifi_radio_start_dhcp_client_obj, 1, wifi_radi
 //|     def stop_dhcp(self) -> None:
 //|         """Stops the station DHCP client. Needed to assign a static IP address."""
 //|         ...
+//|
 static mp_obj_t wifi_radio_stop_dhcp_client(mp_obj_t self) {
     common_hal_wifi_radio_stop_dhcp_client(self);
     return mp_const_none;
@@ -729,6 +773,7 @@ MP_DEFINE_CONST_FUN_OBJ_1(wifi_radio_stop_dhcp_client_obj, wifi_radio_stop_dhcp_
 //|     def start_dhcp_ap(self) -> None:
 //|         """Starts the access point DHCP server."""
 //|         ...
+//|
 static mp_obj_t wifi_radio_start_dhcp_server(mp_obj_t self) {
     common_hal_wifi_radio_start_dhcp_server(self);
     return mp_const_none;
@@ -738,6 +783,7 @@ MP_DEFINE_CONST_FUN_OBJ_1(wifi_radio_start_dhcp_server_obj, wifi_radio_start_dhc
 //|     def stop_dhcp_ap(self) -> None:
 //|         """Stops the access point DHCP server. Needed to assign a static IP address."""
 //|         ...
+//|
 static mp_obj_t wifi_radio_stop_dhcp_server(mp_obj_t self) {
     common_hal_wifi_radio_stop_dhcp_server(self);
     return mp_const_none;
@@ -758,6 +804,7 @@ MP_PROPERTY_GETTER(wifi_radio_ap_info_obj,
 //|         will wait two seconds for enough resources to be freed up before proceeding.
 //|         """
 //|         ...
+//|
 //|
 static mp_obj_t wifi_radio_ping(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     enum { ARG_ip, ARG_timeout };

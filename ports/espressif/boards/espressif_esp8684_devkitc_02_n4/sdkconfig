@@ -32,7 +32,6 @@ CONFIG_ESP_CONSOLE_UART_BAUDRATE=115200
 #
 # LWIP
 #
-CONFIG_LWIP_LOCAL_HOSTNAME="espressif-esp8684"
 # end of LWIP
 
 # end of Component config

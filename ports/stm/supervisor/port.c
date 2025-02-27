@@ -14,7 +14,6 @@
 #include "shared-bindings/microcontroller/__init__.h"
 
 #if CIRCUITPY_BUSIO
-#include "common-hal/busio/I2C.h"
 #include "common-hal/busio/SPI.h"
 #include "common-hal/busio/UART.h"
 #endif
@@ -219,7 +218,6 @@ void reset_port(void) {
     #endif
 
     #if CIRCUITPY_BUSIO
-    i2c_reset();
     spi_reset();
     uart_reset();
     #endif
@@ -286,8 +284,9 @@ uint32_t *port_heap_get_bottom(void) {
     return &_ld_heap_start;
 }
 
+// heap memory can be set in SRAM and stack can be set in DTCM
 uint32_t *port_heap_get_top(void) {
-    return port_stack_get_limit();
+    return &_ld_heap_end;
 }
 
 uint32_t *port_stack_get_limit(void) {

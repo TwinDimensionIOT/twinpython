@@ -9,6 +9,8 @@
 #include <string.h>
 
 #include "py/runtime.h"
+#include "shared/runtime/interrupt_char.h"
+
 #include "shared-bindings/_bleio/__init__.h"
 #include "shared-bindings/_bleio/Adapter.h"
 #include "shared-bindings/_bleio/Characteristic.h"
@@ -16,6 +18,7 @@
 #include "shared-bindings/_bleio/Descriptor.h"
 #include "shared-bindings/_bleio/Service.h"
 #include "shared-bindings/_bleio/UUID.h"
+#include "shared-bindings/time/__init__.h"
 #include "supervisor/shared/bluetooth/bluetooth.h"
 
 #include "common-hal/_bleio/__init__.h"
@@ -23,6 +26,8 @@
 
 #include "nvs_flash.h"
 
+static volatile int _completion_status;
+static uint64_t _timeout_start_time;
 
 background_callback_t bleio_background_callback;
 
@@ -98,6 +103,9 @@ void check_nimble_error(int rc, const char *file, size_t line) {
         case BLE_HS_ENOTCONN:
             mp_raise_ConnectionError(MP_ERROR_TEXT("Not connected"));
             return;
+        case BLE_HS_EALREADY:
+            mp_raise_bleio_BluetoothError(MP_ERROR_TEXT("Already in progress"));
+            return;
         default:
             #if CIRCUITPY_VERBOSE_BLE || CIRCUITPY_DEBUG
             if (file) {
@@ -151,4 +159,84 @@ void common_hal_bleio_check_connected(uint16_t conn_handle) {
     if (conn_handle == BLEIO_HANDLE_INVALID) {
         mp_raise_ConnectionError(MP_ERROR_TEXT("Not connected"));
     }
+}
+
+static void _reset_completion_status(void) {
+    _completion_status = 0;
+}
+
+// Wait for a status change, recorded in a callback.
+// Try twice because sometimes we get a BLE_HS_EAGAIN.
+// Maybe we should try more than twice.
+static int _wait_for_completion(uint32_t timeout_msecs) {
+    for (int tries = 1; tries <= 2; tries++) {
+        _timeout_start_time = common_hal_time_monotonic_ms();
+        while ((_completion_status == 0) &&
+               (common_hal_time_monotonic_ms() < _timeout_start_time + timeout_msecs) &&
+               !mp_hal_is_interrupted()) {
+            RUN_BACKGROUND_TASKS;
+        }
+        if (_completion_status != BLE_HS_EAGAIN) {
+            // Quit, because either the status is either zero (OK) or it's an error.
+            break;
+        }
+    }
+    return _completion_status;
+}
+
+typedef struct {
+    uint8_t *buf;
+    uint16_t len;
+} _read_info_t;
+
+static int _read_cb(uint16_t conn_handle,
+    const struct ble_gatt_error *error,
+    struct ble_gatt_attr *attr,
+    void *arg) {
+    _read_info_t *read_info = (_read_info_t *)arg;
+    switch (error->status) {
+        case 0: {
+            int len = MIN(read_info->len, OS_MBUF_PKTLEN(attr->om));
+            os_mbuf_copydata(attr->om, attr->offset, len, read_info->buf);
+            read_info->len = len;
+        }
+            MP_FALLTHROUGH;
+
+        default:
+            #if CIRCUITPY_VERBOSE_BLE
+            // For debugging.
+            mp_printf(&mp_plat_print, "Read status: %d\n", error->status);
+            #endif
+            break;
+    }
+    _completion_status = error->status;
+
+    return 0;
+}
+
+int bleio_gattc_read(uint16_t conn_handle, uint16_t value_handle, uint8_t *buf, size_t len) {
+    _read_info_t read_info = {
+        .buf = buf,
+        .len = len
+    };
+    _reset_completion_status();
+    CHECK_NIMBLE_ERROR(ble_gattc_read(conn_handle, value_handle, _read_cb, &read_info));
+    CHECK_NIMBLE_ERROR(_wait_for_completion(2000));
+    return read_info.len;
+}
+
+
+static int _write_cb(uint16_t conn_handle,
+    const struct ble_gatt_error *error,
+    struct ble_gatt_attr *attr,
+    void *arg) {
+    _completion_status = error->status;
+
+    return 0;
+}
+
+void bleio_gattc_write(uint16_t conn_handle, uint16_t value_handle, uint8_t *buf, size_t len) {
+    _reset_completion_status();
+    CHECK_NIMBLE_ERROR(ble_gattc_write_flat(conn_handle, value_handle, buf, len, _write_cb, NULL));
+    CHECK_NIMBLE_ERROR(_wait_for_completion(2000));
 }

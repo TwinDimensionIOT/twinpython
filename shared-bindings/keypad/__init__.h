@@ -17,5 +17,5 @@ mp_obj_t common_hal_keypad_generic_get_events(void *self);
 
 MP_DECLARE_CONST_FUN_OBJ_1(keypad_generic_reset_obj);
 
-extern const mp_obj_property_t keypad_generic_events_obj;
-extern const mp_obj_property_t keypad_generic_key_count_obj;
+extern const mp_obj_property_getter_t keypad_generic_events_obj;
+extern const mp_obj_property_getter_t keypad_generic_key_count_obj;

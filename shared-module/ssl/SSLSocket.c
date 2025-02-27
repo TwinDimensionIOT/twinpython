@@ -218,8 +218,7 @@ ssl_sslsocket_obj_t *common_hal_ssl_sslcontext_wrap_socket(ssl_sslcontext_obj_t 
         mp_raise_RuntimeError(MP_ERROR_TEXT("Invalid socket for TLS"));
     }
 
-    ssl_sslsocket_obj_t *o = m_new_obj_with_finaliser(ssl_sslsocket_obj_t);
-    o->base.type = &ssl_sslsocket_type;
+    ssl_sslsocket_obj_t *o = mp_obj_malloc_with_finaliser(ssl_sslsocket_obj_t, &ssl_sslsocket_type);
     o->ssl_context = self;
     o->sock_obj = socket;
     o->poll_mask = 0;

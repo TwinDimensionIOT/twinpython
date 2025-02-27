@@ -48,9 +48,9 @@
 #define EUSART_VCOM_RX_PORT gpioPortA
 #define EUSART_VCOM_RX_PIN 6
 
-STATIC ringbuf_t con_uart_rx_ringbuf;
-STATIC byte con_uart_rx_buf[CONSOLE_RCV_BUFFER_SIZE];
-STATIC volatile uint8_t received_data;
+static ringbuf_t con_uart_rx_ringbuf;
+static byte con_uart_rx_buf[CONSOLE_RCV_BUFFER_SIZE];
+static volatile uint8_t received_data;
 
 // USART0 RX interrupt handler , put characters to ring buffer one by one
 void EUSART0_RX_IRQHandler(void) {

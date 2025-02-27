@@ -8,6 +8,8 @@
 
 #include <stdbool.h>
 
-void supervisor_bluetooth_file_transfer_background(void);
 void supervisor_start_bluetooth_file_transfer(void);
+void supervisor_stop_bluetooth_file_transfer(void);
+
+void supervisor_bluetooth_file_transfer_background(void);
 void supervisor_bluetooth_file_transfer_disconnected(void);

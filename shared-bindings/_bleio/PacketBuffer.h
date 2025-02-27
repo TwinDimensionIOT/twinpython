@@ -35,3 +35,4 @@ mp_int_t common_hal_bleio_packet_buffer_get_outgoing_packet_length(bleio_packet_
 void common_hal_bleio_packet_buffer_flush(bleio_packet_buffer_obj_t *self);
 bool common_hal_bleio_packet_buffer_deinited(bleio_packet_buffer_obj_t *self);
 void common_hal_bleio_packet_buffer_deinit(bleio_packet_buffer_obj_t *self);
+bool common_hal_bleio_packet_buffer_connected(bleio_packet_buffer_obj_t *self);

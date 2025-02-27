@@ -1,5 +1,4 @@
 #
 # LWIP
 #
-CONFIG_LWIP_LOCAL_HOSTNAME="Watchy"
 # end of LWIP

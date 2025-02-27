@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "py/gc.h"
+#include "py/mphal.h"
 #include "py/runtime.h"
 #include "shared-bindings/digitalio/DigitalInOut.h"
 #include "shared-bindings/keypad/EventQueue.h"
@@ -133,6 +134,10 @@ static void keymatrix_scan_now(void *self_in, mp_obj_t timestamp) {
         // to switch values. Just switching to an input with a (relatively weak) pullup/pulldown
         // causes a slight delay in the output changing, which can cause false readings.
         common_hal_digitalio_digitalinout_set_value(row_dio, self->columns_to_anodes);
+
+        // Wait a moment to let the columns settle.
+        mp_hal_delay_us(1);
+
         // Switch the row back to an input, pulled appropriately
         common_hal_digitalio_digitalinout_switch_to_input(
             row_dio, self->columns_to_anodes ? PULL_UP : PULL_DOWN);

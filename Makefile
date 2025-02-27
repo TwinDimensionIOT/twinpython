@@ -40,7 +40,7 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(BASEOPTS)
 # the i18n builder cannot share the environment and doctrees with the others
 I18NSPHINXOPTS  = $(BASEOPTS)
 
-TRANSLATE_SOURCES = extmod lib main.c ports/atmel-samd ports/cxd56 ports/espressif ports/mimxrt10xx ports/nordic ports/raspberrypi ports/stm py shared-bindings shared-module supervisor
+TRANSLATE_SOURCES = extmod lib main.c ports/atmel-samd ports/analog ports/cxd56 ports/espressif ports/mimxrt10xx ports/nordic ports/raspberrypi ports/renode ports/stm py shared-bindings shared-module supervisor
 # Paths to exclude from TRANSLATE_SOURCES
 # Each must be preceded by "-path"; if any wildcards, enclose in quotes.
 # Separate by "-o" (Find's "or" operand)
@@ -268,7 +268,7 @@ stubs:
 	@$(PYTHON) tools/extract_pyi.py ports/atmel-samd/bindings $(STUBDIR)
 	@$(PYTHON) tools/extract_pyi.py ports/espressif/bindings $(STUBDIR)
 	@$(PYTHON) tools/extract_pyi.py ports/raspberrypi/bindings $(STUBDIR)
-	@cp setup.py-stubs circuitpython-stubs/setup.py
+	@sed -e "s,__version__,`python -msetuptools_scm`," < setup.py-stubs > circuitpython-stubs/setup.py
 	@cp README.rst-stubs circuitpython-stubs/README.rst
 	@cp MANIFEST.in-stubs circuitpython-stubs/MANIFEST.in
 	@$(PYTHON) tools/board_stubs/build_board_specific_stubs/board_stub_builder.py
@@ -282,6 +282,7 @@ check-stubs: stubs
 	@(cd $(STUBDIR) && set -- */__init__.pyi && mypy "$${@%/*}")
 	@tools/test-stubs.sh
 
+.PHONY: update-frozen-libraries
 update-frozen-libraries:
 	@echo "Updating all frozen libraries to latest tagged version."
 	cd frozen; for library in *; do cd $$library; ../../tools/git-checkout-latest-tag.sh; cd ..; done
@@ -350,3 +351,16 @@ remove-all-submodules:
 .PHONY: fetch-tags
 fetch-tags:
 	git fetch --tags --recurse-submodules=no --shallow-since="2023-02-01" https://github.com/adafruit/circuitpython HEAD
+
+.PHONY: coverage
+coverage:
+	make -j -C ports/unix VARIANT=coverage
+
+.PHONY: coverage-clean
+coverage-fresh:
+	make -C ports/unix VARIANT=coverage clean
+	make -j -C ports/unix VARIANT=coverage
+
+.PHONY: run-tests
+run-tests:
+	cd tests; MICROPY_MICROPYTHON=../ports/unix/build-coverage/micropython ./run-tests.py

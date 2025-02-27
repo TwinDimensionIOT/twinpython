@@ -2,15 +2,17 @@
 #
 # SPDX-License-Identifier: Unlicense
 
+# CIRCUITPY-CHANGE: CircuitPython-specific.
+
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.0.1
+    rev: v5.0.0
     hooks:
     -   id: check-yaml
     -   id: end-of-file-fixer
-        exclude: '^(tests/.*\.exp|tests/cmdline/.*|tests/.*/data/.*)'
+        exclude: '^(tests/.*\.exp|tests/cmdline/.*|tests/.*/data/.*|ports/raspberrypi/sdk|lib/tinyusb)'
     -   id: trailing-whitespace
-        exclude: '^(tests/.*\.exp|tests/cmdline/.*|tests/.*/data/.*|lib/mbedtls_errors/generate_errors.diff)'
+        exclude: '^(tests/.*\.exp|tests/cmdline/.*|tests/.*/data/.*|lib/mbedtls_errors/generate_errors.diff|ports/raspberrypi/sdk|lib/tinyusb)'
 -   repo: https://github.com/codespell-project/codespell
     rev: v2.2.4
     hooks:
@@ -22,7 +24,9 @@ repos:
             lib/|
             tests/unicode/data/utf-8_invalid.txt|
             tests/extmod/data/qr.pgm|
-            tests/basics/bytearray_byte_operations.py
+            tests/basics/bytearray_byte_operations.py|
+            ports/raspberrypi/sdk|
+            ports/zephyr-cp/cptools/compat2driver.py
           )
 -   repo: local
     hooks:
@@ -35,5 +39,23 @@ repos:
     -   id: formatting
         name: Formatting
         entry: python3 tools/codeformat.py
-        types_or: [c, python]
+        types: [c]
         language: system
+        exclude: |
+          (?x)^(
+            lib/tinyusb|
+            ports/raspberrypi/sdk
+          )
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  # Ruff version.
+  rev: v0.9.4
+  hooks:
+    # Run the linter.
+    - id: ruff
+      args: [ --fix ]
+    # Run the formatter.
+    - id: ruff-format
+- repo: https://github.com/tox-dev/pyproject-fmt
+  rev: "v2.5.0"
+  hooks:
+    - id: pyproject-fmt

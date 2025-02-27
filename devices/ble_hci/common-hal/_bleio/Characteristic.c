@@ -50,6 +50,17 @@ void common_hal_bleio_characteristic_construct(bleio_characteristic_obj_t *self,
     }
 }
 
+bool common_hal_bleio_characteristic_deinited(bleio_characteristic_obj_t *self) {
+    return self->handle == BLE_GATT_HANDLE_INVALID;
+}
+
+void common_hal_bleio_characteristic_deinit(bleio_characteristic_obj_t *self) {
+    if (common_hal_bleio_characteristic_deinited(self)) {
+        return;
+    }
+    self->handle = BLE_GATT_HANDLE_INVALID;
+}
+
 mp_obj_tuple_t *common_hal_bleio_characteristic_get_descriptors(bleio_characteristic_obj_t *self) {
     return mp_obj_new_tuple(self->descriptor_list->len, self->descriptor_list->items);
 }

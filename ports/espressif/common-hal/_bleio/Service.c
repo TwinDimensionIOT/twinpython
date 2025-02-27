@@ -86,6 +86,10 @@ void common_hal_bleio_service_add_characteristic(bleio_service_obj_t *self,
     const char *user_description) {
     mp_obj_list_append(self->characteristic_list, MP_OBJ_FROM_PTR(characteristic));
 
+    if (user_description != NULL) {
+        mp_raise_NotImplementedError_varg(MP_ERROR_TEXT("Invalid %q"), MP_QSTR_user_description);
+    }
+
     // Delete the old version of the service.
     if (self->characteristic_list->len > 1) {
         ble_gatts_delete_svc(&self->uuid->nimble_ble_uuid.u);

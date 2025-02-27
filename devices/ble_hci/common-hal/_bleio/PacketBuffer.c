@@ -247,3 +247,7 @@ void common_hal_bleio_packet_buffer_deinit(bleio_packet_buffer_obj_t *self) {
         ringbuf_deinit(&self->ringbuf);
     }
 }
+
+bool common_hal_bleio_packet_buffer_connected(bleio_packet_buffer_obj_t *self) {
+    return !common_hal_bleio_packet_buffer_deinited(self) && self->conn_handle != BLE_CONN_HANDLE_INVALID;
+}

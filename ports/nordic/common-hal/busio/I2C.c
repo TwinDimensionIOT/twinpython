@@ -21,7 +21,8 @@
 // all TWI instances have the same max size
 // 16 bits for 840, 10 bits for 810, 8 bits for 832
 #define I2C_MAX_XFER_LEN         MIN(((1UL << TWIM0_EASYDMA_MAXCNT_SIZE) - 1), 1024)
-#define I2C_TIMEOUT 1000 // 1 second timeout
+// 1 second timeout
+#define I2C_TIMEOUT 1000
 
 static twim_peripheral_t twim_peripherals[] = {
     #if NRFX_CHECK(NRFX_TWIM0_ENABLED)
@@ -40,28 +41,10 @@ static twim_peripheral_t twim_peripherals[] = {
     #endif
 };
 
-static bool never_reset[MP_ARRAY_SIZE(twim_peripherals)];
-
-void i2c_reset(void) {
-    for (size_t i = 0; i < MP_ARRAY_SIZE(twim_peripherals); i++) {
-        if (never_reset[i]) {
-            continue;
-        }
-        nrfx_twim_uninit(&twim_peripherals[i].twim);
-        twim_peripherals[i].in_use = false;
-    }
-}
 
 void common_hal_busio_i2c_never_reset(busio_i2c_obj_t *self) {
-    for (size_t i = 0; i < MP_ARRAY_SIZE(twim_peripherals); i++) {
-        if (self->twim_peripheral == &twim_peripherals[i]) {
-            never_reset[i] = true;
-
-            never_reset_pin_number(self->scl_pin_number);
-            never_reset_pin_number(self->sda_pin_number);
-            break;
-        }
-    }
+    never_reset_pin_number(self->scl_pin_number);
+    never_reset_pin_number(self->sda_pin_number);
 }
 
 static uint8_t twi_error_to_mp(const nrfx_err_t err) {
@@ -91,6 +74,10 @@ static void twim_event_handler(nrfx_twim_evt_t const *p_event, void *p_context) 
 }
 
 void common_hal_busio_i2c_construct(busio_i2c_obj_t *self, const mcu_pin_obj_t *scl, const mcu_pin_obj_t *sda, uint32_t frequency, uint32_t timeout) {
+
+    // Ensure the object starts in its deinit state.
+    common_hal_busio_i2c_mark_deinit(self);
+
     if (scl->number == sda->number) {
         raise_ValueError_invalid_pins();
     }
@@ -172,10 +159,13 @@ void common_hal_busio_i2c_deinit(busio_i2c_obj_t *self) {
 
     reset_pin_number(self->sda_pin_number);
     reset_pin_number(self->scl_pin_number);
-    self->sda_pin_number = NO_PIN;
-    self->scl_pin_number = NO_PIN;
 
     self->twim_peripheral->in_use = false;
+    common_hal_busio_i2c_mark_deinit(self);
+}
+
+void common_hal_busio_i2c_mark_deinit(busio_i2c_obj_t *self) {
+    self->sda_pin_number = NO_PIN;
 }
 
 // nrfx_twim_tx doesn't support 0-length data so we fall back to the hal API
@@ -216,6 +206,9 @@ bool common_hal_busio_i2c_probe(busio_i2c_obj_t *self, uint8_t addr) {
 }
 
 bool common_hal_busio_i2c_try_lock(busio_i2c_obj_t *self) {
+    if (common_hal_busio_i2c_deinited(self)) {
+        return false;
+    }
     bool grabbed_lock = false;
     // NRFX_CRITICAL_SECTION_ENTER();
     if (!self->has_lock) {

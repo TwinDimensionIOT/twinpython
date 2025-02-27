@@ -30,6 +30,7 @@
 //|         may already be using it.) Only native interfaces are currently supported.
 //|         """
 //|         ...
+//|
 static mp_obj_t mdns_server_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
     enum { ARG_network_interface };
     static const mp_arg_t allowed_args[] = {
@@ -46,8 +47,7 @@ static mp_obj_t mdns_server_make_new(const mp_obj_type_t *type, size_t n_args, s
     }
     #endif
 
-    mdns_server_obj_t *self = m_new_obj_with_finaliser(mdns_server_obj_t);
-    self->base.type = &mdns_server_type;
+    mdns_server_obj_t *self = mp_obj_malloc_with_finaliser(mdns_server_obj_t, &mdns_server_type);
     common_hal_mdns_server_construct(self, args[ARG_network_interface].u_obj);
 
     return MP_OBJ_FROM_PTR(self);
@@ -56,6 +56,7 @@ static mp_obj_t mdns_server_make_new(const mp_obj_type_t *type, size_t n_args, s
 //|     def deinit(self) -> None:
 //|         """Stops the server"""
 //|         ...
+//|
 static mp_obj_t mdns_server_obj_deinit(mp_obj_t self_in) {
     mdns_server_obj_t *self = (mdns_server_obj_t *)self_in;
     common_hal_mdns_server_deinit(self);
@@ -94,6 +95,7 @@ MP_PROPERTY_GETSET(mdns_server_hostname_obj,
 
 //|     instance_name: str
 //|     """Human readable name to describe the device."""
+//|
 static mp_obj_t mdns_server_get_instance_name(mp_obj_t self) {
     check_for_deinit(self);
     const char *instance_name = common_hal_mdns_server_get_instance_name(self);
@@ -125,6 +127,7 @@ MP_PROPERTY_GETSET(mdns_server_instance_name_obj,
 //|         :param str protocol: The service protocol such as "_tcp"
 //|         :param float/int timeout: Time to wait for responses"""
 //|         ...
+//|
 static mp_obj_t _mdns_server_find(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     mdns_server_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
     check_for_deinit(self);
@@ -164,6 +167,7 @@ static MP_DEFINE_CONST_FUN_OBJ_KW(mdns_server_find_obj, 1, _mdns_server_find);
 //|         :param Sequence[str] txt_records: An optional sequence of strings to serve as TXT records along with the service
 //|         """
 //|         ...
+//|
 //|
 static mp_obj_t mdns_server_advertise_service(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     mdns_server_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);

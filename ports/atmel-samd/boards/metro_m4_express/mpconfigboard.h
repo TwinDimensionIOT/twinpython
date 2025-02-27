@@ -32,6 +32,21 @@
 #define DEFAULT_UART_BUS_RX (&pin_PA23)
 #define DEFAULT_UART_BUS_TX (&pin_PA22)
 
+// Used for 32 kHz crystal
+#define IGNORE_PIN_PA00     1
+#define IGNORE_PIN_PA01     1
+
 // USB is always used internally so skip the pin objects for it.
 #define IGNORE_PIN_PA24     1
 #define IGNORE_PIN_PA25     1
+
+// Not connected
+#define IGNORE_PIN_PA07     1
+#define IGNORE_PIN_PA15     1
+#define IGNORE_PIN_PB00     1
+#define IGNORE_PIN_PB01     1
+#define IGNORE_PIN_PB04     1
+#define IGNORE_PIN_PB05     1
+#define IGNORE_PIN_PB23     1
+#define IGNORE_PIN_PB30     1
+#define IGNORE_PIN_PB31     1

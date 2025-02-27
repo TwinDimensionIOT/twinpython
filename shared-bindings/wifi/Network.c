@@ -17,6 +17,7 @@
 //|     def __init__(self) -> None:
 //|         """You cannot create an instance of `wifi.Network`. They are returned by `wifi.Radio.start_scanning_networks`."""
 //|         ...
+//|
 
 //|     ssid: str
 //|     """String id of the network"""
@@ -76,8 +77,9 @@ MP_DEFINE_CONST_FUN_OBJ_1(wifi_network_get_country_obj, wifi_network_get_country
 MP_PROPERTY_GETTER(wifi_network_country_obj,
     (mp_obj_t)&wifi_network_get_country_obj);
 
-//|     authmode: str
-//|     """String id of the authmode"""
+//|     authmode: Sequence[wifi.AuthMode]
+//|     """List of authmodes (wifi.AuthMode) used by the network """
+//|
 //|
 static mp_obj_t wifi_network_get_authmode(mp_obj_t self) {
     return common_hal_wifi_network_get_authmode(self);

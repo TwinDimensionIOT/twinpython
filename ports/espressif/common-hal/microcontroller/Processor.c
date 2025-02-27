@@ -107,11 +107,14 @@ void common_hal_mcu_processor_set_frequency(mcu_processor_obj_t *self, uint32_t 
 }
 #endif
 
+#ifndef CONFIG_IDF_TARGET_ESP32P4
 static uint8_t swap_nibbles(uint8_t v) {
     return ((v << 4) | (v >> 4)) & 0xff;
 }
+#endif
 
 void common_hal_mcu_processor_get_uid(uint8_t raw_id[]) {
+    #ifndef CONFIG_IDF_TARGET_ESP32P4
     memset(raw_id, 0, COMMON_HAL_MCU_PROCESSOR_UID_LENGTH);
 
     uint8_t *ptr = &raw_id[COMMON_HAL_MCU_PROCESSOR_UID_LENGTH - 1];
@@ -149,6 +152,10 @@ void common_hal_mcu_processor_get_uid(uint8_t raw_id[]) {
     *ptr-- = swap_nibbles(mac_address_part & 0xff);
     mac_address_part >>= 8;
     *ptr-- = swap_nibbles(mac_address_part & 0xff);
+    #else
+    // TODO: Get UID for ESP32-P4.
+    return;
+    #endif
 }
 
 mcu_reset_reason_t common_hal_mcu_processor_get_reset_reason(void) {

@@ -58,6 +58,27 @@
 //|
 //| For more information on using `digitalio`, see `this additional Learn guide
 //| <https://learn.adafruit.com/circuitpython-digital-inputs-and-outputs>`_
+//|
+//| .. warning:: `digitalio.DigitalInOut` on Raspberry Pi RP2350 A2 stepping has some limitations
+//|    due to a GPIO hardware issue that causes excessive leakage current (~120uA).
+//|    A pin can read as high even when driven or pulled low, if the input signal is high
+//|    impedance or if an attached pull-down resistor is too weak (has too high a value).
+//|
+//|    To prevent this problem, drive the the input pin with a strong signal that can overcome
+//|    the leakage current. If you need to use a pull-down,
+//|    connect a strong external pull-down resistor that is 8.2k ohms or less.
+//|
+//|    The internal pull-down resistor (``digitalio.DigitalInOut.pull = digitalio.Pull.DOWN``)
+//|    is not strong enough, and is not useful.
+//|
+//|    Typical push-pull outputs from attached peripherals or other microcontrollers will drive
+//|    input pins adequately, with no resistor needed.
+//|
+//|    There is no problem when pull-ups are used, even weak ones. Using the internal pull-up resistor
+//|    (``digitalioDigitalInOut.pull = digitalio.Pull.UP``) will work fine.
+//|
+//|    For more information, see the RP2350-E9 erratum in the
+//|    `RP2350 datasheet <https://datasheets.raspberrypi.com/rp2350/rp2350-datasheet.pdf>`_
 //| """
 
 static const mp_rom_map_elem_t digitalio_module_globals_table[] = {

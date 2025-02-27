@@ -37,12 +37,8 @@ static mp_obj_t keypad_generic_get_key_count(mp_obj_t self_in) {
 }
 MP_DEFINE_CONST_FUN_OBJ_1(keypad_generic_get_key_count_obj, keypad_generic_get_key_count);
 
-const mp_obj_property_t keypad_generic_key_count_obj = {
-    .base.type = &mp_type_property,
-    .proxy = {(mp_obj_t)&keypad_generic_get_key_count_obj,
-              MP_ROM_NONE,
-              MP_ROM_NONE},
-};
+MP_PROPERTY_GETTER(keypad_generic_key_count_obj,
+    (mp_obj_t)&keypad_generic_get_key_count_obj);
 
 static mp_obj_t keypad_generic_get_events(mp_obj_t self_in) {
     keypad_keymatrix_obj_t *self = MP_OBJ_TO_PTR(self_in);
@@ -52,13 +48,8 @@ static mp_obj_t keypad_generic_get_events(mp_obj_t self_in) {
 }
 MP_DEFINE_CONST_FUN_OBJ_1(keypad_generic_get_events_obj, keypad_generic_get_events);
 
-const mp_obj_property_t keypad_generic_events_obj = {
-    .base.type = &mp_type_property,
-    .proxy = {(mp_obj_t)&keypad_generic_get_events_obj,
-              MP_ROM_NONE,
-              MP_ROM_NONE},
-};
-
+MP_PROPERTY_GETTER(keypad_generic_events_obj,
+    (mp_obj_t)&keypad_generic_get_events_obj);
 
 //| """Support for scanning keys and key matrices
 //|
@@ -69,6 +60,12 @@ const mp_obj_property_t keypad_generic_events_obj = {
 //|
 //| For more information about working with the `keypad` module in CircuitPython,
 //| see `this Learn guide <https://learn.adafruit.com/key-pad-matrix-scanning-in-circuitpython>`_.
+//|
+//| .. warning:: Using pull-downs with `keypad` on Raspberry Pi RP2350 A2 stepping has some limitations
+//|    due to a GPIO hardware issue that causes excessive leakage current (~120uA).
+//|    A pin can read as high even when driven or pulled low, if the input signal is high
+//|    impedance or if an attached pull-down resistor is too weak (has too high a value).
+//|    See the warning in `digitalio` for more information.
 //|
 //| .. jinja
 //| """

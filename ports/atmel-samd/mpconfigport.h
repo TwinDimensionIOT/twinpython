@@ -46,6 +46,12 @@
 // Only support simpler HID descriptors on SAMD21.
 #define CIRCUITPY_USB_HID_MAX_REPORT_IDS_PER_DESCRIPTOR (1)
 
+// Avoid linker error:
+// <artificial>:(.text.nlr_push+0x20): relocation truncated to fit: R_ARM_THM_JUMP11 against symbol `nlr_push_tail' defined in .text.nlr_push_tail section in /tmp/ccvHNpPQ.ltrans0.ltrans.o
+// See https://github.com/micropython/micropython/pull/11353
+#define MICROPY_NLR_THUMB_USE_LONG_JUMP (1)
+
+
 #endif // SAMD21
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

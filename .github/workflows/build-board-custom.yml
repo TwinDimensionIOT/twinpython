@@ -36,27 +36,35 @@ run-name: ${{ inputs.board }}-${{ inputs.language }}-${{ inputs.version }}${{ in
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
     - name: Set up repository
       run: |
         git clone --filter=tree:0 https://github.com/adafruit/circuitpython.git $GITHUB_WORKSPACE
     - name: Checkout head / tag
+      env:
+        TAG: ${{ inputs.version == 'latest' && 'HEAD' || inputs.version }}
       run: |
-        git checkout ${{ inputs.version == 'latest' && 'HEAD' || inputs.version }}
+        git checkout "$TAG"
     - name: fork compatibility
       if: github.repository_owner != 'adafruit'
+      env:
+        REPO: ${{ github.repository }}
       run: |
-        git remote add fork https://github.com/${{github.repository}}.git
+        git remote add fork "https://github.com/$REPO.git"
         git fetch fork --filter=tree:0
     - name: branch compatibility
       if: inputs.branch != 'main' && inputs.version == 'latest' && github.repository_owner == 'adafruit'
+      env:
+        BRANCH: ${{ inputs.branch }}
       run: |
-        git checkout ${{inputs.branch}}
+        git checkout "$BRANCH"
     - name: branch compatibility (fork)
       if: inputs.branch != '' && inputs.version == 'latest' && github.repository_owner != 'adafruit'
+      env:
+        BRANCH: ${{ inputs.branch }}
       run: |
-        git checkout -b fork-branch fork/${{inputs.branch}}
+        git checkout -b fork-branch "fork/$BRANCH"
     - name: Set up identifier
       if: inputs.debug || inputs.flags != ''
       run: |
@@ -89,7 +97,7 @@ jobs:
         download: false
     - name: Versions
       run: |
-        tools/describe
+        python py/version.py
         gcc --version
         python3 --version
         cmake --version || true
@@ -101,7 +109,12 @@ jobs:
         riscv64-unknown-elf-gcc --version || true
         mkfs.fat --version || true
     - name: Build board
-      run: make -j4 ${{ inputs.flags }} BOARD=${{ inputs.board }} DEBUG=${{ inputs.debug && '1' || '0' }} TRANSLATION=${{ inputs.language }}
+      env:
+        TRANSLATION: ${{ inputs.language }}
+        BOARD: ${{ inputs.board }}
+        FLAGS: ${{ inputs.flags }}
+        DEBUG: ${{ inputs.debug && '1' || '0' }}
+      run: make -j4 $FLAGS BOARD="$BOARD" DEBUG=$DEBUG TRANSLATION="$TRANSLATION"
       working-directory: ports/${{ steps.set-up-port.outputs.port }}
     - name: Upload artifact
       uses: actions/upload-artifact@v4

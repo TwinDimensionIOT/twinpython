@@ -22,5 +22,3 @@ typedef struct {
     uint8_t scl_pin;
     uint8_t sda_pin;
 } busio_i2c_obj_t;
-
-void reset_i2c(void);

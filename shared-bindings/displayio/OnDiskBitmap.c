@@ -58,6 +58,7 @@
 //|         of CircuitPython will remove the ability to pass in an opened file.
 //|         """
 //|         ...
+//|
 static mp_obj_t displayio_ondiskbitmap_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
     mp_arg_check_num(n_args, n_kw, 1, 1, false);
     mp_obj_t arg = all_args[0];
@@ -106,6 +107,7 @@ MP_PROPERTY_GETTER(displayio_ondiskbitmap_height_obj,
 //|     bitmap's structure.  The pixel shader can be modified (e.g., to set the
 //|     transparent pixel or, for palette shaded images, to update the palette.)"""
 //|
+//|
 static mp_obj_t displayio_ondiskbitmap_obj_get_pixel_shader(mp_obj_t self_in) {
     displayio_ondiskbitmap_t *self = MP_OBJ_TO_PTR(self_in);
     return common_hal_displayio_ondiskbitmap_get_pixel_shader(self);
@@ -113,13 +115,8 @@ static mp_obj_t displayio_ondiskbitmap_obj_get_pixel_shader(mp_obj_t self_in) {
 
 MP_DEFINE_CONST_FUN_OBJ_1(displayio_ondiskbitmap_get_pixel_shader_obj, displayio_ondiskbitmap_obj_get_pixel_shader);
 
-const mp_obj_property_t displayio_ondiskbitmap_pixel_shader_obj = {
-    .base.type = &mp_type_property,
-    .proxy = {(mp_obj_t)&displayio_ondiskbitmap_get_pixel_shader_obj,
-              (mp_obj_t)MP_ROM_NONE,
-              (mp_obj_t)MP_ROM_NONE},
-};
-
+MP_PROPERTY_GETTER(displayio_ondiskbitmap_pixel_shader_obj,
+    (mp_obj_t)&displayio_ondiskbitmap_get_pixel_shader_obj);
 
 static const mp_rom_map_elem_t displayio_ondiskbitmap_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_height), MP_ROM_PTR(&displayio_ondiskbitmap_height_obj) },

@@ -30,13 +30,10 @@ void common_hal_adafruit_pixelbuf_pixelbuf_construct(pixelbuf_pixelbuf_obj_t *se
     self->auto_write = false;
 
     size_t pixel_len = self->pixel_count * self->bytes_per_pixel;
-    self->transmit_buffer_obj = mp_obj_new_bytes_of_zeros(header_len + pixel_len + trailer_len);
-    mp_obj_str_t *o = MP_OBJ_TO_PTR(self->transmit_buffer_obj);
+    self->transmit_buffer_obj = mp_obj_new_bytearray_of_zeros(header_len + pixel_len + trailer_len);
+    mp_obj_array_t *o = MP_OBJ_TO_PTR(self->transmit_buffer_obj);
 
-    // Abuse the bytes object a bit by mutating it's data by dropping the const. If the user's
-    // Python code holds onto it, they'll find out that it changes. At least this way it isn't
-    // mutable by the code itself.
-    uint8_t *transmit_buffer = (uint8_t *)o->data;
+    uint8_t *transmit_buffer = o->items;
     memcpy(transmit_buffer, header, header_len);
     memcpy(transmit_buffer + header_len + pixel_len, trailer, trailer_len);
     self->post_brightness_buffer = transmit_buffer + header_len;

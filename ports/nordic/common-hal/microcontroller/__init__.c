@@ -21,6 +21,7 @@
 #include "supervisor/shared/safe_mode.h"
 #include "nrfx_glue.h"
 #include "nrf_nvic.h"
+#include "nrf_power.h"
 
 // This routine should work even when interrupts are disabled. Used by OneWire
 // for precise timing.
@@ -61,10 +62,14 @@ void common_hal_mcu_enable_interrupts() {
 
 void common_hal_mcu_on_next_reset(mcu_runmode_t runmode) {
     enum { DFU_MAGIC_UF2_RESET = 0x57 };
+    uint8_t new_value = 0;
     if (runmode == RUNMODE_BOOTLOADER || runmode == RUNMODE_UF2) {
-        sd_power_gpregret_set(0, DFU_MAGIC_UF2_RESET);
-    } else {
-        sd_power_gpregret_set(0, 0);
+        new_value = DFU_MAGIC_UF2_RESET;
+    }
+    int err_code = sd_power_gpregret_set(0, DFU_MAGIC_UF2_RESET);
+    if (err_code != NRF_SUCCESS) {
+        // Set it without the soft device if the SD failed. (It may be off.)
+        nrf_power_gpregret_set(NRF_POWER, new_value);
     }
     if (runmode == RUNMODE_SAFE_MODE) {
         safe_mode_on_next_reset(SAFE_MODE_PROGRAMMATIC);

@@ -36,7 +36,7 @@ void common_hal_paralleldisplaybus_parallelbus_construct_nonsequential(paralleld
     const mcu_pin_obj_t *write, const mcu_pin_obj_t *read, const mcu_pin_obj_t *reset, uint32_t frequency) {
 
     if (n_pins != 8 && n_pins != 16) {
-        mp_raise_ValueError_varg(MP_ERROR_TEXT("Number of data_pins must be 8 or 16, not %d"), n_pins);
+        mp_raise_ValueError_varg(MP_ERROR_TEXT("Number of data_pins must be %d or %d, not %d"), 8, 16, n_pins);
     }
 
     for (uint8_t i = 0; i < n_pins; i++) {

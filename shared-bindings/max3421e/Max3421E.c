@@ -19,7 +19,7 @@
 //|         *,
 //|         chip_select: microcontroller.Pin,
 //|         irq: microcontroller.Pin,
-//|         baudrate: int = 26000000
+//|         baudrate: int = 26000000,
 //|     ) -> None:
 //|         """Create a Max3421E object associated with the given pins.
 //|
@@ -31,6 +31,7 @@
 //|         :param microcontroller.Pin irq: Interrupt pin
 //|         :param int baudrate: Maximum baudrate to talk to the Max chip in Hz"""
 //|         ...
+//|
 static mp_obj_t max3421e_max3421e_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
     enum { ARG_spi_bus, ARG_chip_select, ARG_irq, ARG_baudrate };
     static const mp_arg_t allowed_args[] = {
@@ -47,8 +48,7 @@ static mp_obj_t max3421e_max3421e_make_new(const mp_obj_type_t *type, size_t n_a
 
     mp_obj_t spi = mp_arg_validate_type(args[ARG_spi_bus].u_obj, &busio_spi_type, MP_QSTR_spi_bus);
 
-    max3421e_max3421e_obj_t *self = m_new_obj_with_finaliser(max3421e_max3421e_obj_t);
-    self->base.type = &max3421e_max3421e_type;
+    max3421e_max3421e_obj_t *self = mp_obj_malloc_with_finaliser(max3421e_max3421e_obj_t, &max3421e_max3421e_type);
     common_hal_max3421e_max3421e_construct(self,
         MP_OBJ_TO_PTR(spi), chip_select, irq, args[ARG_baudrate].u_int);
     return self;
@@ -57,6 +57,7 @@ static mp_obj_t max3421e_max3421e_make_new(const mp_obj_type_t *type, size_t n_a
 //|     def deinit(self) -> None:
 //|         """Shuts down USB host functionality and releases chip_select and irq pins."""
 //|         ...
+//|
 //|
 static mp_obj_t max3421e_max3421e_obj_deinit(mp_obj_t self_in) {
     max3421e_max3421e_obj_t *self = self_in;

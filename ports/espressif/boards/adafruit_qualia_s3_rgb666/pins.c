@@ -7,14 +7,14 @@
 #include "py/objtuple.h"
 #include "shared-bindings/board/__init__.h"
 
-#define MP_DEFINE_BYTES_OBJ(obj_name, bin) mp_obj_str_t obj_name = {{&mp_type_bytes}, 0, sizeof(bin) - 1, (const byte *)bin}
+#define MP_DEFINE_BYTES_OBJ_WITH_NULL(obj_name, bin) mp_obj_str_t obj_name = {{&mp_type_bytes}, 0, sizeof(bin) - 1, (const byte *)bin}
 
 static const char i2c_bus_init_sequence[] = {
     2, 3, 0x78, // set GPIO direction
     2, 2, 0, // disable all output inversion
     0, // trailing NUL for python bytes() representation
 };
-static MP_DEFINE_BYTES_OBJ(i2c_init_byte_obj, i2c_bus_init_sequence);
+static MP_DEFINE_BYTES_OBJ_WITH_NULL(i2c_init_byte_obj, i2c_bus_init_sequence);
 
 static const mp_rom_map_elem_t tft_io_expander_table[] = {
     { MP_ROM_QSTR(MP_QSTR_i2c_address), MP_ROM_INT(0x3f)},

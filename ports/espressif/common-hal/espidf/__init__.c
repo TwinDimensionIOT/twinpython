@@ -27,7 +27,11 @@
 static size_t psram_size_usable(void) {
     #ifdef CONFIG_SPIRAM
     /* PSRAM chip may be larger than the size we can map into address space */
+    #ifdef CONFIG_IDF_TARGET_ESP32P4
+    size_t s = esp_psram_get_size();
+    #else
     size_t s = MIN(esp_psram_get_size(), SOC_EXTRAM_DATA_SIZE);
+    #endif
     return s - esp_himem_reserved_area_size();
     #else
     return 0;

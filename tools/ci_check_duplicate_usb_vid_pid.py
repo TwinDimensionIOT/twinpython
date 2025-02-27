@@ -54,8 +54,9 @@ DEFAULT_CLUSTERLIST = {
         "espressif_esp32s3_devkitc_1_n8",
         "espressif_esp32s3_devkitc_1_n8r2",
         "espressif_esp32s3_devkitc_1_n8r8",
-        "espressif_esp32s3_devkitc_1_n32r8",
         "espressif_esp32s3_devkitc_1_n8r8_hacktablet",
+        "espressif_esp32s3_devkitc_1_n16",
+        "espressif_esp32s3_devkitc_1_n32r8",
     ],
     "0x303A:0x7009": [
         "espressif_esp32s2_devkitc_1_n4",
@@ -97,7 +98,7 @@ def check_vid_pid(files, clusterlist):
     """
 
     usb_pattern = re.compile(
-        r"^CIRCUITPY_USB_DEVICE\s*=\s*0$|^IDF_TARGET = (esp32|esp32c2|esp32c3|esp32c6|esp32h2)$|^MCU_SERIES = MG24$",
+        r"^CIRCUITPY_USB_DEVICE\s*=\s*0$|^IDF_TARGET = (esp32|esp32c2|esp32c3|esp32c6|esp32h2|esp32p4)$|^MCU_SERIES = MG24$",
         flags=re.M,
     )
 
@@ -137,9 +138,9 @@ def check_vid_pid(files, clusterlist):
         cluster = set(clusterlist.get(key, []))
         if cluster != boards:
             if key == "":
-                duplicates.append(f"- Non-USB:\n" f"  Boards: {', '.join(sorted(boards))}")
+                duplicates.append(f"- Non-USB:\n  Boards: {', '.join(sorted(boards))}")
             else:
-                duplicates.append(f"- VID/PID: {key}\n" f"  Boards: {', '.join(sorted(boards))}")
+                duplicates.append(f"- VID/PID: {key}\n  Boards: {', '.join(sorted(boards))}")
 
     if duplicates:
         duplicates = "\n".join(duplicates)

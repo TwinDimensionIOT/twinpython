@@ -77,13 +77,16 @@ void common_hal_espcamera_camera_construct(
 
     self->i2c = i2c;
 
-    self->camera_config.pin_pwdn = common_hal_mcu_pin_number(powerdown_pin);
-    self->camera_config.pin_reset = common_hal_mcu_pin_number(reset_pin);
-    self->camera_config.pin_xclk = common_hal_mcu_pin_number(external_clock_pin);
+    // These pins might be NULL because they were not specified.
+    // Note that common_hal_mcu_pin_number() returns NO_PIN (- =1) if pass NULL, but as a `uint8_t`,
+    // so it becomes 255. The camera driver expects non-specified pins to be < 0.
+    // So we have to set the pins to NO_PIN explicitly,
+    // instead of relying on the return value from common_hal_mcu_pin_number().
+    self->camera_config.pin_pwdn = powerdown_pin ? common_hal_mcu_pin_number(powerdown_pin) : NO_PIN;
+    self->camera_config.pin_reset = reset_pin ? common_hal_mcu_pin_number(reset_pin) : NO_PIN;
+    self->camera_config.pin_xclk = external_clock_pin ? common_hal_mcu_pin_number(external_clock_pin) : NO_PIN;
 
-    self->camera_config.pin_sccb_sda = NO_PIN;
-    self->camera_config.pin_sccb_scl = NO_PIN;
-    /* sccb i2c port set below */
+    self->camera_config.sccb_i2c_master_bus_handle = self->i2c->handle;
 
     self->camera_config.pin_d7 = data_pins[7];
     self->camera_config.pin_d6 = data_pins[6];
@@ -106,7 +109,7 @@ void common_hal_espcamera_camera_construct(
     self->camera_config.fb_count = framebuffer_count;
     self->camera_config.grab_mode = grab_mode;
 
-    self->camera_config.sccb_i2c_port = i2c->i2c_num;
+
 
     i2c_lock(self);
     esp_err_t result = esp_camera_init(&self->camera_config);
@@ -122,6 +125,7 @@ extern void common_hal_espcamera_camera_deinit(espcamera_camera_obj_t *self) {
 
     common_hal_pwmio_pwmout_deinit(&self->pwm);
 
+    // Does nothing if pin is NO_PIN (-1).
     reset_pin_number(self->camera_config.pin_pwdn);
     reset_pin_number(self->camera_config.pin_reset);
     reset_pin_number(self->camera_config.pin_xclk);

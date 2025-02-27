@@ -31,35 +31,37 @@ Classes
 
         - *flag* is optional and can be set to 1 to check for overflow when
           adding items.  If the deque is full and overflow checking is enabled,
-          an IndexError will be raised when adding items.
+          an ``IndexError`` will be raised when adding items.
 
     Deque objects have the following methods:
 
     .. method:: deque.append(x)
 
         Add *x* to the right side of the deque.
-        Raises IndexError if overflow checking is enabled and there is no more room left.
+        Raises ``IndexError`` if overflow checking is enabled and there is
+        no more room in the queue.
 
     .. method:: deque.appendleft(x)
 
         Add *x* to the left side of the deque.
-        Raises IndexError if overflow checking is enabled and there is no more room left.
+        Raises ``IndexError`` if overflow checking is enabled and there is
+        no more room in the queue.
 
     .. method:: deque.pop()
 
         Remove and return an item from the right side of the deque.
-        Raises IndexError if no items are present.
+        Raises ``IndexError`` if no items are present.
 
     .. method:: deque.popleft()
 
         Remove and return an item from the left side of the deque.
-        Raises IndexError if no items are present.
+        Raises ``IndexError`` if no items are present.
 
     .. method:: deque.extend(iterable)
 
-        Extend the right side of the deque by appending items from the *iterable* argument.
+        Extend the right side of the deque by appending items from the ``iterable`` argument.
         Raises IndexError if overflow checking is enabled and there is no more room left
-        for all of the items in *iterable*.
+        for all of the items in ``iterable``.
 
     In addition to the above, deques support iteration, ``bool``, ``len(d)``, ``reversed(d)``,
     membership testing with the ``in`` operator, and subscript references like ``d[0]``.

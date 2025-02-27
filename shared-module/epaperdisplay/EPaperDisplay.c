@@ -157,7 +157,7 @@ static void send_command_sequence(epaperdisplay_epaperdisplay_obj_t *self,
         uint16_t delay_length_ms = 0;
         if (delay) {
             data_size++;
-            delay_length_ms = *(cmd + 1 + data_size);
+            delay_length_ms = *(cmd + 1 + data_size + self->two_byte_sequence_length);
             if (delay_length_ms == 255) {
                 delay_length_ms = 500;
             }

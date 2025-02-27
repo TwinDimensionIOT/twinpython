@@ -11,6 +11,11 @@
 #include "py/runtime.h"
 #include "py/binary.h"
 
+#if CIRCUITPY_ULAB
+#include "extmod/ulab/code/ulab.h"
+#include "extmod/ulab/code/ndarray.h"
+#endif
+
 #include "shared-module/_eve/__init__.h"
 #include "shared-bindings/_eve/__init__.h"
 
@@ -20,9 +25,11 @@
 //| contains methods for constructing EVE command
 //| buffers and appending basic graphics commands."""
 //|
+//|
 //| class _EVE:
 //|     def __init__(self) -> None:
 //|         """Create an _EVE object"""
+//|
 typedef struct _mp_obj__EVE_t {
     mp_obj_base_t base;
     common_hal__eve_t _eve;
@@ -33,7 +40,10 @@ static const mp_obj_type_t _EVE_type;
 #define EVEHAL(s) \
     (&((mp_obj__EVE_t *)mp_obj_cast_to_native_base((s), &_EVE_type))->_eve)
 
-//|     def register(self, o: object) -> None: ...
+//|     def register(self, o: object) -> None:
+//|         """Register an object's ``write()`` function"""
+//|         ...
+//|
 static mp_obj_t _register(mp_obj_t self, mp_obj_t o) {
     common_hal__eve_t *eve = EVEHAL(self);
     mp_load_method(o, MP_QSTR_write, eve->dest);
@@ -41,11 +51,25 @@ static mp_obj_t _register(mp_obj_t self, mp_obj_t o) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_2(register_obj, _register);
 
+//|
+//|     def setmodel(self, m: int) -> None:
+//|         """Set the model number of the EVE chip"""
+//|         ...
+//|
+static mp_obj_t _setmodel(mp_obj_t self, mp_obj_t m) {
+    common_hal__eve_t *eve = EVEHAL(self);
+    eve->model = mp_obj_get_int_truncated(m);
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(setmodel_obj, _setmodel);
+
+//|
 //|     def flush(self) -> None:
 //|         """Send any queued drawing commands directly to the hardware.
 //|
 //|         :param int width: The width of the grid in tiles, or 1 for sprites."""
 //|         ...
+//|
 static mp_obj_t _flush(mp_obj_t self) {
     common_hal__eve_flush(EVEHAL(self));
     return mp_const_none;
@@ -57,6 +81,7 @@ static MP_DEFINE_CONST_FUN_OBJ_1(flush_obj, _flush);
 //|
 //|         :param ~circuitpython_typing.ReadableBuffer b: The bytes to add"""
 //|         ...
+//|
 static mp_obj_t _cc(mp_obj_t self, mp_obj_t b) {
     mp_buffer_info_t buffer_info;
     mp_get_buffer_raise(b, &buffer_info, MP_BUFFER_READ);
@@ -76,6 +101,7 @@ static MP_DEFINE_CONST_FUN_OBJ_2(cc_obj, _cc);
 //|         These values are part of the graphics context and are saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _alphafunc(mp_obj_t self, mp_obj_t a0, mp_obj_t a1) {
     uint32_t func = mp_obj_get_int_truncated(a0);
@@ -93,6 +119,7 @@ static MP_DEFINE_CONST_FUN_OBJ_3(alphafunc_obj, _alphafunc);
 //|         Valid primitives are ``BITMAPS``, ``POINTS``, ``LINES``, ``LINE_STRIP``, ``EDGE_STRIP_R``, ``EDGE_STRIP_L``, ``EDGE_STRIP_A``, ``EDGE_STRIP_B`` and ``RECTS``.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _begin(mp_obj_t self, mp_obj_t a0) {
     uint32_t prim = mp_obj_get_int_truncated(a0);
@@ -106,6 +133,7 @@ static MP_DEFINE_CONST_FUN_OBJ_2(begin_obj, _begin);
 //|
 //|         :param int format: bitmap pixel format."""
 //|         ...
+//|
 
 static mp_obj_t _bitmapextformat(mp_obj_t self, mp_obj_t a0) {
     uint32_t fmt = mp_obj_get_int_truncated(a0);
@@ -122,6 +150,7 @@ static MP_DEFINE_CONST_FUN_OBJ_2(bitmapextformat_obj, _bitmapextformat);
 //|         This value is part of the graphics context and is saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _bitmaphandle(mp_obj_t self, mp_obj_t a0) {
     uint32_t handle = mp_obj_get_int_truncated(a0);
@@ -136,6 +165,7 @@ static MP_DEFINE_CONST_FUN_OBJ_2(bitmaphandle_obj, _bitmaphandle);
 //|         :param int linestride: high part of bitmap line stride, in bytes. Range 0-7
 //|         :param int height: high part of bitmap height, in lines. Range 0-3"""
 //|         ...
+//|
 
 static mp_obj_t _bitmaplayouth(mp_obj_t self, mp_obj_t a0, mp_obj_t a1) {
     uint32_t linestride = mp_obj_get_int_truncated(a0);
@@ -152,6 +182,7 @@ static MP_DEFINE_CONST_FUN_OBJ_3(bitmaplayouth_obj, _bitmaplayouth);
 //|         :param int linestride: bitmap line stride, in bytes. Range 0-1023
 //|         :param int height: bitmap height, in lines. Range 0-511"""
 //|         ...
+//|
 
 static mp_obj_t _bitmaplayout(size_t n_args, const mp_obj_t *args) {
     uint32_t format = mp_obj_get_int_truncated(args[1]);
@@ -168,6 +199,7 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(bitmaplayout_obj, 4, 4, _bitmaplayout
 //|         :param int width: high part of drawn bitmap width, in pixels. Range 0-3
 //|         :param int height: high part of drawn bitmap height, in pixels. Range 0-3"""
 //|         ...
+//|
 
 static mp_obj_t _bitmapsizeh(mp_obj_t self, mp_obj_t a0, mp_obj_t a1) {
     uint32_t width = mp_obj_get_int_truncated(a0);
@@ -186,6 +218,7 @@ static MP_DEFINE_CONST_FUN_OBJ_3(bitmapsizeh_obj, _bitmapsizeh);
 //|         :param int width: drawn bitmap width, in pixels. Range 0-511
 //|         :param int height: drawn bitmap height, in pixels. Range 0-511"""
 //|         ...
+//|
 
 static mp_obj_t _bitmapsize(size_t n_args, const mp_obj_t *args) {
     uint32_t filter = mp_obj_get_int_truncated(args[1]);
@@ -201,9 +234,10 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(bitmapsize_obj, 6, 6, _bitmapsize);
 //|     def BitmapSource(self, addr: int) -> None:
 //|         """Set the source address for bitmap graphics
 //|
-//|         :param int addr: Bitmap start address, pixel-aligned. May be in SRAM or flash. Range 0-16777215
+//|         :param int addr: Bitmap start address, pixel-aligned, low part.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _bitmapsource(mp_obj_t self, mp_obj_t a0) {
     uint32_t addr = mp_obj_get_int_truncated(a0);
@@ -211,6 +245,21 @@ static mp_obj_t _bitmapsource(mp_obj_t self, mp_obj_t a0) {
     return mp_const_none;
 }
 static MP_DEFINE_CONST_FUN_OBJ_2(bitmapsource_obj, _bitmapsource);
+
+//|     def BitmapSourceH(self, addr: int) -> None:
+//|         """Set the high source address for bitmap graphics
+//|
+//|         :param int addr: Bitmap start address, pixel-aligned, high part.
+//|         """
+//|         ...
+//|
+
+static mp_obj_t _bitmapsourceh(mp_obj_t self, mp_obj_t a0) {
+    uint32_t addr = mp_obj_get_int_truncated(a0);
+    common_hal__eve_BitmapSourceH(EVEHAL(self), addr);
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(bitmapsourceh_obj, _bitmapsourceh);
 
 //|     def BitmapSwizzle(self, r: int, g: int, b: int, a: int) -> None:
 //|         """Set the source for the r,g,b and a channels of a bitmap
@@ -220,6 +269,7 @@ static MP_DEFINE_CONST_FUN_OBJ_2(bitmapsource_obj, _bitmapsource);
 //|         :param int b: blue component source channel. Range 0-7
 //|         :param int a: alpha component source channel. Range 0-7"""
 //|         ...
+//|
 
 static mp_obj_t _bitmapswizzle(size_t n_args, const mp_obj_t *args) {
     uint32_t r = mp_obj_get_int_truncated(args[1]);
@@ -231,113 +281,159 @@ static mp_obj_t _bitmapswizzle(size_t n_args, const mp_obj_t *args) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(bitmapswizzle_obj, 5, 5, _bitmapswizzle);
 
-//|     def BitmapTransformA(self, p: int, v: int) -> None:
+//|     def BitmapTransformA(self, v: float) -> None:
 //|         """Set the :math:`a` component of the bitmap transform matrix
 //|
-//|         :param int p: precision control: 0 is 8.8, 1 is 1.15. Range 0-1. The initial value is 0
-//|         :param int v: The :math:`a` component of the bitmap transform matrix, in signed 8.8 or 1.15 bit fixed-point form. Range 0-131071. The initial value is 256
+//|         :param float v: The :math:`a` component of the bitmap transform matrix
 //|
-//|         The initial value is **p** = 0, **v** = 256. This represents the value 1.0.
+//|         The initial value 1.0.
 //|
 //|         These values are part of the graphics context and are saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
-static mp_obj_t _bitmaptransforma(mp_obj_t self, mp_obj_t a0, mp_obj_t a1) {
-    uint32_t p = mp_obj_get_int_truncated(a0);
-    uint32_t v = mp_obj_get_int_truncated(a1);
-    common_hal__eve_BitmapTransformA(EVEHAL(self), p, v);
+static void _transform1(uint32_t *p, uint32_t *v, size_t n_args, const mp_obj_t *args) {
+    common_hal__eve_t *eve = EVEHAL(args[0]);
+    mp_float_t a;
+
+    if (eve->model == 0) {
+        // Backwards-compatible case for legacy code
+        if (n_args != 3) {
+            mp_raise_TypeError_varg(MP_ERROR_TEXT("function takes %d positional arguments but %d were given"), 2, n_args - 1);
+        }
+        *p = mp_obj_get_int_truncated(args[1]);
+        *v = mp_obj_get_int_truncated(args[2]);
+    } else {
+        if (n_args != 2) {
+            mp_raise_TypeError_varg(MP_ERROR_TEXT("function takes %d positional arguments but %d were given"), 1, n_args - 1);
+        }
+        a = mp_obj_get_float(args[1]);
+        if ((eve->model > 810) && (-2.0 <= a) && (a < 2.0)) {
+            *p = 1;
+            *v = (int)(32768.0 * a);
+        } else {
+            *p = 0;
+            *v = (int)(256.0 * a);
+        }
+    }
+}
+
+static mp_obj_t _bitmaptransforma(size_t n_args, const mp_obj_t *args) {
+    uint32_t p, v;
+    _transform1(&p, &v, n_args, args);
+    common_hal__eve_BitmapTransformA(EVEHAL(args[0]), p, v);
     return mp_const_none;
 }
-static MP_DEFINE_CONST_FUN_OBJ_3(bitmaptransforma_obj, _bitmaptransforma);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(bitmaptransforma_obj, 2, 3, _bitmaptransforma);
 
-//|     def BitmapTransformB(self, p: int, v: int) -> None:
+//|     def BitmapTransformB(self, v: float) -> None:
 //|         """Set the :math:`b` component of the bitmap transform matrix
 //|
-//|         :param int p: precision control: 0 is 8.8, 1 is 1.15. Range 0-1. The initial value is 0
-//|         :param int v: The :math:`b` component of the bitmap transform matrix, in signed 8.8 or 1.15 bit fixed-point form. Range 0-131071. The initial value is 0
+//|         :param float v: The :math:`b` component of the bitmap transform matrix
 //|
-//|         The initial value is **p** = 0, **v** = 0. This represents the value 0.0.
+//|         The initial value 0.0.
 //|
 //|         These values are part of the graphics context and are saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
-static mp_obj_t _bitmaptransformb(mp_obj_t self, mp_obj_t a0, mp_obj_t a1) {
-    uint32_t p = mp_obj_get_int_truncated(a0);
-    uint32_t v = mp_obj_get_int_truncated(a1);
-    common_hal__eve_BitmapTransformB(EVEHAL(self), p, v);
+static mp_obj_t _bitmaptransformb(size_t n_args, const mp_obj_t *args) {
+    uint32_t p, v;
+    _transform1(&p, &v, n_args, args);
+    common_hal__eve_BitmapTransformB(EVEHAL(args[0]), p, v);
     return mp_const_none;
 }
-static MP_DEFINE_CONST_FUN_OBJ_3(bitmaptransformb_obj, _bitmaptransformb);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(bitmaptransformb_obj, 2, 3, _bitmaptransformb);
 
-//|     def BitmapTransformC(self, v: int) -> None:
+//|     def BitmapTransformC(self, v: float) -> None:
 //|         """Set the :math:`c` component of the bitmap transform matrix
 //|
-//|         :param int v: The :math:`c` component of the bitmap transform matrix, in signed 15.8 bit fixed-point form. Range 0-16777215. The initial value is 0
+//|         :param int v: The :math:`c` component of the bitmap transform matrix
+//|
+//|         The initial value 0.0.
 //|
 //|         This value is part of the graphics context and is saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _bitmaptransformc(mp_obj_t self, mp_obj_t a0) {
-    uint32_t v = mp_obj_get_int_truncated(a0);
+    common_hal__eve_t *eve = EVEHAL(self);
+    int v;
+
+    if (eve->model == 0) {
+        v = mp_obj_get_int_truncated(a0);
+    } else {
+        v = (int)(256.0 * mp_obj_get_float(a0));
+    }
     common_hal__eve_BitmapTransformC(EVEHAL(self), v);
     return mp_const_none;
 }
 static MP_DEFINE_CONST_FUN_OBJ_2(bitmaptransformc_obj, _bitmaptransformc);
 
-//|     def BitmapTransformD(self, p: int, v: int) -> None:
+//|     def BitmapTransformD(self, v: float) -> None:
 //|         """Set the :math:`d` component of the bitmap transform matrix
 //|
-//|         :param int p: precision control: 0 is 8.8, 1 is 1.15. Range 0-1. The initial value is 0
-//|         :param int v: The :math:`d` component of the bitmap transform matrix, in signed 8.8 or 1.15 bit fixed-point form. Range 0-131071. The initial value is 0
+//|         :param float v: The :math:`d` component of the bitmap transform matrix
 //|
-//|         The initial value is **p** = 0, **v** = 0. This represents the value 0.0.
+//|         The initial value 0.0.
 //|
 //|         These values are part of the graphics context and are saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
-static mp_obj_t _bitmaptransformd(mp_obj_t self, mp_obj_t a0, mp_obj_t a1) {
-    uint32_t p = mp_obj_get_int_truncated(a0);
-    uint32_t v = mp_obj_get_int_truncated(a1);
-    common_hal__eve_BitmapTransformD(EVEHAL(self), p, v);
+static mp_obj_t _bitmaptransformd(size_t n_args, const mp_obj_t *args) {
+    uint32_t p, v;
+    _transform1(&p, &v, n_args, args);
+    common_hal__eve_BitmapTransformD(EVEHAL(args[0]), p, v);
     return mp_const_none;
 }
-static MP_DEFINE_CONST_FUN_OBJ_3(bitmaptransformd_obj, _bitmaptransformd);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(bitmaptransformd_obj, 2, 3, _bitmaptransformd);
 
-//|     def BitmapTransformE(self, p: int, v: int) -> None:
+//|     def BitmapTransformE(self, v: float) -> None:
 //|         """Set the :math:`e` component of the bitmap transform matrix
 //|
-//|         :param int p: precision control: 0 is 8.8, 1 is 1.15. Range 0-1. The initial value is 0
-//|         :param int v: The :math:`e` component of the bitmap transform matrix, in signed 8.8 or 1.15 bit fixed-point form. Range 0-131071. The initial value is 256
+//|         :param float v: The :math:`e` component of the bitmap transform matrix
 //|
-//|         The initial value is **p** = 0, **v** = 256. This represents the value 1.0.
+//|         The initial value 1.0.
 //|
 //|         These values are part of the graphics context and are saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
-static mp_obj_t _bitmaptransforme(mp_obj_t self, mp_obj_t a0, mp_obj_t a1) {
-    uint32_t p = mp_obj_get_int_truncated(a0);
-    uint32_t v = mp_obj_get_int_truncated(a1);
-    common_hal__eve_BitmapTransformE(EVEHAL(self), p, v);
+static mp_obj_t _bitmaptransforme(size_t n_args, const mp_obj_t *args) {
+    uint32_t p, v;
+    _transform1(&p, &v, n_args, args);
+    common_hal__eve_BitmapTransformE(EVEHAL(args[0]), p, v);
     return mp_const_none;
 }
-static MP_DEFINE_CONST_FUN_OBJ_3(bitmaptransforme_obj, _bitmaptransforme);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(bitmaptransforme_obj, 2, 3, _bitmaptransforme);
 
 //|     def BitmapTransformF(self, v: int) -> None:
 //|         """Set the :math:`f` component of the bitmap transform matrix
 //|
-//|         :param int v: The :math:`f` component of the bitmap transform matrix, in signed 15.8 bit fixed-point form. Range 0-16777215. The initial value is 0
+//|         :param int v: The :math:`f` component of the bitmap transform matrix
+//|
+//|         The initial value 0.0.
 //|
 //|         This value is part of the graphics context and is saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _bitmaptransformf(mp_obj_t self, mp_obj_t a0) {
-    uint32_t v = mp_obj_get_int_truncated(a0);
+    common_hal__eve_t *eve = EVEHAL(self);
+    int v;
+
+    if (eve->model == 0) {
+        v = mp_obj_get_int_truncated(a0);
+    } else {
+        v = (int)(256.0 * mp_obj_get_float(a0));
+    }
     common_hal__eve_BitmapTransformF(EVEHAL(self), v);
     return mp_const_none;
 }
@@ -352,6 +448,7 @@ static MP_DEFINE_CONST_FUN_OBJ_2(bitmaptransformf_obj, _bitmaptransformf);
 //|         These values are part of the graphics context and are saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _blendfunc(mp_obj_t self, mp_obj_t a0, mp_obj_t a1) {
     uint32_t src = mp_obj_get_int_truncated(a0);
@@ -366,6 +463,7 @@ static MP_DEFINE_CONST_FUN_OBJ_3(blendfunc_obj, _blendfunc);
 //|
 //|         :param int dest: display list address. Range 0-65535"""
 //|         ...
+//|
 
 static mp_obj_t _call(mp_obj_t self, mp_obj_t a0) {
     uint32_t dest = mp_obj_get_int_truncated(a0);
@@ -382,6 +480,7 @@ static MP_DEFINE_CONST_FUN_OBJ_2(call_obj, _call);
 //|         This value is part of the graphics context and is saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _cell(mp_obj_t self, mp_obj_t a0) {
     uint32_t cell = mp_obj_get_int_truncated(a0);
@@ -398,6 +497,7 @@ static MP_DEFINE_CONST_FUN_OBJ_2(cell_obj, _cell);
 //|         This value is part of the graphics context and is saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _clearcolora(mp_obj_t self, mp_obj_t a0) {
     uint32_t alpha = mp_obj_get_int_truncated(a0);
@@ -416,6 +516,7 @@ static MP_DEFINE_CONST_FUN_OBJ_2(clearcolora_obj, _clearcolora);
 //|         These values are part of the graphics context and are saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _clearcolorrgb(size_t n_args, const mp_obj_t *args) {
     uint32_t red = mp_obj_get_int_truncated(args[1]);
@@ -433,6 +534,7 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(clearcolorrgb_obj, 4, 4, _clearcolorr
 //|         :param int s: clear stencil buffer. Range 0-1
 //|         :param int t: clear tag buffer. Range 0-1"""
 //|         ...
+//|
 
 static mp_obj_t _clear(size_t n_args, const mp_obj_t *args) {
     uint32_t c = (n_args > 1) ? mp_obj_get_int_truncated(args[1]) : 1;
@@ -451,6 +553,7 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(clear_obj, 1, 4, _clear);
 //|         This value is part of the graphics context and is saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _clearstencil(mp_obj_t self, mp_obj_t a0) {
     uint32_t s = mp_obj_get_int_truncated(a0);
@@ -466,6 +569,7 @@ static MP_DEFINE_CONST_FUN_OBJ_2(clearstencil_obj, _clearstencil);
 //|
 //|         This value is part of the graphics context and is saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
+//|
 
 static mp_obj_t _cleartag(mp_obj_t self, mp_obj_t a0) {
     uint32_t s = mp_obj_get_int_truncated(a0);
@@ -482,6 +586,7 @@ static MP_DEFINE_CONST_FUN_OBJ_2(cleartag_obj, _cleartag);
 //|         This value is part of the graphics context and is saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _colora(mp_obj_t self, mp_obj_t a0) {
     uint32_t alpha = mp_obj_get_int_truncated(a0);
@@ -501,6 +606,7 @@ static MP_DEFINE_CONST_FUN_OBJ_2(colora_obj, _colora);
 //|         These values are part of the graphics context and are saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _colormask(size_t n_args, const mp_obj_t *args) {
     uint32_t r = mp_obj_get_int_truncated(args[1]);
@@ -522,6 +628,7 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(colormask_obj, 5, 5, _colormask);
 //|         These values are part of the graphics context and are saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _colorrgb(size_t n_args, const mp_obj_t *args) {
     uint32_t red = mp_obj_get_int_truncated(args[1]);
@@ -535,6 +642,7 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(colorrgb_obj, 4, 4, _colorrgb);
 //|     def Display(self) -> None:
 //|         """End the display list"""
 //|         ...
+//|
 
 static mp_obj_t _display(mp_obj_t self) {
 
@@ -549,6 +657,7 @@ static MP_DEFINE_CONST_FUN_OBJ_1(display_obj, _display);
 //|         :meth:`Vertex2ii` and :meth:`Vertex2f` calls are ignored until the next :meth:`Begin`.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _end(mp_obj_t self) {
 
@@ -562,6 +671,7 @@ static MP_DEFINE_CONST_FUN_OBJ_1(end_obj, _end);
 //|
 //|         :param int dest: display list address. Range 0-65535"""
 //|         ...
+//|
 
 static mp_obj_t _jump(mp_obj_t self, mp_obj_t a0) {
     uint32_t dest = mp_obj_get_int_truncated(a0);
@@ -575,6 +685,7 @@ static MP_DEFINE_CONST_FUN_OBJ_2(jump_obj, _jump);
 //|
 //|         :param int m: macro register to read. Range 0-1"""
 //|         ...
+//|
 
 static mp_obj_t _macro(mp_obj_t self, mp_obj_t a0) {
     uint32_t m = mp_obj_get_int_truncated(a0);
@@ -586,6 +697,7 @@ static MP_DEFINE_CONST_FUN_OBJ_2(macro_obj, _macro);
 //|     def Nop(self) -> None:
 //|         """No operation"""
 //|         ...
+//|
 
 static mp_obj_t _nop(mp_obj_t self) {
 
@@ -597,11 +709,12 @@ static MP_DEFINE_CONST_FUN_OBJ_1(nop_obj, _nop);
 //|     def PaletteSource(self, addr: int) -> None:
 //|         """Set the base address of the palette
 //|
-//|         :param int addr: Address in graphics SRAM, 2-byte aligned. Range 0-4194303. The initial value is 0
+//|         :param int addr: Address in graphics RAM, 2-byte aligned, low part.
 //|
 //|         This value is part of the graphics context and is saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _palettesource(mp_obj_t self, mp_obj_t a0) {
     uint32_t addr = mp_obj_get_int_truncated(a0);
@@ -610,9 +723,27 @@ static mp_obj_t _palettesource(mp_obj_t self, mp_obj_t a0) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_2(palettesource_obj, _palettesource);
 
+//|     def PaletteSourceH(self, addr: int) -> None:
+//|         """Set the base address of the palette
+//|
+//|         :param int addr: Address in graphics RAM, 2-byte aligned, high part.
+//|
+//|         This value is part of the graphics context and is saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
+//|         """
+//|         ...
+//|
+
+static mp_obj_t _palettesourceh(mp_obj_t self, mp_obj_t a0) {
+    uint32_t addr = mp_obj_get_int_truncated(a0);
+    common_hal__eve_PaletteSourceH(EVEHAL(self), addr);
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(palettesourceh_obj, _palettesourceh);
+
 //|     def RestoreContext(self) -> None:
 //|         """Restore the current graphics context from the context stack"""
 //|         ...
+//|
 
 static mp_obj_t _restorecontext(mp_obj_t self) {
 
@@ -624,6 +755,7 @@ static MP_DEFINE_CONST_FUN_OBJ_1(restorecontext_obj, _restorecontext);
 //|     def Return(self) -> None:
 //|         """Return from a previous call command"""
 //|         ...
+//|
 
 static mp_obj_t _return(mp_obj_t self) {
 
@@ -635,6 +767,7 @@ static MP_DEFINE_CONST_FUN_OBJ_1(return_obj, _return);
 //|     def SaveContext(self) -> None:
 //|         """Push the current graphics context on the context stack"""
 //|         ...
+//|
 
 static mp_obj_t _savecontext(mp_obj_t self) {
 
@@ -652,6 +785,7 @@ static MP_DEFINE_CONST_FUN_OBJ_1(savecontext_obj, _savecontext);
 //|         These values are part of the graphics context and are saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _scissorsize(mp_obj_t self, mp_obj_t a0, mp_obj_t a1) {
     uint32_t width = mp_obj_get_int_truncated(a0);
@@ -670,6 +804,7 @@ static MP_DEFINE_CONST_FUN_OBJ_3(scissorsize_obj, _scissorsize);
 //|         These values are part of the graphics context and are saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _scissorxy(mp_obj_t self, mp_obj_t a0, mp_obj_t a1) {
     uint32_t x = mp_obj_get_int_truncated(a0);
@@ -689,6 +824,7 @@ static MP_DEFINE_CONST_FUN_OBJ_3(scissorxy_obj, _scissorxy);
 //|         These values are part of the graphics context and are saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _stencilfunc(size_t n_args, const mp_obj_t *args) {
     uint32_t func = mp_obj_get_int_truncated(args[1]);
@@ -707,6 +843,7 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(stencilfunc_obj, 4, 4, _stencilfunc);
 //|         This value is part of the graphics context and is saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _stencilmask(mp_obj_t self, mp_obj_t a0) {
     uint32_t mask = mp_obj_get_int_truncated(a0);
@@ -724,6 +861,7 @@ static MP_DEFINE_CONST_FUN_OBJ_2(stencilmask_obj, _stencilmask);
 //|         These values are part of the graphics context and are saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _stencilop(mp_obj_t self, mp_obj_t a0, mp_obj_t a1) {
     uint32_t sfail = mp_obj_get_int_truncated(a0);
@@ -741,6 +879,7 @@ static MP_DEFINE_CONST_FUN_OBJ_3(stencilop_obj, _stencilop);
 //|         This value is part of the graphics context and is saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _tagmask(mp_obj_t self, mp_obj_t a0) {
     uint32_t mask = mp_obj_get_int_truncated(a0);
@@ -757,6 +896,7 @@ static MP_DEFINE_CONST_FUN_OBJ_2(tagmask_obj, _tagmask);
 //|         This value is part of the graphics context and is saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _tag(mp_obj_t self, mp_obj_t a0) {
     uint32_t s = mp_obj_get_int_truncated(a0);
@@ -780,6 +920,7 @@ static MP_DEFINE_CONST_FUN_OBJ_2(vertexformat_obj, _vertexformat);
 //|
 //|         This method is an alternative to :meth:`Vertex2f`."""
 //|         ...
+//|
 
 static mp_obj_t _vertex2ii(size_t n_args, const mp_obj_t *args) {
     uint32_t x = mp_obj_get_int_truncated(args[1]);
@@ -801,6 +942,7 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(vertex2ii_obj, 3, 5, _vertex2ii);
     { MP_ROM_QSTR(MP_QSTR_BitmapSizeH), MP_ROM_PTR(&bitmapsizeh_obj) }, \
     { MP_ROM_QSTR(MP_QSTR_BitmapSize), MP_ROM_PTR(&bitmapsize_obj) }, \
     { MP_ROM_QSTR(MP_QSTR_BitmapSource), MP_ROM_PTR(&bitmapsource_obj) }, \
+    { MP_ROM_QSTR(MP_QSTR_BitmapSourceH), MP_ROM_PTR(&bitmapsourceh_obj) }, \
     { MP_ROM_QSTR(MP_QSTR_BitmapSwizzle), MP_ROM_PTR(&bitmapswizzle_obj) }, \
     { MP_ROM_QSTR(MP_QSTR_BitmapTransformA), MP_ROM_PTR(&bitmaptransforma_obj) }, \
     { MP_ROM_QSTR(MP_QSTR_BitmapTransformB), MP_ROM_PTR(&bitmaptransformb_obj) }, \
@@ -826,6 +968,7 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(vertex2ii_obj, 3, 5, _vertex2ii);
     { MP_ROM_QSTR(MP_QSTR_Macro), MP_ROM_PTR(&macro_obj) }, \
     { MP_ROM_QSTR(MP_QSTR_Nop), MP_ROM_PTR(&nop_obj) }, \
     { MP_ROM_QSTR(MP_QSTR_PaletteSource), MP_ROM_PTR(&palettesource_obj) }, \
+    { MP_ROM_QSTR(MP_QSTR_PaletteSourceH), MP_ROM_PTR(&palettesourceh_obj) }, \
     { MP_ROM_QSTR(MP_QSTR_PointSize), MP_ROM_PTR(&pointsize_obj) }, \
     { MP_ROM_QSTR(MP_QSTR_RestoreContext), MP_ROM_PTR(&restorecontext_obj) }, \
     { MP_ROM_QSTR(MP_QSTR_Return), MP_ROM_PTR(&return_obj) }, \
@@ -844,6 +987,19 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(vertex2ii_obj, 3, 5, _vertex2ii);
 
 // }
 
+#if CIRCUITPY_ULAB
+static bool is_vector(mp_obj_t a) {
+    if (!mp_obj_is_type(a, &ulab_ndarray_type)) {
+        return false;
+    }
+    ndarray_obj_t *ndarray = MP_OBJ_TO_PTR(a);
+    if (!ndarray_is_dense(ndarray)) {
+        mp_raise_TypeError(MP_ERROR_TEXT("input must be an ndarray"));
+    }
+    return true;
+}
+#endif
+
 // Hand-written functions {
 
 //|     def Vertex2f(self, b: float) -> None:
@@ -852,7 +1008,20 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(vertex2ii_obj, 3, 5, _vertex2ii);
 //|         :param float x: pixel x-coordinate
 //|         :param float y: pixel y-coordinate"""
 //|         ...
+//|
 static mp_obj_t _vertex2f(mp_obj_t self, mp_obj_t a0, mp_obj_t a1) {
+    #if CIRCUITPY_ULAB
+    if (is_vector(a0) && is_vector(a1)) {
+        ndarray_obj_t *v0 = MP_OBJ_TO_PTR(a0);
+        ndarray_obj_t *v1 = MP_OBJ_TO_PTR(a1);
+        mp_float_t *p0 = (mp_float_t *)v0->array;
+        mp_float_t *p1 = (mp_float_t *)v1->array;
+        for (size_t i = 0; i < v0->len; i++, p0++, p1++) {
+            common_hal__eve_Vertex2f(EVEHAL(self), *p0, *p1);
+        }
+        return mp_const_none;
+    }
+    #endif
     mp_float_t x = mp_obj_get_float(a0);
     mp_float_t y = mp_obj_get_float(a1);
     common_hal__eve_Vertex2f(EVEHAL(self), x, y);
@@ -868,6 +1037,7 @@ static MP_DEFINE_CONST_FUN_OBJ_3(vertex2f_obj, _vertex2f);
 //|         This value is part of the graphics context and is saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _linewidth(mp_obj_t self, mp_obj_t a0) {
     mp_float_t width = mp_obj_get_float(a0);
@@ -884,6 +1054,7 @@ static MP_DEFINE_CONST_FUN_OBJ_2(linewidth_obj, _linewidth);
 //|         This value is part of the graphics context and is saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _pointsize(mp_obj_t self, mp_obj_t a0) {
     mp_float_t size = mp_obj_get_float(a0);
@@ -900,6 +1071,7 @@ static MP_DEFINE_CONST_FUN_OBJ_2(pointsize_obj, _pointsize);
 //|         This value is part of the graphics context and is saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
 static mp_obj_t _vertextranslatex(mp_obj_t self, mp_obj_t a0) {
     mp_float_t x = mp_obj_get_float(a0);
@@ -916,6 +1088,7 @@ static MP_DEFINE_CONST_FUN_OBJ_2(vertextranslatex_obj, _vertextranslatex);
 //|         This value is part of the graphics context and is saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
 
 static mp_obj_t _vertextranslatey(mp_obj_t self, mp_obj_t a0) {
@@ -933,6 +1106,7 @@ static MP_DEFINE_CONST_FUN_OBJ_2(vertextranslatey_obj, _vertextranslatey);
 //|         This value is part of the graphics context and is saved and restored by :meth:`SaveContext` and :meth:`RestoreContext`.
 //|         """
 //|         ...
+//|
 
 // }
 
@@ -948,6 +1122,7 @@ static MP_DEFINE_CONST_FUN_OBJ_2(vertextranslatey_obj, _vertextranslatey);
 //|         This method is used by the ``eve`` module to efficiently add
 //|         commands to the FIFO."""
 //|         ...
+//|
 
 static mp_obj_t _cmd0(mp_obj_t self, mp_obj_t n) {
     uint32_t code = 0xffffff00 | mp_obj_get_int_truncated(n);
@@ -969,6 +1144,7 @@ static MP_DEFINE_CONST_FUN_OBJ_2(cmd0_obj, _cmd0);
 //|         This method is used by the ``eve`` module to efficiently add
 //|         commands to the FIFO."""
 //|         ...
+//|
 //|
 static mp_obj_t _cmd(size_t n_args, const mp_obj_t *args) {
     mp_obj_t self = args[0];
@@ -1027,6 +1203,7 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(cmd_obj, 4, 4, _cmd);
 
 static const mp_rom_map_elem_t _EVE_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_register), MP_ROM_PTR(&register_obj) },
+    { MP_ROM_QSTR(MP_QSTR_setmodel), MP_ROM_PTR(&setmodel_obj) },
     { MP_ROM_QSTR(MP_QSTR_cc), MP_ROM_PTR(&cc_obj) },
     { MP_ROM_QSTR(MP_QSTR_flush), MP_ROM_PTR(&flush_obj) },
     { MP_ROM_QSTR(MP_QSTR_Vertex2f), MP_ROM_PTR(&vertex2f_obj) },
@@ -1041,6 +1218,7 @@ static mp_obj_t _EVE_make_new(const mp_obj_type_t *type, size_t n_args, size_t n
     mp_obj__EVE_t *o = mp_obj_malloc(mp_obj__EVE_t, &_EVE_type);
     o->_eve.n = 0;
     o->_eve.vscale = 16;
+    o->_eve.model = 0;  // default is legacy behavior
     return MP_OBJ_FROM_PTR(o);
 }
 

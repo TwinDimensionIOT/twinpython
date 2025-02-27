@@ -29,6 +29,7 @@ static void write_to_ringbuf(bleio_characteristic_buffer_obj_t *self, uint8_t *d
         for (uint16_t i = 0; i < len; i++) {
             if (data[i] == mp_interrupt_char) {
                 mp_sched_keyboard_interrupt();
+                ringbuf_clear(&self->ringbuf);
             } else {
                 ringbuf_put(&self->ringbuf, data[i]);
             }

@@ -10,9 +10,9 @@
 # them as CircuitPython.
 #
 # Typical usages:
-# header_change.py *.c *.h --change
-# find boards common-hal/ peripherals/ supervisor/ -name '*.[ch]' |xargs header_change.py
-# find boards common-hal/ peripherals/ supervisor/ -name '*.[ch]' |xargs header_change.py --change
+# circuitpy_header_change.py *.c *.h --change
+# find boards common-hal/ peripherals/ supervisor/ -name '*.[ch]' |xargs circuitpy_header_change.py
+# find boards common-hal/ peripherals/ supervisor/ -name '*.[ch]' |xargs circutipy_header_change.py --change
 
 import click
 import os
@@ -48,18 +48,16 @@ def find_related_copyrights(filename):
 def fix_file(filename, change):
     copyrights = []
     mit_license = False
-    empty_file = False
     first_line = ""
     no_existing_header = False
 
     with open(filename, "r") as f:
         lines = f.readlines()
         if not lines:
-            empty_file = True
             no_existing_header = True
             mit_license = True
             copyrights.append(
-                f"// SPDX-FileCopyrightText: Copyright (c) 2024 Adafruit Industries LLC"
+                "// SPDX-FileCopyrightText: Copyright (c) 2024 Adafruit Industries LLC"
             )
         else:
             first_line = lines.pop(0)
@@ -111,7 +109,7 @@ def fix_file(filename, change):
             copyrights = find_related_copyrights(filename)
             if not copyrights:
                 copyrights.append(
-                    f"// SPDX-FileCopyrightText: Copyright (c) 2024 Adafruit Industries LLC"
+                    "// SPDX-FileCopyrightText: Copyright (c) 2024 Adafruit Industries LLC"
                 )
 
         if change:

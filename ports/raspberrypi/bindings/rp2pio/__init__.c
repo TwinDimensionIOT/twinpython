@@ -17,12 +17,19 @@
 //|     introduction and guide to working with PIO in CircuitPython, see `this
 //|     Learn guide <https://learn.adafruit.com/intro-to-rp2040-pio-with-circuitpython>`_.
 //|
+//| .. warning:: Using PIO inputs on Raspberry Pi RP2350 A2 stepping has some limitations
+//|    due to a GPIO hardware issue that causes excessive leakage current (~120uA).
+//|    A pin can read as high even when driven or pulled low, if the input signal is high
+//|    impedance or if an attached pull-down resistor is too weak (has too high a value).
+//|    See the warning in `digitalio` for more information.
 //| """
+//|
 //|
 
 //| def pins_are_sequential(pins: List[microcontroller.Pin]) -> bool:
 //|     """Return True if the pins have sequential GPIO numbers, False otherwise"""
 //|     ...
+//|
 //|
 static mp_obj_t rp2pio_pins_are_sequential(mp_obj_t pins_obj) {
     size_t len;
