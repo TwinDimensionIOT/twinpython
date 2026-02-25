@@ -35,7 +35,7 @@
 #include "lwip/timeouts.h"
 #include "lwip/udp.h"
 
-#include "sdk/src/rp2_common/pico_cyw43_arch/include/pico/cyw43_arch.h"
+#include "pico/cyw43_arch.h"
 
 mp_obj_t socketpool_ip_addr_to_str(const ip_addr_t *addr) {
     char ip_str[IPADDR_STRLEN_MAX]; // big enough for any supported address type
@@ -89,7 +89,7 @@ static mp_obj_t socketpool_ip_addr_and_port_to_tuple(const ip_addr_t *addr, int 
 // socket API.
 
 // Extension to lwIP error codes
-// Matches lwIP 2.0.3
+// Matches lwIP 2.2.1
 #undef _ERR_BADF
 #define _ERR_BADF -17
 static const int error_lookup_table[] = {
@@ -251,7 +251,7 @@ static void _lwip_tcp_err_unaccepted(void *arg, err_t err) {
     // because it's only ever used by lwIP if tcp_connect is called on the TCP PCB.
     socketpool_socket_obj_t *socket = (socketpool_socket_obj_t *)pcb->connected;
 
-    // Array is not volatile because thiss callback is executed within the lwIP context
+    // Array is not volatile because this callback is executed within the lwIP context
     uint8_t alloc = socket->incoming.connection.alloc;
     struct tcp_pcb **tcp_array = (struct tcp_pcb **)lwip_socket_incoming_array(socket);
 
@@ -473,7 +473,12 @@ static mp_uint_t lwip_tcp_send(socketpool_socket_obj_t *socket, const byte *buf,
 
     MICROPY_PY_LWIP_ENTER
 
-    u16_t available = tcp_sndbuf(socket->pcb.tcp);
+    // If the socket is still connecting then don't let data be written to it.
+    // Otherwise, get the number of available bytes in the output buffer.
+    u16_t available = 0;
+    if (socket->state != STATE_CONNECTING) {
+        available = tcp_sndbuf(socket->pcb.tcp);
+    }
 
     if (available == 0) {
         // Non-blocking socket
@@ -490,7 +495,8 @@ static mp_uint_t lwip_tcp_send(socketpool_socket_obj_t *socket, const byte *buf,
         // If peer fully closed socket, we would have socket->state set to ERR_RST (connection
         // reset) by error callback.
         // Avoid sending too small packets, so wait until at least 16 bytes available
-        while (socket->state >= STATE_CONNECTED && (available = tcp_sndbuf(socket->pcb.tcp)) < 16) {
+        while (socket->state == STATE_CONNECTING
+               || (socket->state >= STATE_CONNECTED && (available = tcp_sndbuf(socket->pcb.tcp)) < 16)) {
             MICROPY_PY_LWIP_EXIT
             if (socket->timeout != (unsigned)-1 && mp_hal_ticks_ms() - start > socket->timeout) {
                 *_errno = MP_ETIMEDOUT;
@@ -531,9 +537,10 @@ static mp_uint_t lwip_tcp_send(socketpool_socket_obj_t *socket, const byte *buf,
         MICROPY_PY_LWIP_REENTER
     }
 
-    // If the output buffer is getting full then send the data to the lower layers
-    if (err == ERR_OK && tcp_sndbuf(socket->pcb.tcp) < TCP_SND_BUF / 4) {
-        err = tcp_output(socket->pcb.tcp);
+    // Use nagle algorithm to determine when to send segment buffer (can be
+    // disabled with TCP_NODELAY socket option)
+    if (err == ERR_OK) {
+        err = tcp_output_nagle(socket->pcb.tcp);
     }
 
     MICROPY_PY_LWIP_EXIT
@@ -550,6 +557,12 @@ static mp_uint_t lwip_tcp_send(socketpool_socket_obj_t *socket, const byte *buf,
 static mp_uint_t lwip_tcp_receive(socketpool_socket_obj_t *socket, byte *buf, mp_uint_t len, int *_errno) {
     // Check for any pending errors
     STREAM_ERROR_CHECK(socket);
+
+    if (socket->state == STATE_LISTENING) {
+        // original socket in listening state, not the accepted connection.
+        *_errno = MP_ENOTCONN;
+        return -1;
+    }
 
     if (socket->incoming.pbuf == NULL) {
 
@@ -1071,7 +1084,8 @@ bool common_hal_socketpool_socket_listen(socketpool_socket_obj_t *socket, int ba
         socket->incoming.connection.tcp.item = NULL;
     } else {
         socket->incoming.connection.alloc = backlog;
-        socket->incoming.connection.tcp.array = m_new0(struct tcp_pcb *, backlog);
+        socket->incoming.connection.tcp.array = m_malloc_without_collect(sizeof(struct tcp_pcb *) * backlog);
+        memset(socket->incoming.connection.tcp.array, 0, sizeof(struct tcp_pcb *) * backlog);
     }
     socket->incoming.connection.iget = 0;
     socket->incoming.connection.iput = 0;

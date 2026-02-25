@@ -8,15 +8,15 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2021-01-04 12:55-0600\n"
-"PO-Revision-Date: 2023-12-04 01:08+0000\n"
-"Last-Translator: Bill Sideris <bill88t@feline.gr>\n"
+"PO-Revision-Date: 2025-06-29 13:02+0000\n"
+"Last-Translator: MAE <martin-aehle@hotmail.de>\n"
 "Language-Team: none\n"
 "Language: el\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.3-dev\n"
+"X-Generator: Weblate 5.13-dev\n"
 
 #: main.c
 msgid ""
@@ -83,8 +83,8 @@ msgstr " έξοδος:\n"
 
 #: py/objstr.c
 #, c-format
-msgid "%%c requires int or char"
-msgstr "%%c απαιτεί ακέραιο ή χαρακτήρα"
+msgid "%%c needs int or char"
+msgstr ""
 
 #: shared-bindings/rgbmatrix/RGBMatrix.c
 #, c-format
@@ -97,7 +97,7 @@ msgstr ""
 msgid "%q and %q contain duplicate pins"
 msgstr "%q και %q περιέχουν διπλότυπα pins"
 
-#: ports/atmel-samd/common-hal/audioio/AudioOut.c
+#: shared-bindings/audioio/AudioOut.c
 msgid "%q and %q must be different"
 msgstr "%q και %q πρεπει να είναι διαφορετικά"
 
@@ -117,11 +117,16 @@ msgstr "%q περιέχει διπλότυπα pins"
 msgid "%q failure: %d"
 msgstr "%q αποτυχία: %d"
 
-#: py/argcheck.c
+#: shared-module/audiodelays/MultiTapDelay.c
+msgid "%q in %q must be of type %q or %q, not %q"
+msgstr ""
+
+#: py/argcheck.c shared-module/audiofilters/Filter.c
 msgid "%q in %q must be of type %q, not %q"
 msgstr "%q στο %q πρέπει να είναι τύπου %q, όχι %q"
 
 #: ports/espressif/common-hal/espulp/ULP.c
+#: ports/espressif/common-hal/mipidsi/Bus.c
 #: ports/mimxrt10xx/common-hal/audiobusio/__init__.c
 #: ports/mimxrt10xx/common-hal/usb_host/Port.c
 #: ports/raspberrypi/common-hal/picodvi/Framebuffer_RP2040.c
@@ -129,7 +134,8 @@ msgstr "%q στο %q πρέπει να είναι τύπου %q, όχι %q"
 #: ports/raspberrypi/common-hal/rp2pio/StateMachine.c
 #: ports/raspberrypi/common-hal/usb_host/Port.c
 #: shared-bindings/digitalio/DigitalInOut.c
-#: shared-bindings/microcontroller/Pin.c shared-module/max3421e/Max3421E.c
+#: shared-bindings/i2cioexpander/IOPin.c shared-bindings/microcontroller/Pin.c
+#: shared-module/max3421e/Max3421E.c
 msgid "%q in use"
 msgstr "%q είναι σε χρήση"
 
@@ -141,7 +147,8 @@ msgstr "%q δείκτης εκτός εμβέλειας"
 msgid "%q indices must be integers, not %s"
 msgstr "%q δείκτες πρέπει να είναι ακέραιοι, όχι %s"
 
-#: shared-module/bitbangio/SPI.c
+#: ports/analog/common-hal/busio/SPI.c ports/analog/common-hal/busio/UART.c
+#: shared-bindings/digitalio/DigitalInOutProtocol.c
 msgid "%q init failed"
 msgstr "%q εκκίνηση απέτυχε"
 
@@ -168,10 +175,6 @@ msgstr "%q μήκος πρέπει να είναι <= %d"
 #: py/argcheck.c
 msgid "%q length must be >= %d"
 msgstr "%q μήκος πρέπει να είναι >= %d"
-
-#: py/modsys.c py/objmodule.c py/runtime.c
-msgid "%q moved from %q to %q"
-msgstr "%q μετακινήθηκε από το %q στο %q"
 
 #: py/argcheck.c
 msgid "%q must be %d"
@@ -202,10 +205,6 @@ msgstr "%q πρέπει να είναι <= %u"
 msgid "%q must be >= %d"
 msgstr "%q πρέπει να είναι >= %d"
 
-#: shared-module/audiofilters/Filter.c
-msgid "%q must be a %q object, %q, or %q"
-msgstr ""
-
 #: shared-bindings/analogbufio/BufferedIn.c
 msgid "%q must be a bytearray or array of type 'H' or 'B'"
 msgstr "%q πρέπει να είναι bytearray ή array τύπου 'H' ή 'B'"
@@ -233,7 +232,8 @@ msgstr ""
 #: ports/raspberrypi/bindings/cyw43/__init__.c py/argcheck.c py/objexcept.c
 #: shared-bindings/bitmapfilter/__init__.c shared-bindings/canio/CAN.c
 #: shared-bindings/digitalio/Pull.c shared-bindings/supervisor/__init__.c
-#: shared-module/synthio/Biquad.c shared-module/synthio/Synthesizer.c
+#: shared-module/audiofilters/Filter.c shared-module/displayio/__init__.c
+#: shared-module/synthio/Synthesizer.c
 msgid "%q must be of type %q or %q, not %q"
 msgstr "%q πρέπει να είναι τύπου %q ή %q, όχι %q"
 
@@ -242,6 +242,7 @@ msgid "%q must be of type %q, %q, or %q, not %q"
 msgstr ""
 
 #: py/argcheck.c py/runtime.c shared-bindings/bitmapfilter/__init__.c
+#: shared-module/audiodelays/MultiTapDelay.c shared-module/synthio/Note.c
 #: shared-module/synthio/__init__.c
 msgid "%q must be of type %q, not %q"
 msgstr "%q πρέπει να είναι τύπου %q, όχι %q"
@@ -250,20 +251,30 @@ msgstr "%q πρέπει να είναι τύπου %q, όχι %q"
 msgid "%q must be power of 2"
 msgstr "%q πρέπει να είναι δύναμη του 2"
 
+#: shared-bindings/digitalio/DigitalInOutProtocol.c
+msgid "%q object missing '%q' attribute"
+msgstr ""
+
+#: shared-bindings/digitalio/DigitalInOutProtocol.c
+msgid "%q object missing '%q' method"
+msgstr ""
+
 #: shared-bindings/wifi/Monitor.c
 msgid "%q out of bounds"
 msgstr "%q εκτός ορίων"
 
+#: ports/analog/common-hal/busio/SPI.c
 #: ports/atmel-samd/common-hal/pulseio/PulseIn.c
 #: ports/cxd56/common-hal/pulseio/PulseIn.c
 #: ports/nordic/common-hal/pulseio/PulseIn.c
 #: ports/raspberrypi/common-hal/rp2pio/StateMachine.c
 #: ports/stm/common-hal/pulseio/PulseIn.c py/argcheck.c
-#: shared-bindings/canio/Match.c shared-bindings/time/__init__.c
+#: shared-bindings/bitmaptools/__init__.c shared-bindings/canio/Match.c
+#: shared-bindings/time/__init__.c
 msgid "%q out of range"
 msgstr "%q εκτός εμβέλειας"
 
-#: py/objmodule.c py/runtime.c
+#: py/objmodule.c
 msgid "%q renamed %q"
 msgstr "%q μεταονομάστηκε σε %q"
 
@@ -317,20 +328,20 @@ msgstr "%s σφάλμα 0x%x"
 msgid "'%q' argument required"
 msgstr "'%q' όρισμα απαιτείται"
 
-#: py/proto.c
+#: py/proto.c shared-bindings/digitalio/DigitalInOutProtocol.c
 msgid "'%q' object does not support '%q'"
 msgstr "'%q' αντικείμενο δεν υποστηρίζει '%q'"
 
 #: py/runtime.c
-msgid "'%q' object is not an iterator"
+msgid "'%q' object isn't an iterator"
 msgstr "'%q' αντικείμενο δεν είναι επαναλήπτης"
 
 #: py/objtype.c py/runtime.c shared-module/atexit/__init__.c
-msgid "'%q' object is not callable"
-msgstr "'%q' αντικείμενο δεν καλείται"
+msgid "'%q' object isn't callable"
+msgstr ""
 
 #: py/runtime.c
-msgid "'%q' object is not iterable"
+msgid "'%q' object isn't iterable"
 msgstr "'%q' αντικείμενο δεν είναι επαναληπτικό"
 
 #: py/emitinlinethumb.c py/emitinlinextensa.c
@@ -515,7 +526,8 @@ msgstr "Όλα τα RX FIFOs είναι σε χρήση"
 msgid "All SPI peripherals are in use"
 msgstr "Όλα τα SPI περιφεριακά είναι σε χρήση"
 
-#: ports/espressif/common-hal/busio/UART.c ports/nordic/common-hal/busio/UART.c
+#: ports/analog/common-hal/busio/UART.c ports/espressif/common-hal/busio/UART.c
+#: ports/nordic/common-hal/busio/UART.c
 msgid "All UART peripherals are in use"
 msgstr "Όλα τα UART περιφεριακά ειναι σε χρήση"
 
@@ -557,7 +569,6 @@ msgstr "Όλοι οι χρονιστές για αυτό το pin χρησιμο
 #: ports/nordic/common-hal/pulseio/PulseIn.c
 #: ports/nordic/peripherals/nrf/timers.c
 #: ports/raspberrypi/common-hal/audiopwmio/PWMAudioOut.c
-#: ports/stm/peripherals/timers.c
 msgid "All timers in use"
 msgstr "Όλοι οι χρονιστές βρίσκονται σε χρήση"
 
@@ -583,10 +594,11 @@ msgstr "Τρέχει ήδη"
 
 #: ports/espressif/common-hal/wifi/Radio.c
 #: ports/raspberrypi/common-hal/wifi/Radio.c
+#: ports/zephyr-cp/common-hal/wifi/Radio.c
 msgid "Already scanning for wifi networks"
 msgstr "Ήδη γίνεται σάρωση για δίκτυα wifi"
 
-#: shared-module/os/getenv.c
+#: supervisor/shared/settings.c
 #, c-format
 msgid "An error occurred while retrieving '%s':\n"
 msgstr "Παρουσιάστηκε σφάλμα κατά την ανάκτηση '%s':\n"
@@ -668,6 +680,7 @@ msgstr "Το μέγεθος του bitmap και τα bits ανα τιμή πρ�
 msgid "Boot device must be first (interface #0)."
 msgstr "Η συσκευή εκκίνησης πρέπει να επιλεχθεί πρώτα (διεπαφή #0)."
 
+#: ports/analog/common-hal/busio/UART.c
 #: ports/mimxrt10xx/common-hal/busio/UART.c
 msgid "Both RX and TX required for flow control"
 msgstr "Και RX και TX απαιτούνται για έλεγχο flow"
@@ -781,6 +794,10 @@ msgid "Cannot create a new Adapter; use _bleio.adapter;"
 msgstr ""
 "Δεν μπορεί να δημιουργηθεί νέο Adapter; χρησιμοποιείστε _bleio.adapter;"
 
+#: shared-module/i2cioexpander/IOExpander.c
+msgid "Cannot deinitialize board IOExpander"
+msgstr ""
+
 #: shared-bindings/displayio/Bitmap.c
 #: shared-bindings/memorymonitor/AllocationSize.c
 #: shared-bindings/pulseio/PulseIn.c
@@ -813,10 +830,11 @@ msgid "Cannot record to a file"
 msgstr "Δεν μπορεί να γίνει καταγραφή σε αρχείο"
 
 #: shared-module/storage/__init__.c
-msgid "Cannot remount '/' when visible via USB."
-msgstr "Δεν μπορεί να γίνει remount του '/' όταν είναι ορατό μέσω USB."
+msgid "Cannot remount path when visible via USB."
+msgstr ""
 
 #: shared-bindings/digitalio/DigitalInOut.c
+#: shared-bindings/i2cioexpander/IOPin.c
 msgid "Cannot set value when direction is input."
 msgstr "Δεν μπορεί να οριστεί τιμή οταν η κατεύθυνση είναι input."
 
@@ -869,6 +887,14 @@ msgstr ""
 msgid "Coordinate arrays types have different sizes"
 msgstr ""
 
+#: shared-module/usb/core/Device.c
+msgid "Could not allocate DMA capable buffer"
+msgstr ""
+
+#: ports/espressif/common-hal/rclcpy/Publisher.c
+msgid "Could not publish to ROS topic"
+msgstr ""
+
 #: shared-bindings/_bleio/Adapter.c
 msgid "Could not set address"
 msgstr "Δεν μπόρεσε να ρυθμιστεί η διεύθυνση"
@@ -880,6 +906,11 @@ msgstr "Δεν μπόρεσε να εκκινηθεί το interrupt, RX κατ�
 #: shared-module/audiomp3/MP3Decoder.c
 msgid "Couldn't allocate decoder"
 msgstr "Δεν μπόρεσε να δεσμευτεί decoder"
+
+#: ports/espressif/common-hal/rclcpy/__init__.c
+#, c-format
+msgid "Critical ROS failure during soft reboot, reset required: %d"
+msgstr ""
 
 #: ports/stm/common-hal/analogio/AnalogOut.c
 msgid "DAC Channel Init Error"
@@ -897,10 +928,6 @@ msgstr "DAC είναι ήδη σε χρήση"
 #: ports/nordic/common-hal/paralleldisplaybus/ParallelBus.c
 msgid "Data 0 pin must be byte aligned"
 msgstr "Το Data 0 pin πρέπει να είναι byte aligned"
-
-#: shared-module/audiocore/WaveFile.c
-msgid "Data chunk must follow fmt chunk"
-msgstr "Το data chunk πρέπει να ακολουθεί το fmt chunk"
 
 #: shared-module/jpegio/JpegDecoder.c
 msgid "Data format error (may be broken data)"
@@ -942,6 +969,7 @@ msgstr "Η οθόνη πρέπει να έχει 16 bit χρωματική ευ�
 #: shared-bindings/busdisplay/BusDisplay.c
 #: shared-bindings/epaperdisplay/EPaperDisplay.c
 #: shared-bindings/framebufferio/FramebufferDisplay.c
+#: shared-bindings/mipidsi/Display.c
 msgid "Display rotation must be in 90 degree increments"
 msgstr "Η περιστροφή της οθόνη πρέπει να γίνεται σε βήματα 90 μοιρών"
 
@@ -950,6 +978,7 @@ msgid "Done"
 msgstr "Ολοκληρώθηκε"
 
 #: shared-bindings/digitalio/DigitalInOut.c
+#: shared-bindings/i2cioexpander/IOPin.c
 msgid "Drive mode not used when direction is input."
 msgstr "Ο τρόπος οδήγησης δεν χρησιμοποιείται όταν η κατεύθυνση είναι είσοδος."
 
@@ -1010,7 +1039,7 @@ msgid ""
 "Failed to add service TXT record; non-string or bytes found in txt_records"
 msgstr ""
 
-#: shared-module/rgbmatrix/RGBMatrix.c
+#: ports/analog/common-hal/busio/UART.c shared-module/rgbmatrix/RGBMatrix.c
 msgid "Failed to allocate %q buffer"
 msgstr ""
 
@@ -1068,6 +1097,14 @@ msgstr ""
 msgid "Failed to release mutex, err 0x%04x"
 msgstr ""
 
+#: ports/analog/common-hal/busio/SPI.c
+msgid "Failed to set SPI Clock Mode"
+msgstr ""
+
+#: ports/zephyr-cp/common-hal/wifi/Radio.c
+msgid "Failed to set hostname"
+msgstr ""
+
 #: ports/espressif/common-hal/audioio/AudioOut.c
 msgid "Failed to start async audio"
 msgstr ""
@@ -1080,7 +1117,7 @@ msgstr ""
 msgid "File exists"
 msgstr ""
 
-#: shared-module/os/getenv.c
+#: shared-bindings/supervisor/__init__.c shared-module/lvfontio/OnDiskFont.c
 msgid "File not found"
 msgstr ""
 
@@ -1111,7 +1148,7 @@ msgstr ""
 msgid "For RGB colorspaces, input bitmap must have 16 bits per pixel"
 msgstr ""
 
-#: ports/cxd56/common-hal/camera/Camera.c
+#: ports/cxd56/common-hal/camera/Camera.c shared-module/audiocore/WaveFile.c
 msgid "Format not supported"
 msgstr ""
 
@@ -1219,6 +1256,7 @@ msgid "Insufficient stream input buffer"
 msgstr ""
 
 #: ports/espressif/common-hal/wifi/Radio.c
+#: ports/zephyr-cp/common-hal/wifi/Radio.c
 msgid "Interface must be started"
 msgstr ""
 
@@ -1230,7 +1268,7 @@ msgstr ""
 msgid "Internal define error"
 msgstr ""
 
-#: shared-bindings/pwmio/PWMOut.c shared-module/os/getenv.c
+#: shared-bindings/pwmio/PWMOut.c supervisor/shared/settings.c
 msgid "Internal error"
 msgstr ""
 
@@ -1264,17 +1302,25 @@ msgstr ""
 msgid "Interrupted by output function"
 msgstr ""
 
+#: ports/analog/common-hal/busio/UART.c
+#: ports/analog/peripherals/max32690/max32_i2c.c
+#: ports/analog/peripherals/max32690/max32_spi.c
+#: ports/analog/peripherals/max32690/max32_uart.c
 #: ports/espressif/common-hal/_bleio/Service.c
 #: ports/espressif/common-hal/espulp/ULP.c
 #: ports/espressif/common-hal/microcontroller/Processor.c
+#: ports/espressif/common-hal/mipidsi/Display.c
 #: ports/mimxrt10xx/common-hal/audiobusio/__init__.c
 #: ports/mimxrt10xx/common-hal/pwmio/PWMOut.c
 #: ports/raspberrypi/bindings/picodvi/Framebuffer.c
 #: ports/raspberrypi/bindings/rp2pio/StateMachine.c
 #: ports/raspberrypi/common-hal/picodvi/Framebuffer_RP2040.c py/argcheck.c
 #: shared-bindings/digitalio/DigitalInOut.c
-#: shared-bindings/epaperdisplay/EPaperDisplay.c shared-bindings/pwmio/PWMOut.c
+#: shared-bindings/epaperdisplay/EPaperDisplay.c
+#: shared-bindings/i2cioexpander/IOPin.c shared-bindings/mipidsi/Display.c
+#: shared-bindings/pwmio/PWMOut.c shared-bindings/supervisor/__init__.c
 #: shared-module/aurora_epaper/aurora_framebuffer.c
+#: shared-module/lvfontio/OnDiskFont.c
 msgid "Invalid %q"
 msgstr ""
 
@@ -1307,6 +1353,10 @@ msgstr ""
 msgid "Invalid MAC address"
 msgstr ""
 
+#: ports/espressif/common-hal/rclcpy/__init__.c
+msgid "Invalid ROS domain ID"
+msgstr ""
+
 #: ports/espressif/common-hal/espidf/__init__.c py/moderrno.c
 msgid "Invalid argument"
 msgstr ""
@@ -1315,17 +1365,12 @@ msgstr ""
 msgid "Invalid bits per value"
 msgstr ""
 
-#: shared-module/os/getenv.c
-#, c-format
-msgid "Invalid byte %.*s"
-msgstr ""
-
 #: ports/atmel-samd/common-hal/imagecapture/ParallelImageCapture.c
 #, c-format
 msgid "Invalid data_pins[%d]"
 msgstr ""
 
-#: shared-module/msgpack/__init__.c
+#: shared-module/msgpack/__init__.c supervisor/shared/settings.c
 msgid "Invalid format"
 msgstr ""
 
@@ -1338,6 +1383,7 @@ msgid "Invalid hex password"
 msgstr ""
 
 #: ports/espressif/common-hal/wifi/Radio.c
+#: ports/zephyr-cp/common-hal/wifi/Radio.c
 msgid "Invalid multicast MAC address"
 msgstr ""
 
@@ -1349,21 +1395,18 @@ msgstr ""
 msgid "Invalid socket for TLS"
 msgstr ""
 
+#: ports/analog/common-hal/busio/SPI.c
 #: ports/espressif/common-hal/espidf/__init__.c
 #: ports/nordic/common-hal/_bleio/__init__.c
 msgid "Invalid state"
 msgstr ""
 
-#: shared-module/os/getenv.c
+#: supervisor/shared/settings.c
 msgid "Invalid unicode escape"
 msgstr ""
 
 #: shared-bindings/aesio/aes.c
 msgid "Key must be 16, 24, or 32 bytes long"
-msgstr ""
-
-#: shared-module/os/getenv.c
-msgid "Key not found"
 msgstr ""
 
 #: shared-module/is31fl3741/FrameBuffer.c
@@ -1395,8 +1438,17 @@ msgstr ""
 msgid "MITM security not supported"
 msgstr ""
 
+#: ports/stm/common-hal/sdioio/SDCard.c
+#, c-format
+msgid "MMC/SDIO Clock Error %x"
+msgstr ""
+
 #: shared-bindings/is31fl3741/IS31FL3741.c
 msgid "Mapping must be a tuple"
+msgstr ""
+
+#: py/persistentcode.c
+msgid "MicroPython .mpy file; use CircuitPython mpy-cross"
 msgstr ""
 
 #: ports/raspberrypi/bindings/rp2pio/StateMachine.c
@@ -1580,6 +1632,10 @@ msgstr ""
 msgid "No pulldown on pin; 1Mohm recommended"
 msgstr ""
 
+#: shared-module/touchio/TouchIn.c
+msgid "No pullup on pin; 1Mohm recommended"
+msgstr ""
+
 #: py/moderrno.c
 msgid "No space left on device"
 msgstr ""
@@ -1617,10 +1673,6 @@ msgstr ""
 #: shared-bindings/audiobusio/I2SOut.c shared-bindings/audioio/AudioOut.c
 #: shared-bindings/audiopwmio/PWMAudioOut.c
 msgid "Not playing"
-msgstr ""
-
-#: shared-module/jpegio/JpegDecoder.c
-msgid "Not supported JPEG standard"
 msgstr ""
 
 #: ports/espressif/common-hal/paralleldisplaybus/ParallelBus.c
@@ -1679,13 +1731,6 @@ msgstr ""
 msgid "Only int or string supported for ip"
 msgstr ""
 
-#: shared-module/displayio/OnDiskBitmap.c
-#, c-format
-msgid ""
-"Only monochrome, indexed 4bpp or 8bpp, and 16bpp or greater BMPs supported: "
-"%d bpp given"
-msgstr ""
-
 #: ports/espressif/common-hal/alarm/touch/TouchAlarm.c
 msgid "Only one %q can be set in deep sleep."
 msgstr ""
@@ -1736,6 +1781,7 @@ msgstr ""
 
 #: ports/espressif/common-hal/socketpool/Socket.c
 #: ports/raspberrypi/common-hal/socketpool/Socket.c
+#: ports/zephyr-cp/common-hal/socketpool/Socket.c
 msgid "Out of sockets"
 msgstr ""
 
@@ -1858,7 +1904,12 @@ msgstr ""
 msgid "Program too long"
 msgstr ""
 
+#: shared-bindings/rclcpy/Publisher.c
+msgid "Publishers can only be created from a parent node"
+msgstr ""
+
 #: shared-bindings/digitalio/DigitalInOut.c
+#: shared-bindings/i2cioexpander/IOPin.c
 msgid "Pull not used when direction is output."
 msgstr ""
 
@@ -1878,10 +1929,31 @@ msgstr ""
 msgid "RNG Init Error"
 msgstr ""
 
+#: ports/espressif/common-hal/rclcpy/__init__.c
+msgid "ROS failed to initialize. Is agent connected?"
+msgstr ""
+
+#: ports/espressif/common-hal/rclcpy/__init__.c
+msgid "ROS internal setup failure"
+msgstr ""
+
+#: ports/espressif/common-hal/rclcpy/__init__.c
+msgid "ROS memory allocator failure"
+msgstr ""
+
+#: ports/espressif/common-hal/rclcpy/Node.c
+msgid "ROS node failed to initialize"
+msgstr ""
+
+#: ports/espressif/common-hal/rclcpy/Publisher.c
+msgid "ROS topic failed to initialize"
+msgstr ""
+
+#: ports/analog/common-hal/busio/UART.c
 #: ports/atmel-samd/common-hal/busio/UART.c ports/cxd56/common-hal/busio/UART.c
 #: ports/nordic/common-hal/busio/UART.c ports/stm/common-hal/busio/UART.c
 msgid "RS485"
-msgstr ""
+msgstr "RS485"
 
 #: ports/espressif/common-hal/busio/UART.c
 #: ports/mimxrt10xx/common-hal/busio/UART.c
@@ -1970,6 +2042,10 @@ msgstr ""
 msgid "SPI init error"
 msgstr ""
 
+#: ports/analog/common-hal/busio/SPI.c
+msgid "SPI needs MOSI, MISO, and SCK"
+msgstr ""
+
 #: ports/raspberrypi/common-hal/busio/SPI.c
 msgid "SPI peripheral in use"
 msgstr ""
@@ -2009,11 +2085,13 @@ msgstr ""
 #: shared-bindings/displayio/TileGrid.c
 #: shared-bindings/memorymonitor/AllocationSize.c
 #: shared-bindings/pulseio/PulseIn.c
+#: shared-bindings/tilepalettemapper/TilePaletteMapper.c
 msgid "Slices not supported"
 msgstr ""
 
 #: ports/espressif/common-hal/socketpool/SocketPool.c
 #: ports/raspberrypi/common-hal/socketpool/SocketPool.c
+#: ports/zephyr-cp/common-hal/socketpool/SocketPool.c
 msgid "SocketPool can only be used with wifi.radio"
 msgstr ""
 
@@ -2053,8 +2131,7 @@ msgstr ""
 msgid "The length of rgb_pins must be 6, 12, 18, 24, or 30"
 msgstr ""
 
-#: shared-module/audiodelays/Echo.c shared-module/audiofilters/Distortion.c
-#: shared-module/audiofilters/Filter.c shared-module/audiomixer/MixerVoice.c
+#: shared-module/audiocore/__init__.c
 msgid "The sample's %q does not match"
 msgstr ""
 
@@ -2076,12 +2153,18 @@ msgstr ""
 msgid "Tile height must exactly divide bitmap height"
 msgstr ""
 
-#: shared-bindings/displayio/TileGrid.c shared-module/displayio/TileGrid.c
+#: shared-bindings/displayio/TileGrid.c
+#: shared-bindings/tilepalettemapper/TilePaletteMapper.c
+#: shared-module/displayio/TileGrid.c
 msgid "Tile index out of bounds"
 msgstr ""
 
 #: shared-bindings/displayio/TileGrid.c
 msgid "Tile width must exactly divide bitmap width"
+msgstr ""
+
+#: shared-module/tilepalettemapper/TilePaletteMapper.c
+msgid "TilePaletteMapper may only be bound to a TileGrid once"
 msgstr ""
 
 #: shared-bindings/alarm/time/TimeAlarm.c
@@ -2092,6 +2175,10 @@ msgstr ""
 #: ports/nordic/common-hal/_bleio/Adapter.c
 #, c-format
 msgid "Timeout is too long: Maximum timeout length is %d seconds"
+msgstr ""
+
+#: ports/analog/common-hal/busio/UART.c
+msgid "Timeout must be < 100 seconds"
 msgstr ""
 
 #: ports/atmel-samd/common-hal/audiobusio/I2SOut.c
@@ -2137,12 +2224,24 @@ msgstr ""
 msgid "UART init"
 msgstr ""
 
+#: ports/analog/common-hal/busio/UART.c
+msgid "UART needs TX & RX"
+msgstr ""
+
 #: ports/raspberrypi/common-hal/busio/UART.c
 msgid "UART peripheral in use"
 msgstr ""
 
 #: ports/stm/common-hal/busio/UART.c
 msgid "UART re-init"
+msgstr ""
+
+#: ports/analog/common-hal/busio/UART.c
+msgid "UART read error"
+msgstr ""
+
+#: ports/analog/common-hal/busio/UART.c
+msgid "UART transaction timeout"
 msgstr ""
 
 #: ports/stm/common-hal/busio/UART.c
@@ -2197,6 +2296,7 @@ msgid "Unable to allocate to the heap."
 msgstr ""
 
 #: ports/espressif/common-hal/busio/I2C.c
+#: ports/espressif/common-hal/busio/SPI.c
 msgid "Unable to create lock"
 msgstr ""
 
@@ -2302,6 +2402,10 @@ msgid ""
 "declined or ignored."
 msgstr ""
 
+#: shared-module/jpegio/JpegDecoder.c
+msgid "Unsupported JPEG (may be progressive)"
+msgstr ""
+
 #: shared-bindings/bitmaptools/__init__.c
 msgid "Unsupported colorspace"
 msgstr ""
@@ -2310,21 +2414,24 @@ msgstr ""
 msgid "Unsupported display bus type"
 msgstr ""
 
-#: shared-module/audiocore/WaveFile.c
-msgid "Unsupported format"
-msgstr ""
-
 #: shared-bindings/hashlib/__init__.c
 msgid "Unsupported hash algorithm"
 msgstr ""
 
 #: ports/espressif/common-hal/socketpool/Socket.c
+#: ports/zephyr-cp/common-hal/socketpool/Socket.c
 msgid "Unsupported socket type"
 msgstr ""
 
 #: ports/espressif/common-hal/_bleio/Adapter.c
 #: ports/espressif/common-hal/dualbank/__init__.c
 msgid "Update failed"
+msgstr ""
+
+#: ports/zephyr-cp/common-hal/busio/I2C.c
+#: ports/zephyr-cp/common-hal/busio/SPI.c
+#: ports/zephyr-cp/common-hal/busio/UART.c
+msgid "Use device tree to define %q devices"
 msgstr ""
 
 #: ports/espressif/common-hal/_bleio/Characteristic.c
@@ -2367,10 +2474,12 @@ msgstr ""
 
 #: supervisor/shared/web_workflow/web_workflow.c
 msgid "Wi-Fi: "
-msgstr ""
+msgstr "Wi-Fi: "
 
+#: ports/espressif/common-hal/wifi/Radio.c
 #: ports/raspberrypi/common-hal/wifi/Radio.c
-msgid "Wifi is not enabled"
+#: ports/zephyr-cp/common-hal/wifi/Radio.c
+msgid "WiFi is not enabled"
 msgstr ""
 
 #: main.c
@@ -2462,6 +2571,10 @@ msgstr ""
 
 #: extmod/modbinascii.c extmod/modhashlib.c py/objarray.c
 msgid "a bytes-like object is required"
+msgstr ""
+
+#: shared-bindings/i2cioexpander/IOExpander.c
+msgid "address out of range"
 msgstr ""
 
 #: shared-bindings/i2ctarget/I2CTarget.c
@@ -2606,8 +2719,16 @@ msgstr ""
 msgid "bits must be 32 or less"
 msgstr ""
 
-#: shared-bindings/audiodelays/Echo.c shared-bindings/audiofilters/Distortion.c
-#: shared-bindings/audiofilters/Filter.c shared-bindings/audiomixer/Mixer.c
+#: shared-bindings/audiofreeverb/Freeverb.c
+msgid "bits_per_sample must be 16"
+msgstr ""
+
+#: shared-bindings/audiodelays/Chorus.c shared-bindings/audiodelays/Echo.c
+#: shared-bindings/audiodelays/MultiTapDelay.c
+#: shared-bindings/audiodelays/PitchShift.c
+#: shared-bindings/audiofilters/Distortion.c
+#: shared-bindings/audiofilters/Filter.c shared-bindings/audiofilters/Phaser.c
+#: shared-bindings/audiomixer/Mixer.c
 msgid "bits_per_sample must be 8 or 16"
 msgstr ""
 
@@ -2662,6 +2783,10 @@ msgstr ""
 #: shared-module/vectorio/Circle.c shared-module/vectorio/Polygon.c
 #: shared-module/vectorio/Rectangle.c
 msgid "can only have one parent"
+msgstr ""
+
+#: py/emitinlinerv32.c
+msgid "can only have up to 4 parameters for RV32 assembly"
 msgstr ""
 
 #: py/emitinlinethumb.c
@@ -2729,6 +2854,10 @@ msgstr ""
 
 #: py/objstr.c
 msgid "can't convert to str implicitly"
+msgstr ""
+
+#: py/objtype.c
+msgid "can't create '%q' instances"
 msgstr ""
 
 #: py/compile.c
@@ -2827,10 +2956,6 @@ msgstr ""
 
 #: extmod/ulab/code/ndarray.c
 msgid "cannot convert complex type"
-msgstr ""
-
-#: py/objtype.c
-msgid "cannot create '%q' instances"
 msgstr ""
 
 #: py/objtype.c
@@ -3094,10 +3219,6 @@ msgstr ""
 msgid "file write is not available"
 msgstr ""
 
-#: shared-bindings/storage/__init__.c
-msgid "filesystem must provide mount method"
-msgstr ""
-
 #: extmod/ulab/code/numpy/vector.c
 msgid "first argument must be a callable"
 msgstr ""
@@ -3147,7 +3268,15 @@ msgid "format"
 msgstr ""
 
 #: py/objstr.c
-msgid "format requires a dict"
+msgid "format needs a dict"
+msgstr ""
+
+#: py/objstr.c
+msgid "format string didn't convert all arguments"
+msgstr ""
+
+#: py/objstr.c
+msgid "format string needs more arguments"
 msgstr ""
 
 #: py/objdeque.c
@@ -3606,7 +3735,7 @@ msgid "must use keyword argument for key function"
 msgstr ""
 
 #: py/runtime.c
-msgid "name '%q' is not defined"
+msgid "name '%q' isn't defined"
 msgstr ""
 
 #: py/runtime.c
@@ -3696,7 +3825,7 @@ msgid "non-default argument follows default argument"
 msgstr ""
 
 #: py/objstr.c
-msgid "non-hex digit found"
+msgid "non-hex digit"
 msgstr ""
 
 #: ports/nordic/common-hal/_bleio/Adapter.c
@@ -3715,20 +3844,16 @@ msgstr ""
 msgid "not a constant"
 msgstr ""
 
-#: py/objstr.c
-msgid "not all arguments converted during string formatting"
-msgstr ""
-
-#: py/objstr.c
-msgid "not enough arguments for format string"
-msgstr ""
-
 #: extmod/ulab/code/numpy/carray/carray_tools.c
 msgid "not implemented for complex dtype"
 msgstr ""
 
 #: extmod/ulab/code/numpy/bitwise.c
 msgid "not supported for input types"
+msgstr ""
+
+#: shared-bindings/i2cioexpander/IOExpander.c
+msgid "num_pins must be 8 or 16"
 msgstr ""
 
 #: extmod/ulab/code/numpy/create.c
@@ -3742,6 +3867,10 @@ msgstr ""
 #: py/obj.c
 #, c-format
 msgid "object '%s' isn't a tuple or list"
+msgstr ""
+
+#: shared-bindings/digitalio/DigitalInOutProtocol.c
+msgid "object does not support DigitalInOut protocol"
 msgstr ""
 
 #: py/obj.c
@@ -3783,10 +3912,6 @@ msgstr ""
 
 #: py/obj.c
 msgid "object with buffer protocol required"
-msgstr ""
-
-#: py/objstr.c
-msgid "odd-length string"
 msgstr ""
 
 #: supervisor/shared/web_workflow/web_workflow.c
@@ -3835,6 +3960,30 @@ msgstr ""
 
 #: py/vm.c
 msgid "opcode"
+msgstr ""
+
+#: py/emitinlinerv32.c
+msgid "opcode '%q' argument %d: expecting %q"
+msgstr ""
+
+#: py/emitinlinerv32.c
+msgid "opcode '%q' argument %d: must not be zero"
+msgstr ""
+
+#: py/emitinlinerv32.c
+msgid "opcode '%q' argument %d: out of range"
+msgstr ""
+
+#: py/emitinlinerv32.c
+msgid "opcode '%q' argument %d: undefined label '%q'"
+msgstr ""
+
+#: py/emitinlinerv32.c
+msgid "opcode '%q' argument %d: unknown register"
+msgstr ""
+
+#: py/emitinlinerv32.c
+msgid "opcode '%q': expecting %d arguments"
 msgstr ""
 
 #: extmod/ulab/code/ndarray.c extmod/ulab/code/numpy/bitwise.c
@@ -3928,6 +4077,10 @@ msgstr ""
 msgid "palette must be 32 bytes long"
 msgstr ""
 
+#: py/emitinlinerv32.c
+msgid "parameters must be registers in sequence a0 to a3"
+msgstr ""
+
 #: py/emitinlinextensa.c
 msgid "parameters must be registers in sequence a2 to a5"
 msgstr ""
@@ -3977,10 +4130,6 @@ msgstr ""
 msgid "pull masks conflict with direction masks"
 msgstr ""
 
-#: py/parse.c
-msgid "raw f-strings are not supported"
-msgstr ""
-
 #: extmod/ulab/code/numpy/fft/fft_tools.c
 msgid "real and imaginary parts must be of equal length"
 msgstr ""
@@ -4022,6 +4171,10 @@ msgstr ""
 
 #: py/objstr.c
 msgid "rsplit(None,n)"
+msgstr ""
+
+#: shared-bindings/audiofreeverb/Freeverb.c
+msgid "samples_signed must be true"
 msgstr ""
 
 #: ports/atmel-samd/common-hal/audiobusio/PDMIn.c
@@ -4115,10 +4268,6 @@ msgstr ""
 
 #: extmod/modre.c
 msgid "splitting with sub-captures"
-msgstr ""
-
-#: py/objstr.c
-msgid "start/end indices"
 msgstr ""
 
 #: shared-bindings/random/__init__.c
@@ -4243,11 +4392,11 @@ msgid "tx and rx cannot both be None"
 msgstr ""
 
 #: py/objtype.c
-msgid "type '%q' is not an acceptable base type"
+msgid "type '%q' isn't an acceptable base type"
 msgstr ""
 
 #: py/objtype.c
-msgid "type is not an acceptable base type"
+msgid "type isn't an acceptable base type"
 msgstr ""
 
 #: py/runtime.c
@@ -4283,6 +4432,10 @@ msgstr ""
 msgid "unindent doesn't match any outer indent level"
 msgstr ""
 
+#: py/emitinlinerv32.c
+msgid "unknown RV32 instruction '%q'"
+msgstr ""
+
 #: py/objstr.c
 #, c-format
 msgid "unknown conversion specifier %c"
@@ -4309,7 +4462,9 @@ msgstr ""
 msgid "unreadable attribute"
 msgstr ""
 
-#: shared-bindings/displayio/TileGrid.c shared-bindings/vectorio/VectorShape.c
+#: shared-bindings/displayio/TileGrid.c shared-bindings/terminalio/Terminal.c
+#: shared-bindings/tilepalettemapper/TilePaletteMapper.c
+#: shared-bindings/vectorio/VectorShape.c
 msgid "unsupported %q type"
 msgstr ""
 
@@ -4387,11 +4542,6 @@ msgstr ""
 msgid "width must be greater than zero"
 msgstr ""
 
-#: ports/espressif/common-hal/wifi/Radio.c
-#: ports/raspberrypi/common-hal/wifi/Radio.c
-msgid "wifi is not enabled"
-msgstr ""
-
 #: ports/raspberrypi/common-hal/wifi/Monitor.c
 msgid "wifi.Monitor not available"
 msgstr ""
@@ -4453,6 +4603,22 @@ msgstr ""
 #: extmod/ulab/code/scipy/signal/signal.c
 msgid "zi must be of shape (n_section, 2)"
 msgstr ""
+
+#~ msgid "%q moved from %q to %q"
+#~ msgstr "%q μετακινήθηκε από το %q στο %q"
+
+#, c-format
+#~ msgid "%%c requires int or char"
+#~ msgstr "%%c απαιτεί ακέραιο ή χαρακτήρα"
+
+#~ msgid "'%q' object is not callable"
+#~ msgstr "'%q' αντικείμενο δεν καλείται"
+
+#~ msgid "Cannot remount '/' when visible via USB."
+#~ msgstr "Δεν μπορεί να γίνει remount του '/' όταν είναι ορατό μέσω USB."
+
+#~ msgid "Data chunk must follow fmt chunk"
+#~ msgstr "Το data chunk πρέπει να ακολουθεί το fmt chunk"
 
 #~ msgid "Buffer length must be a multiple of 512"
 #~ msgstr "Το μήκος buffer πρέπει να είναι πολλαπλάσιο του 512"
@@ -4568,7 +4734,7 @@ msgstr ""
 #~ msgid "'continue' outside loop"
 #~ msgstr "'continue' εκτός επανάληψης"
 
-#~ msgid "'coroutine' object is not an iterator"
+#~ msgid "'coroutine' object isn't an iterator"
 #~ msgstr ""
 #~ "'coroutine' αντικείμενο δεν μπορεί να χρησιμοποιηθεί σαν επαναλήπτης"
 

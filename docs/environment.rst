@@ -53,8 +53,10 @@ Details of the toml language subset
 CircuitPython behavior
 ----------------------
 
-CircuitPython will also read the environment to configure its behavior. Other
-keys are ignored by CircuitPython. Here are the keys it uses:
+CircuitPython will also read the environment to configure its behavior. Some keys are read at
+startup once and others are read on reload (ctrl-D in the REPL). If a reload doesn't change things,
+then try a reset (a power cycle or pressing the reset button). Other keys are ignored by CircuitPython.
+Here are the keys it uses:
 
 Core CircuitPython keys
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -158,9 +160,13 @@ Selects the desired resolution and color depth.
 
 Supported resolutions are:
  * 640x480 with color depth 1, 2, 4 or 8 bits per pixel
- * 320x240 with color depth 8 or 16 bits per pixel
+ * 320x240 with pixel doubling and color depth 8, 16, or 32 bits per pixel
+ * 360x200 with pixel doubling and color depth 8, 16, or 32 bits per pixel
 
-The default value, if unspecified, is 320x240 with 16 bits per pixel.
+See :py:class:`picodvi.Framebuffer` for more details.
+
+The default value, if unspecified, is 360x200 16 bits per pixel if the connected
+display is 1920x1080 or a multiple of it, otherwise 320x240 with 16 bits per pixel.
 
 If height is unspecified, it is set from the width. For example, a width of 640
 implies a height of 480.
@@ -174,3 +180,29 @@ Example: Configure the display to 640x480 black and white (1 bit per pixel):
 
 `Adafruit Feather RP2350 <https://circuitpython.org/board/adafruit_feather_rp2350/>`_
 `Adafruit Metro RP2350 <https://circuitpython.org/board/adafruit_metro_rp2350/>`_
+
+CIRCUITPY_TERMINAL_SCALE
+~~~~~~~~~~~~~~~~~~~~~~~~
+Allows the entry of a display scaling factor used during the terminalio console construction.
+The entered scaling factor only affects the terminalio console and has no impact on
+the UART, Web Workflow, BLE Workflow, etc consoles.
+
+This feature is not enabled on boards that the CIRCUITPY_SETTINGS_TOML (or CIRCUITPY_FULL_BUILD)
+flag has been set to 0. Currently this is primarily boards with limited flash including some
+of the Atmel_samd boards based on the SAMD21/M0 microprocessor.
+
+CIRCUITPY_TERMINAL_FONT
+~~~~~~~~~~~~~~~~~~~~~~~
+Specifies a custom font file path to use for the terminalio console instead of the default
+``/fonts/terminal.lvfontbin``. This allows users to create and use custom fonts for the
+CircuitPython console.
+
+This feature requires both CIRCUITPY_SETTINGS_TOML and CIRCUITPY_LVFONTIO to be enabled.
+
+Example:
+
+.. code-block::
+
+    CIRCUITPY_TERMINAL_FONT="/fonts/myfont.lvfontbin"
+
+`boards that the terminalio core module is available on <https://docs.circuitpython.org/en/latest/shared-bindings/terminalio/>`_

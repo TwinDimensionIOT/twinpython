@@ -40,20 +40,30 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(BASEOPTS)
 # the i18n builder cannot share the environment and doctrees with the others
 I18NSPHINXOPTS  = $(BASEOPTS)
 
-TRANSLATE_SOURCES = extmod lib main.c ports/atmel-samd ports/analog ports/cxd56 ports/espressif ports/mimxrt10xx ports/nordic ports/raspberrypi ports/renode ports/stm py shared-bindings shared-module supervisor
+TRANSLATE_SOURCES = extmod lib main.c ports/atmel-samd ports/analog ports/cxd56 ports/espressif ports/mimxrt10xx ports/nordic ports/raspberrypi ports/renode ports/stm ports/zephyr-cp py shared-bindings shared-module supervisor
 # Paths to exclude from TRANSLATE_SOURCES
 # Each must be preceded by "-path"; if any wildcards, enclose in quotes.
 # Separate by "-o" (Find's "or" operand)
 TRANSLATE_SOURCES_EXC = -path "ports/*/build-*" \
 	-o -path "ports/*/build" \
+	-o -path ports/analog/msdk \
 	-o -path ports/atmel-samd/asf4 \
 	-o -path ports/cxd56/spresense-exported-sdk \
+	-o -path ports/espressif/esp-camera \
 	-o -path ports/espressif/esp-idf \
+	-o -path ports/espressif/esp-protocols \
 	-o -path ports/mimxrt10xx/sdk \
+	-o -path ports/nordic/bluetooth \
+	-o -path ports/nordic/nrfx \
+	-o -path ports/raspberrypi/lib \
 	-o -path ports/raspberrypi/sdk \
+	-o -path ports/stm/peripherals \
 	-o -path ports/stm/st_driver \
-	-o -path lib/tinyusb \
-	-o -path lib/lwip \
+	-o -path ports/zephyr-cp/bootloader \
+	-o -path ports/zephyr-cp/modules \
+	-o -path ports/zephyr-cp/tools \
+	-o -path ports/zephyr-cp/zephyr \
+	-o -path lib \
 	-o -path extmod/ulab/circuitpython \
 	-o -path extmod/ulab/micropython \
 
@@ -226,7 +236,7 @@ pseudoxml:
 .PHONY: all-source
 all-source:
 
-TRANSLATE_CHECK_SUBMODULES=if ! [ -f extmod/ulab/README.md ]; then python tools/ci_fetch_deps.py translate; fi
+TRANSLATE_CHECK_SUBMODULES=if ! [ -f extmod/ulab/README.md ]; then $(PYTHON) tools/ci_fetch_deps.py translate; fi
 TRANSLATE_COMMAND=find $(TRANSLATE_SOURCES) -type d \( $(TRANSLATE_SOURCES_EXC) \) -prune -o -type f \( -iname "*.c" -o -iname "*.h" \) -print | (LC_ALL=C sort) | xgettext -x locale/synthetic.pot -f- -L C -s --add-location=file --keyword=MP_ERROR_TEXT -o - | sed -e '/"POT-Creation-Date: /d'
 locale/circuitpython.pot: all-source
 	$(TRANSLATE_CHECK_SUBMODULES)
@@ -261,21 +271,21 @@ check-translate:
 
 .PHONY: stubs
 stubs:
-	@rm -rf circuitpython-stubs
-	@mkdir circuitpython-stubs
-	@$(PYTHON) tools/extract_pyi.py shared-bindings/ $(STUBDIR)
-	@$(PYTHON) tools/extract_pyi.py extmod/ulab/code/ $(STUBDIR)/ulab
-	@$(PYTHON) tools/extract_pyi.py ports/atmel-samd/bindings $(STUBDIR)
-	@$(PYTHON) tools/extract_pyi.py ports/espressif/bindings $(STUBDIR)
-	@$(PYTHON) tools/extract_pyi.py ports/raspberrypi/bindings $(STUBDIR)
-	@sed -e "s,__version__,`python -msetuptools_scm`," < setup.py-stubs > circuitpython-stubs/setup.py
-	@cp README.rst-stubs circuitpython-stubs/README.rst
-	@cp MANIFEST.in-stubs circuitpython-stubs/MANIFEST.in
-	@$(PYTHON) tools/board_stubs/build_board_specific_stubs/board_stub_builder.py
-	@cp -r tools/board_stubs/circuitpython_setboard circuitpython-stubs/circuitpython_setboard
-	@$(PYTHON) -m build circuitpython-stubs
-	@touch circuitpython-stubs/board/__init__.py
-	@touch circuitpython-stubs/board_definitions/__init__.py
+	rm -rf circuitpython-stubs
+	mkdir circuitpython-stubs
+	$(PYTHON) tools/extract_pyi.py shared-bindings/ $(STUBDIR)
+	$(PYTHON) tools/extract_pyi.py extmod/ulab/code/ $(STUBDIR)/ulab
+	for d in ports/*/bindings; do \
+	    $(PYTHON) tools/extract_pyi.py "$$d" $(STUBDIR); done
+	sed -e "s,__version__,`python -msetuptools_scm`," < setup.py-stubs > circuitpython-stubs/setup.py
+	cp README.rst-stubs circuitpython-stubs/README.rst
+	cp MANIFEST.in-stubs circuitpython-stubs/MANIFEST.in
+	cp -r stubs/* circuitpython-stubs
+	$(PYTHON) tools/board_stubs/build_board_specific_stubs/board_stub_builder.py
+	cp -r tools/board_stubs/circuitpython_setboard circuitpython-stubs/circuitpython_setboard
+	$(PYTHON) -m build circuitpython-stubs
+	touch circuitpython-stubs/board/__init__.py
+	touch circuitpython-stubs/board_definitions/__init__.py
 
 .PHONY: check-stubs
 check-stubs: stubs
@@ -288,6 +298,9 @@ update-frozen-libraries:
 	cd frozen; for library in *; do cd $$library; ../../tools/git-checkout-latest-tag.sh; cd ..; done
 
 one-of-each: samd21 litex mimxrt10xx nordic stm
+
+analog:
+	$(MAKE) -C ports/analog/ BOARD=apard32690
 
 samd21:
 	$(MAKE) -C ports/atmel-samd BOARD=trinket_m0

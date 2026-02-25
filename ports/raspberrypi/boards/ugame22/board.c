@@ -7,7 +7,7 @@
 #include "supervisor/board.h"
 
 #include "shared-bindings/microcontroller/Pin.h"
-#include "src/rp2_common/hardware_gpio/include/hardware/gpio.h"
+#include "hardware/gpio.h"
 
 #include "shared-bindings/busio/SPI.h"
 #include "shared-bindings/fourwire/FourWire.h"
@@ -52,9 +52,9 @@ void board_init(void) {
     bus->base.type = &fourwire_fourwire_type;
     common_hal_fourwire_fourwire_construct(bus,
         spi,
-        &pin_GPIO4, // TFT_DC Command or data
-        &pin_GPIO5, // TFT_CS Chip select
-        &pin_GPIO1, // TFT_RST Reset
+        MP_OBJ_FROM_PTR(&pin_GPIO4), // TFT_DC Command or data
+        MP_OBJ_FROM_PTR(&pin_GPIO5), // TFT_CS Chip select
+        MP_OBJ_FROM_PTR(&pin_GPIO1), // TFT_RST Reset
         80000000L, // Baudrate
         0, // Polarity
         0); // Phase

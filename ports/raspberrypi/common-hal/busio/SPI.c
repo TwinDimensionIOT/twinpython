@@ -14,28 +14,18 @@
 #include "common-hal/microcontroller/Pin.h"
 #include "shared-bindings/microcontroller/Pin.h"
 
-#include "src/rp2_common/hardware_dma/include/hardware/dma.h"
-#include "src/rp2_common/hardware_gpio/include/hardware/gpio.h"
+#include "hardware/dma.h"
+#include "hardware/gpio.h"
 
 #define NO_INSTANCE 0xff
-
-static bool never_reset_spi[2];
-static spi_inst_t *spi[2] = {spi0, spi1};
-
-void reset_spi(void) {
-    for (size_t i = 0; i < 2; i++) {
-        if (never_reset_spi[i]) {
-            continue;
-        }
-
-        spi_deinit(spi[i]);
-    }
-}
 
 void common_hal_busio_spi_construct(busio_spi_obj_t *self,
     const mcu_pin_obj_t *clock, const mcu_pin_obj_t *mosi,
     const mcu_pin_obj_t *miso, bool half_duplex) {
     size_t instance_index = NO_INSTANCE;
+
+    // Ensure the object starts in its deinit state.
+    common_hal_busio_spi_mark_deinit(self);
 
     if (half_duplex) {
         mp_raise_NotImplementedError_varg(MP_ERROR_TEXT("%q"), MP_QSTR_half_duplex);
@@ -96,8 +86,6 @@ void common_hal_busio_spi_construct(busio_spi_obj_t *self,
 }
 
 void common_hal_busio_spi_never_reset(busio_spi_obj_t *self) {
-    never_reset_spi[spi_get_index(self->peripheral)] = true;
-
     common_hal_never_reset_pin(self->clock);
     common_hal_never_reset_pin(self->MOSI);
     common_hal_never_reset_pin(self->MISO);
@@ -107,17 +95,21 @@ bool common_hal_busio_spi_deinited(busio_spi_obj_t *self) {
     return self->clock == NULL;
 }
 
+void common_hal_busio_spi_mark_deinit(busio_spi_obj_t *self) {
+    self->clock = NULL;
+}
+
 void common_hal_busio_spi_deinit(busio_spi_obj_t *self) {
     if (common_hal_busio_spi_deinited(self)) {
         return;
     }
-    never_reset_spi[spi_get_index(self->peripheral)] = false;
     spi_deinit(self->peripheral);
 
     common_hal_reset_pin(self->clock);
     common_hal_reset_pin(self->MOSI);
     common_hal_reset_pin(self->MISO);
-    self->clock = NULL;
+
+    common_hal_busio_spi_mark_deinit(self);
 }
 
 bool common_hal_busio_spi_configure(busio_spi_obj_t *self,
@@ -182,7 +174,10 @@ static bool _transfer(busio_spi_obj_t *self,
         chan_tx = dma_claim_unused_channel(false);
         chan_rx = dma_claim_unused_channel(false);
     }
-    bool use_dma = chan_rx >= 0 && chan_tx >= 0;
+    bool has_dma_channels = chan_rx >= 0 && chan_tx >= 0;
+    // Only use DMA if both data buffers are in SRAM. Otherwise, we'll stall the DMA with PSRAM or flash cache misses.
+    bool data_in_sram = data_in >= (uint8_t *)SRAM_BASE && data_out >= (uint8_t *)SRAM_BASE;
+    bool use_dma = has_dma_channels && data_in_sram;
     if (use_dma) {
         dma_channel_config c = dma_channel_get_default_config(chan_tx);
         channel_config_set_transfer_data_size(&c, DMA_SIZE_8);

@@ -8,10 +8,6 @@
 
 #include "mphalport.h"
 
-#if defined(CIRCUITPY_BOOT_BUTTON)
-#include "shared-bindings/digitalio/DigitalInOut.h"
-#include "shared-bindings/time/__init__.h"
-#endif
 #include "shared-bindings/microcontroller/Processor.h"
 #include "shared-bindings/microcontroller/ResetReason.h"
 
@@ -21,6 +17,10 @@
 #include "supervisor/shared/status_leds.h"
 #include "supervisor/shared/translate/translate.h"
 #include "supervisor/shared/tick.h"
+
+#ifdef __ZEPHYR__
+#include <zephyr/kernel.h>
+#endif
 
 #define SAFE_MODE_DATA_GUARD 0xad0000af
 #define SAFE_MODE_DATA_GUARD_MASK 0xff0000ff
@@ -69,7 +69,7 @@ safe_mode_t wait_for_safe_mode_reset(void) {
     uint64_t diff = 0;
     bool boot_in_safe_mode = false;
     while (diff < 1000) {
-        #ifdef CIRCUITPY_STATUS_LED
+        #if CIRCUITPY_STATUS_LED
         // Blink on for 100, off for 100
         bool led_on = (diff % 250) < 125;
         if (led_on) {
@@ -78,19 +78,10 @@ safe_mode_t wait_for_safe_mode_reset(void) {
             new_status_color(BLACK);
         }
         #endif
-        // Init the boot button every time in case it is used for LEDs.
-        #ifdef CIRCUITPY_BOOT_BUTTON
-        digitalio_digitalinout_obj_t boot_button;
-        common_hal_digitalio_digitalinout_construct(&boot_button, CIRCUITPY_BOOT_BUTTON);
-        common_hal_digitalio_digitalinout_switch_to_input(&boot_button, PULL_UP);
-        common_hal_time_delay_ms(1);
-        bool button_pressed = !common_hal_digitalio_digitalinout_get_value(&boot_button);
-        common_hal_digitalio_digitalinout_deinit(&boot_button);
-        if (button_pressed) {
+        if (port_boot_button_pressed()) {
             boot_in_safe_mode = true;
             break;
         }
-        #endif
         diff = supervisor_ticks_ms64() - start_ticks;
     }
     #if CIRCUITPY_STATUS_LED
@@ -112,10 +103,19 @@ void PLACE_IN_ITCM(safe_mode_on_next_reset)(safe_mode_t reason) {
 // Don't inline this so it's easy to break on it from GDB.
 void __attribute__((noinline, )) PLACE_IN_ITCM(reset_into_safe_mode)(safe_mode_t reason) {
     if (_safe_mode > SAFE_MODE_BROWNOUT && reason > SAFE_MODE_BROWNOUT) {
+        #ifdef __ZEPHYR__
+        printk("Already in safe mode\n");
+        printk("Reason: %d\n", reason);
+        printk("Current safe mode: %d\n", _safe_mode);
+        while (true) {
+            k_cpu_idle();
+        }
+        #else
         while (true) {
             // This very bad because it means running in safe mode didn't save us. Only ignore brownout
             // because it may be due to a switch bouncing.
         }
+        #endif
     }
 
     safe_mode_on_next_reset(reason);
@@ -142,7 +142,7 @@ void print_safe_mode_message(safe_mode_t reason) {
         case SAFE_MODE_USER:
             #if defined(BOARD_USER_SAFE_MODE_ACTION)
             message = BOARD_USER_SAFE_MODE_ACTION;
-            #elif defined(CIRCUITPY_BOOT_BUTTON)
+            #elif defined(CIRCUITPY_BOOT_BUTTON) || CIRCUITPY_BOOT_BUTTON_NO_GPIO
             message = MP_ERROR_TEXT("You pressed the BOOT button at start up");
             #else
             message = MP_ERROR_TEXT("You pressed the reset button during boot.");

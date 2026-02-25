@@ -54,6 +54,9 @@ bool common_hal_pulseio_pulseout_deinited(pulseio_pulseout_obj_t *self) {
 }
 
 void common_hal_pulseio_pulseout_deinit(pulseio_pulseout_obj_t *self) {
+    if (common_hal_pulseio_pulseout_deinited(self)) {
+        return;
+    }
     rmt_disable(self->channel);
     rmt_del_encoder(self->encoder);
     rmt_del_channel(self->channel);
@@ -66,7 +69,7 @@ void common_hal_pulseio_pulseout_send(pulseio_pulseout_obj_t *self, uint16_t *pu
     // Circuitpython allows 16 bit pulse values, while ESP32 only allows 15 bits
     // Thus, we use entire items for one pulse, rather than switching inside each item
     for (size_t i = 0; i < length; i++) {
-        // Setting the RMT duration to 0 has undefined behavior, so avoid that pre-emptively.
+        // Setting the RMT duration to 0 has undefined behavior, so avoid that preemptively.
         if (pulses[i] == 0) {
             continue;
         }

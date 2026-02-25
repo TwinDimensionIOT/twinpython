@@ -30,6 +30,7 @@ CIRCUITPY_FREQUENCYIO = 0
 
 # Use PWM internally
 CIRCUITPY_I2CTARGET = 1
+CIRCUITPY_I2CIOEXPANDER = 1
 CIRCUITPY_NVM = 1
 # Use PIO internally
 CIRCUITPY_PULSEIO ?= 1
@@ -59,14 +60,13 @@ CIRCUITPY_CYW43_INIT_DELAY ?= 1000
 endif
 
 ifeq ($(CHIP_VARIANT),RP2350)
+# RP2350 has PSRAM that is not DMA-capable
+CIRCUITPY_ALL_MEMORY_DMA_CAPABLE = 0
+
 # This needs to be implemented.
 CIRCUITPY_ALARM = 0
 # Default PICODVI on because it doesn't require much code in RAM to talk to HSTX.
 CIRCUITPY_PICODVI ?= 1
-
-# Our generic touchio uses a pull down and RP2350 A2 hardware doesn't work correctly.
-# So, turn touchio off because it doesn't work.
-CIRCUITPY_TOUCHIO = 0
 
 # delay in ms before calling cyw43_arch_init_with_country
 CIRCUITPY_CYW43_INIT_DELAY ?= 0

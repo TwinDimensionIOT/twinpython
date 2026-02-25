@@ -36,8 +36,8 @@ ifeq ($(DEBUG), 1)
   CFLAGS += -ggdb3
   OPTIMIZATION_FLAGS = -Og
 else
-  OPTIMIZATION_FLAGS ?= -O2 -fno-inline-functions
-  CFLAGS += -DNDEBUG -ggdb3
+  OPTIMIZATION_FLAGS ?= -O2
+  CFLAGS += -DNDEBUG
 endif
 
 ifeq ($(NRF_DEBUG_PRINT), 1)
@@ -47,7 +47,7 @@ endif
 # option to override compiler optimization level, set in boards/$(BOARD)/mpconfigboard.mk
 CFLAGS += $(OPTIMIZATION_FLAGS)
 
-CFLAGS += $(INC) -Wall -Werror -std=gnu11 -nostdlib -fshort-enums $(BASE_CFLAGS) $(CFLAGS_MOD) $(COPT) -Werror=missing-prototypes
+CFLAGS += $(INC) -Wall -Werror -std=gnu11 -nostdlib -fshort-enums $(BASE_CFLAGS) $(CFLAGS_MOD) $(COPT) -Werror=missing-prototypes -Werror=old-style-definition
 
 # Nordic Softdevice SDK header files contains inline assembler that has
 # broken constraints. As a result the IPA-modref pass, introduced in gcc-11,
@@ -146,20 +146,9 @@ SRC_C += $(SRC_DCD)
 $(patsubst %.c,$(BUILD)/%.o,$(SRC_DCD)): CFLAGS += -Wno-missing-prototypes
 endif # CIRCUITPY_USB_DEVICE
 
-SRC_COMMON_HAL_EXPANDED = $(addprefix shared-bindings/, $(SRC_COMMON_HAL)) \
-                          $(addprefix shared-bindings/, $(SRC_BINDINGS_ENUMS)) \
-                          $(addprefix common-hal/, $(SRC_COMMON_HAL))
+SRC_S = shared/runtime/gchelper_thumb2.s
 
-SRC_SHARED_MODULE_EXPANDED = $(addprefix shared-bindings/, $(SRC_SHARED_MODULE)) \
-                             $(addprefix shared-module/, $(SRC_SHARED_MODULE)) \
-                             $(addprefix shared-module/, $(SRC_SHARED_MODULE_INTERNAL))
-
-# There may be duplicates between SRC_COMMON_HAL_EXPANDED and SRC_SHARED_MODULE_EXPANDED,
-# because a few modules have files both in common-hal/ and shared-module/.
-# Doing a $(sort ...) removes duplicates as part of sorting.
-SRC_COMMON_HAL_SHARED_MODULE_EXPANDED = $(sort $(SRC_COMMON_HAL_EXPANDED) $(SRC_SHARED_MODULE_EXPANDED))
-
-SRC_S = supervisor/cpu.s
+SRC_C += shared/runtime/gchelper_native.c
 
 OBJ += $(PY_O) $(SUPERVISOR_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 OBJ += $(addprefix $(BUILD)/, $(SRC_NRFX:.c=.o))
@@ -180,7 +169,7 @@ $(BUILD)/$(FATFS_DIR)/ff.o: COPT += -Os
 $(filter $(PY_BUILD)/../extmod/vfs_fat_%.o, $(PY_O)): COPT += -Os
 
 # List of sources for qstr extraction
-SRC_QSTR += $(SRC_C) $(SRC_SUPERVISOR) $(SRC_MOD) $(SRC_COMMON_HAL_EXPANDED) $(SRC_SHARED_MODULE_EXPANDED) $(SRC_CIRCUITPY_COMMON)
+SRC_QSTR += $(SRC_C) $(SRC_SUPERVISOR) $(SRC_MOD) $(SRC_COMMON_HAL_SHARED_MODULE_EXPANDED) $(SRC_CIRCUITPY_COMMON)
 # Sources that only hold QSTRs after pre-processing.
 SRC_QSTR_PREPROCESSOR +=
 

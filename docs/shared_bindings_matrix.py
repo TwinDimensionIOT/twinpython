@@ -66,6 +66,8 @@ ALIASES_BRAND_NAMES = {
 
 ADDITIONAL_MODULES = {
     "_asyncio": "MICROPY_PY_ASYNCIO",
+    "_bleio (native)": "CIRCUITPY_BLEIO_NATIVE",
+    "_bleio (HCI co-processor)": "CIRCUITPY_BLEIO_HCI",
     "_eve": "CIRCUITPY__EVE",
     "adafruit_bus_device": "CIRCUITPY_BUSDEVICE",
     "adafruit_pixelbuf": "CIRCUITPY_PIXELBUF",
@@ -82,8 +84,9 @@ ADDITIONAL_MODULES = {
     "keypad.Keys": "CIRCUITPY_KEYPAD_KEYS",
     "keypad.ShiftRegisterKeys": "CIRCUITPY_KEYPAD_SHIFTREGISTERKEYS",
     "keypad_demux.DemuxKeyMatrix": "CIRCUITPY_KEYPAD_DEMUX",
-    "os.getenv": "CIRCUITPY_OS_GETENV",
+    "os.getenv": "CIRCUITPY_SETTINGS_TOML",
     "select": "MICROPY_PY_SELECT_SELECT",
+    "supervisor.get_setting": "CIRCUITPY_SETTINGS_TOML",
     "sys": "CIRCUITPY_SYS",
     "terminalio": "CIRCUITPY_DISPLAYIO",
     "usb": "CIRCUITPY_PYUSB",
@@ -362,7 +365,7 @@ def support_matrix_by_board(
         if use_branded_name:
             board_name = branded_name
         else:
-            board_name = board_directory.name
+            board_name = board_id
 
         if add_chips:
             with open(board_directory / "mpconfigboard.h") as get_name:

@@ -39,6 +39,7 @@
 
 #include "py/objproperty.h"
 #include "shared-bindings/usb/core/Device.h"
+#include "shared-bindings/util.h"
 #include "py/runtime.h"
 
 //| class Device:
@@ -49,10 +50,28 @@
 //|         ...
 //|
 
+static void check_for_deinit(usb_core_device_obj_t *self) {
+    if (common_hal_usb_core_device_deinited(self)) {
+        raise_deinited_error();
+    }
+}
+
+//|     def __del__(self) -> None:
+//|         """Closes any resources used for this device."""
+//|         ...
+//|
+static mp_obj_t usb_core_device_deinit(mp_obj_t self_in) {
+    usb_core_device_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    common_hal_usb_core_device_deinit(self);
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(usb_core_device_deinit_obj, usb_core_device_deinit);
+
 //|     idVendor: int
 //|     """The USB vendor ID of the device"""
 static mp_obj_t usb_core_device_obj_get_idVendor(mp_obj_t self_in) {
     usb_core_device_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    check_for_deinit(self);
     return MP_OBJ_NEW_SMALL_INT(common_hal_usb_core_device_get_idVendor(self));
 }
 MP_DEFINE_CONST_FUN_OBJ_1(usb_core_device_get_idVendor_obj, usb_core_device_obj_get_idVendor);
@@ -64,6 +83,7 @@ MP_PROPERTY_GETTER(usb_core_device_idVendor_obj,
 //|     """The USB product ID of the device"""
 static mp_obj_t usb_core_device_obj_get_idProduct(mp_obj_t self_in) {
     usb_core_device_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    check_for_deinit(self);
     return MP_OBJ_NEW_SMALL_INT(common_hal_usb_core_device_get_idProduct(self));
 }
 MP_DEFINE_CONST_FUN_OBJ_1(usb_core_device_get_idProduct_obj, usb_core_device_obj_get_idProduct);
@@ -75,6 +95,7 @@ MP_PROPERTY_GETTER(usb_core_device_idProduct_obj,
 //|     """The USB device's serial number string."""
 static mp_obj_t usb_core_device_obj_get_serial_number(mp_obj_t self_in) {
     usb_core_device_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    check_for_deinit(self);
     return common_hal_usb_core_device_get_serial_number(self);
 }
 MP_DEFINE_CONST_FUN_OBJ_1(usb_core_device_get_serial_number_obj, usb_core_device_obj_get_serial_number);
@@ -86,6 +107,7 @@ MP_PROPERTY_GETTER(usb_core_device_serial_number_obj,
 //|     """The USB device's product string."""
 static mp_obj_t usb_core_device_obj_get_product(mp_obj_t self_in) {
     usb_core_device_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    check_for_deinit(self);
     return common_hal_usb_core_device_get_product(self);
 }
 MP_DEFINE_CONST_FUN_OBJ_1(usb_core_device_get_product_obj, usb_core_device_obj_get_product);
@@ -98,12 +120,54 @@ MP_PROPERTY_GETTER(usb_core_device_product_obj,
 //|
 static mp_obj_t usb_core_device_obj_get_manufacturer(mp_obj_t self_in) {
     usb_core_device_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    check_for_deinit(self);
     return common_hal_usb_core_device_get_manufacturer(self);
 }
 MP_DEFINE_CONST_FUN_OBJ_1(usb_core_device_get_manufacturer_obj, usb_core_device_obj_get_manufacturer);
 
 MP_PROPERTY_GETTER(usb_core_device_manufacturer_obj,
     (mp_obj_t)&usb_core_device_get_manufacturer_obj);
+
+//|     bus: int
+//|     """The bus number of the root hub this device is connected to."""
+//|
+static mp_obj_t usb_core_device_obj_get_bus(mp_obj_t self_in) {
+    usb_core_device_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    check_for_deinit(self);
+    return MP_OBJ_NEW_SMALL_INT(common_hal_usb_core_device_get_bus(self));
+}
+MP_DEFINE_CONST_FUN_OBJ_1(usb_core_device_get_bus_obj, usb_core_device_obj_get_bus);
+
+MP_PROPERTY_GETTER(usb_core_device_bus_obj,
+    (mp_obj_t)&usb_core_device_get_bus_obj);
+
+//|     port_numbers: tuple[int] | None
+//|     """The port topology of the devices location. None when connected to the
+//|        root port (aka bus)."""
+//|
+static mp_obj_t usb_core_device_obj_get_port_numbers(mp_obj_t self_in) {
+    usb_core_device_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    check_for_deinit(self);
+    return common_hal_usb_core_device_get_port_numbers(self);
+}
+MP_DEFINE_CONST_FUN_OBJ_1(usb_core_device_get_port_numbers_obj, usb_core_device_obj_get_port_numbers);
+
+MP_PROPERTY_GETTER(usb_core_device_port_numbers_obj,
+    (mp_obj_t)&usb_core_device_get_port_numbers_obj);
+
+
+//|     speed: int
+//|     """The speed of the device. One of `usb.util.SPEED_LOW`, `usb.util.SPEED_FULL`, `usb.util.SPEED_HIGH` or 0 for unknown."""
+//|
+static mp_obj_t usb_core_device_obj_get_speed(mp_obj_t self_in) {
+    usb_core_device_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    check_for_deinit(self);
+    return MP_OBJ_NEW_SMALL_INT(common_hal_usb_core_device_get_speed(self));
+}
+MP_DEFINE_CONST_FUN_OBJ_1(usb_core_device_get_speed_obj, usb_core_device_obj_get_speed);
+
+MP_PROPERTY_GETTER(usb_core_device_speed_obj,
+    (mp_obj_t)&usb_core_device_get_speed_obj);
 
 //|     def set_configuration(self, configuration: int = 1) -> None:
 //|         """Set the active configuration.
@@ -122,6 +186,7 @@ static mp_obj_t usb_core_device_set_configuration(size_t n_args, const mp_obj_t 
         { MP_QSTR_configuration, MP_ARG_INT, {.u_int = 1} },
     };
     usb_core_device_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+    check_for_deinit(self);
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
@@ -148,6 +213,7 @@ static mp_obj_t usb_core_device_write(size_t n_args, const mp_obj_t *pos_args, m
         { MP_QSTR_timeout, MP_ARG_INT, {.u_int = 0} },
     };
     usb_core_device_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+    check_for_deinit(self);
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
@@ -179,6 +245,7 @@ static mp_obj_t usb_core_device_read(size_t n_args, const mp_obj_t *pos_args, mp
         { MP_QSTR_timeout, MP_ARG_INT, {.u_int = 0} },
     };
     usb_core_device_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+    check_for_deinit(self);
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
@@ -228,6 +295,7 @@ static mp_obj_t usb_core_device_ctrl_transfer(size_t n_args, const mp_obj_t *pos
         { MP_QSTR_timeout, MP_ARG_INT, {.u_int = 0} },
     };
     usb_core_device_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+    check_for_deinit(self);
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
@@ -261,6 +329,7 @@ MP_DEFINE_CONST_FUN_OBJ_KW(usb_core_device_ctrl_transfer_obj, 2, usb_core_device
 //|
 static mp_obj_t usb_core_device_is_kernel_driver_active(mp_obj_t self_in, mp_obj_t interface_in) {
     usb_core_device_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    check_for_deinit(self);
     mp_int_t interface = mp_obj_get_int(interface_in);
     bool active = common_hal_usb_core_device_is_kernel_driver_active(self, interface);
     return mp_obj_new_bool(active);
@@ -278,6 +347,7 @@ MP_DEFINE_CONST_FUN_OBJ_2(usb_core_device_is_kernel_driver_active_obj, usb_core_
 //|
 static mp_obj_t usb_core_device_detach_kernel_driver(mp_obj_t self_in, mp_obj_t interface_in) {
     usb_core_device_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    check_for_deinit(self);
     mp_int_t interface = mp_obj_get_int(interface_in);
     common_hal_usb_core_device_detach_kernel_driver(self, interface);
     return mp_const_none;
@@ -294,6 +364,7 @@ MP_DEFINE_CONST_FUN_OBJ_2(usb_core_device_detach_kernel_driver_obj, usb_core_dev
 //|
 static mp_obj_t usb_core_device_attach_kernel_driver(mp_obj_t self_in, mp_obj_t interface_in) {
     usb_core_device_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    check_for_deinit(self);
     mp_int_t interface = mp_obj_get_int(interface_in);
     common_hal_usb_core_device_attach_kernel_driver(self, interface);
     return mp_const_none;
@@ -302,11 +373,16 @@ MP_DEFINE_CONST_FUN_OBJ_2(usb_core_device_attach_kernel_driver_obj, usb_core_dev
 
 
 static const mp_rom_map_elem_t usb_core_device_locals_dict_table[] = {
+    { MP_ROM_QSTR(MP_QSTR___del__),          MP_ROM_PTR(&usb_core_device_deinit_obj) },
+    { MP_ROM_QSTR(MP_QSTR_deinit),           MP_ROM_PTR(&usb_core_device_deinit_obj) },
     { MP_ROM_QSTR(MP_QSTR_idVendor),         MP_ROM_PTR(&usb_core_device_idVendor_obj) },
     { MP_ROM_QSTR(MP_QSTR_idProduct),        MP_ROM_PTR(&usb_core_device_idProduct_obj) },
     { MP_ROM_QSTR(MP_QSTR_serial_number),    MP_ROM_PTR(&usb_core_device_serial_number_obj) },
     { MP_ROM_QSTR(MP_QSTR_product),          MP_ROM_PTR(&usb_core_device_product_obj) },
     { MP_ROM_QSTR(MP_QSTR_manufacturer),     MP_ROM_PTR(&usb_core_device_manufacturer_obj) },
+    { MP_ROM_QSTR(MP_QSTR_bus),              MP_ROM_PTR(&usb_core_device_bus_obj) },
+    { MP_ROM_QSTR(MP_QSTR_port_numbers),     MP_ROM_PTR(&usb_core_device_port_numbers_obj) },
+    { MP_ROM_QSTR(MP_QSTR_speed),            MP_ROM_PTR(&usb_core_device_speed_obj) },
 
     { MP_ROM_QSTR(MP_QSTR_set_configuration), MP_ROM_PTR(&usb_core_device_set_configuration_obj) },
     { MP_ROM_QSTR(MP_QSTR_write),            MP_ROM_PTR(&usb_core_device_write_obj) },

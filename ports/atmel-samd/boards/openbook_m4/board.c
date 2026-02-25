@@ -44,49 +44,33 @@ void board_init(void) {
     bus->base.type = &fourwire_fourwire_type;
     common_hal_fourwire_fourwire_construct(bus,
         spi,
-        &pin_PB05, // EPD_DC Command or data
-        &pin_PB07, // EPD_CS Chip select
-        &pin_PA00, // EPD_RST Reset
+        MP_OBJ_FROM_PTR(&pin_PB05), // EPD_DC Command or data
+        MP_OBJ_FROM_PTR(&pin_PB07), // EPD_CS Chip select
+        MP_OBJ_FROM_PTR(&pin_PA00), // EPD_RST Reset
         1000000, // Baudrate
         0, // Polarity
         0); // Phase
 
     epaperdisplay_epaperdisplay_obj_t *display = &allocate_display()->epaper_display;
     display->base.type = &epaperdisplay_epaperdisplay_type;
-    common_hal_epaperdisplay_epaperdisplay_construct(display,
-        bus,
-        start_sequence,
-        sizeof(start_sequence),
-        0, // start up time
-        stop_sequence,
-        sizeof(stop_sequence),
-        300, // width
-        400, // height
-        300, // RAM width
-        400, // RAM height
-        0, // colstart
-        0, // rowstart
-        270, // rotation
-        NO_COMMAND, // set_column_window_command
-        NO_COMMAND, // set_row_window_command
-        NO_COMMAND, // set_current_column_command
-        NO_COMMAND, // set_current_row_command
-        0x13, // write_black_ram_command
-        false, // black_bits_inverted
-        NO_COMMAND, // write_color_ram_command (can add this for grayscale eventually)
-        false, // color_bits_inverted
-        0x000000, // highlight_color
-        refresh_sequence, // refresh_display_sequence
-        sizeof(refresh_sequence),
-        40, // refresh_time
-        &pin_PA01, // busy_pin
-        false, // busy_state
-        5, // seconds_per_frame
-        false, // chip_select (don't always toggle chip select)
-        false, // grayscale
-        false, // acep
-        false, // two_byte_sequence_length
-        false); // address_little_endian
+    epaperdisplay_construct_args_t args = EPAPERDISPLAY_CONSTRUCT_ARGS_DEFAULTS;
+    args.bus = bus;
+    args.start_sequence = start_sequence;
+    args.start_sequence_len = sizeof(start_sequence);
+    args.stop_sequence = stop_sequence;
+    args.stop_sequence_len = sizeof(stop_sequence);
+    args.width = 300;
+    args.height = 400;
+    args.ram_width = 300;
+    args.ram_height = 400;
+    args.rotation = 270;
+    args.write_black_ram_command = 0x13;
+    args.refresh_sequence = refresh_sequence;
+    args.refresh_sequence_len = sizeof(refresh_sequence);
+    args.refresh_time = 40.0;
+    args.busy_pin = &pin_PA01;
+    args.seconds_per_frame = 5.0;
+    common_hal_epaperdisplay_epaperdisplay_construct(display, &args);
 }
 
 // Use the MP_WEAK supervisor/shared/board.c versions of routines not defined here.

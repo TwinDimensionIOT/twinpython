@@ -80,7 +80,7 @@ void common_hal_busdisplay_busdisplay_construct(busdisplay_busdisplay_obj_t *sel
             memcpy(full_command + 1, data, data_size);
             self->bus.send(self->bus.bus, DISPLAY_COMMAND, CHIP_SELECT_TOGGLE_EVERY_BYTE, full_command, data_size + 1);
         } else {
-            self->bus.send(self->bus.bus, DISPLAY_COMMAND, CHIP_SELECT_TOGGLE_EVERY_BYTE, cmd, 1);
+            self->bus.send(self->bus.bus, DISPLAY_COMMAND, data_size > 0 ? CHIP_SELECT_TOGGLE_EVERY_BYTE : CHIP_SELECT_UNTOUCHED, cmd, 1);
             self->bus.send(self->bus.bus, DISPLAY_DATA, CHIP_SELECT_UNTOUCHED, data, data_size);
         }
         displayio_display_bus_end_transaction(&self->bus);
@@ -296,8 +296,11 @@ static bool _refresh_area(busdisplay_busdisplay_obj_t *self, const displayio_are
         _send_pixels(self, (uint8_t *)buffer, subrectangle_size_bytes);
         displayio_display_bus_end_transaction(&self->bus);
 
-        // TODO(tannewt): Make refresh displays faster so we don't starve other
-        // background tasks.
+        // Run background tasks so they can run during an explicit refresh.
+        // Auto-refresh won't run background tasks here because it is a background task itself.
+        RUN_BACKGROUND_TASKS;
+
+        // Run USB background tasks so they can run during an implicit refresh.
         #if CIRCUITPY_TINYUSB
         usb_background();
         #endif
@@ -310,7 +313,11 @@ static void _refresh_display(busdisplay_busdisplay_obj_t *self) {
         // A refresh on this bus is already in progress.  Try next display.
         return;
     }
-    displayio_display_core_start_refresh(&self->core);
+    if (!displayio_display_core_start_refresh(&self->core)) {
+        // Refresh for this display already in progress.
+        return;
+    }
+
     const displayio_area_t *current_area = _get_refresh_areas(self);
     while (current_area != NULL) {
         _refresh_area(self, current_area);

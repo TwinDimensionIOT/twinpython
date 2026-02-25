@@ -30,26 +30,17 @@ uint8_t display_init_sequence[] = {
 };
 
 static void display_init(void) {
-
     busio_spi_obj_t *spi = common_hal_board_create_spi(0);
     fourwire_fourwire_obj_t *bus = &allocate_display_bus()->fourwire_bus;
-
-    common_hal_busio_spi_construct(
-        spi,
-        &pin_GPIO12,    // CLK
-        &pin_GPIO11,    // MOSI
-        NULL,           // MISO not connected
-        false);         // Not half-duplex
-
 
     bus->base.type = &fourwire_fourwire_type;
 
     common_hal_fourwire_fourwire_construct(
         bus,
         spi,
-        &pin_GPIO8,  // TFT_DC
-        &pin_GPIO10,  // TFT_CS
-        &pin_GPIO9,  // TFT_RST
+        MP_OBJ_FROM_PTR(&pin_GPIO8),  // TFT_DC
+        MP_OBJ_FROM_PTR(&pin_GPIO10),  // TFT_CS
+        MP_OBJ_FROM_PTR(&pin_GPIO9),  // TFT_RST
         50000000, // Baudrate
         0, // Polarity
         0 // Phase

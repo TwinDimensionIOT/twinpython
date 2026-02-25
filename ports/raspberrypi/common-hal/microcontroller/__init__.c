@@ -19,8 +19,8 @@
 #include "supervisor/port.h"
 #include "supervisor/shared/safe_mode.h"
 
-#include "src/rp2040/hardware_structs/include/hardware/structs/sio.h"
-#include "src/rp2_common/hardware_sync/include/hardware/sync.h"
+#include "hardware/structs/sio.h"
+#include "hardware/sync.h"
 
 #include "hardware/watchdog.h"
 #include "hardware/irq.h"
@@ -51,10 +51,11 @@ void common_hal_mcu_enable_interrupts(void) {
     asm volatile ("cpsie i" : : : "memory");
 }
 #else
-#include "src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Include/RP2350.h"
+#include "RP2350.h"
 #define PICO_ELEVATED_IRQ_PRIORITY (0x60) // between PICO_DEFAULT and PIOCO_HIGHEST_IRQ_PRIORITY
 static uint32_t oldBasePri = 0; // 0 (default) masks nothing, other values mask equal-or-larger priority values
 void common_hal_mcu_disable_interrupts(void) {
+    uint32_t my_interrupts = save_and_disable_interrupts();
     if (nesting_count == 0) {
         // We must keep DMA_IRQ_1 (reserved for pico dvi) enabled at all times,
         // including during flash writes. Do this by setting the priority mask (BASEPRI
@@ -66,6 +67,7 @@ void common_hal_mcu_disable_interrupts(void) {
         __isb(); // Instruction synchronization barrier
     }
     nesting_count++;
+    restore_interrupts(my_interrupts);
 }
 
 void common_hal_mcu_enable_interrupts(void) {

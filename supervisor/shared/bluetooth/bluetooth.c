@@ -10,16 +10,13 @@
 
 #include "shared-bindings/_bleio/__init__.h"
 #include "shared-bindings/_bleio/Adapter.h"
-#if defined(CIRCUITPY_BOOT_BUTTON)
-#include "shared-bindings/digitalio/DigitalInOut.h"
-#include "shared-bindings/time/__init__.h"
-#endif
 #include "shared-bindings/microcontroller/Processor.h"
 #include "shared-bindings/microcontroller/ResetReason.h"
 #include "shared-module/storage/__init__.h"
 
 #include "common-hal/_bleio/__init__.h"
 
+#include "supervisor/port.h"
 #include "supervisor/shared/serial.h"
 #include "supervisor/shared/status_leds.h"
 #include "supervisor/shared/tick.h"
@@ -39,8 +36,8 @@
 #include "supervisor/shared/status_bar.h"
 #endif
 
-#if CIRCUITPY_WEB_WORKFLOW && CIRCUITPY_WIFI && CIRCUITPY_OS_GETENV
-#include "shared-module/os/__init__.h"
+#if CIRCUITPY_WEB_WORKFLOW && CIRCUITPY_WIFI && CIRCUITPY_SETTINGS_TOML
+#include "supervisor/shared/settings.h"
 #endif
 
 
@@ -192,6 +189,7 @@ void supervisor_bluetooth_init(void) {
     boot_in_discovery_mode = false;
     if (reset_reason != RESET_REASON_POWER_ON &&
         reset_reason != RESET_REASON_RESET_PIN &&
+        reset_reason != RESET_REASON_DEEP_SLEEP_ALARM &&
         reset_reason != RESET_REASON_UNKNOWN &&
         reset_reason != RESET_REASON_SOFTWARE) {
         return;
@@ -218,18 +216,18 @@ void supervisor_bluetooth_init(void) {
     // Checking here allows us to have the status LED solidly on even if no button was
     // pressed.
     bool wifi_workflow_active = false;
-    #if CIRCUITPY_WEB_WORKFLOW && CIRCUITPY_WIFI && CIRCUITPY_OS_GETENV
+    #if CIRCUITPY_WEB_WORKFLOW && CIRCUITPY_WIFI && CIRCUITPY_SETTINGS_TOML
     char _api_password[64];
     const size_t api_password_len = sizeof(_api_password) - 1;
-    os_getenv_err_t result = common_hal_os_getenv_str("CIRCUITPY_WEB_API_PASSWORD", _api_password + 1, api_password_len);
-    wifi_workflow_active = result == GETENV_OK;
+    settings_err_t result = settings_get_str("CIRCUITPY_WEB_API_PASSWORD", _api_password + 1, api_password_len);
+    wifi_workflow_active = result == SETTINGS_OK;
     #endif
     if (!bonded && !wifi_workflow_active) {
         boot_in_discovery_mode = true;
     }
     #endif
     while (diff < 1000) {
-        #ifdef CIRCUITPY_STATUS_LED
+        #if CIRCUITPY_STATUS_LED
         // Blink on for 50 and off for 100
         bool led_on = boot_in_discovery_mode || (diff % 150) <= 50;
         if (led_on) {
@@ -238,18 +236,10 @@ void supervisor_bluetooth_init(void) {
             new_status_color(BLACK);
         }
         #endif
-        // Init the boot button every time in case it is used for LEDs.
-        #ifdef CIRCUITPY_BOOT_BUTTON
-        digitalio_digitalinout_obj_t boot_button;
-        common_hal_digitalio_digitalinout_construct(&boot_button, CIRCUITPY_BOOT_BUTTON);
-        common_hal_digitalio_digitalinout_switch_to_input(&boot_button, PULL_UP);
-        common_hal_time_delay_ms(1);
-        bool button_pressed = !common_hal_digitalio_digitalinout_get_value(&boot_button);
-        common_hal_digitalio_digitalinout_deinit(&boot_button);
-        if (button_pressed) {
+        if (port_boot_button_pressed()) {
             boot_in_discovery_mode = true;
+            break;
         }
-        #endif
         diff = supervisor_ticks_ms64() - start_ticks;
     }
     if (boot_in_discovery_mode) {

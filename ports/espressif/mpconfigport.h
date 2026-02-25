@@ -22,9 +22,12 @@
 #define MICROPY_NLR_SETJMP                  (1)
 #define CIRCUITPY_DEFAULT_STACK_SIZE        0x6000
 
+// PSRAM can require more stack space for GC.
+#define MICROPY_ALLOC_GC_STACK_SIZE         (128)
+
 // Nearly all boards have this because it is used to enter the ROM bootloader.
 #ifndef CIRCUITPY_BOOT_BUTTON
-  #if defined(CONFIG_IDF_TARGET_ESP32C2) || defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32C6) || defined(CONFIG_IDF_TARGET_ESP32H2)
+  #if defined(CONFIG_IDF_TARGET_ESP32C2) || defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32C6) || defined(CONFIG_IDF_TARGET_ESP32H2) || defined(CONFIG_IDF_TARGET_ESP32C61)
     #define CIRCUITPY_BOOT_BUTTON (&pin_GPIO9)
   #elif !defined(CONFIG_IDF_TARGET_ESP32)
     #define CIRCUITPY_BOOT_BUTTON (&pin_GPIO0)
@@ -64,4 +67,8 @@ extern portMUX_TYPE background_task_mutex;
 // Allow a different value to be specified for boards that have trouble with using the maximum power.
 #ifndef CIRCUITPY_WIFI_DEFAULT_TX_POWER
 #define CIRCUITPY_WIFI_DEFAULT_TX_POWER (20)
+#endif
+
+#ifndef CIRCUITPY_ESP32P4_SWAP_LSFS
+#define CIRCUITPY_ESP32P4_SWAP_LSFS (0)
 #endif

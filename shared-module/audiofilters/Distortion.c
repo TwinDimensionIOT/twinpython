@@ -10,6 +10,7 @@
 #include <math.h>
 #include "shared-bindings/audiofilters/Distortion.h"
 #include "shared-module/audiofilters/Distortion.h"
+#include "shared-bindings/audiocore/__init__.h"
 
 /**
  * Based on Godot's AudioEffectDistortion
@@ -39,14 +40,14 @@ void common_hal_audiofilters_distortion_construct(audiofilters_distortion_obj_t 
     // Samples are set sequentially. For stereo audio they are passed L/R/L/R/...
     self->buffer_len = buffer_size; // in bytes
 
-    self->buffer[0] = m_malloc(self->buffer_len);
+    self->buffer[0] = m_malloc_without_collect(self->buffer_len);
     if (self->buffer[0] == NULL) {
         common_hal_audiofilters_distortion_deinit(self);
         m_malloc_fail(self->buffer_len);
     }
     memset(self->buffer[0], 0, self->buffer_len);
 
-    self->buffer[1] = m_malloc(self->buffer_len);
+    self->buffer[1] = m_malloc_without_collect(self->buffer_len);
     if (self->buffer[1] == NULL) {
         common_hal_audiofilters_distortion_deinit(self);
         m_malloc_fail(self->buffer_len);
@@ -73,14 +74,8 @@ void common_hal_audiofilters_distortion_construct(audiofilters_distortion_obj_t 
     self->soft_clip = soft_clip;
 }
 
-bool common_hal_audiofilters_distortion_deinited(audiofilters_distortion_obj_t *self) {
-    if (self->buffer[0] == NULL) {
-        return true;
-    }
-    return false;
-}
-
 void common_hal_audiofilters_distortion_deinit(audiofilters_distortion_obj_t *self) {
+    audiosample_mark_deinit(&self->base);
     self->buffer[0] = NULL;
     self->buffer[1] = NULL;
 }
@@ -146,7 +141,7 @@ bool common_hal_audiofilters_distortion_get_playing(audiofilters_distortion_obj_
 }
 
 void common_hal_audiofilters_distortion_play(audiofilters_distortion_obj_t *self, mp_obj_t sample, bool loop) {
-    audiosample_must_match(&self->base, sample);
+    audiosample_must_match(&self->base, sample, false);
 
     self->sample = sample;
     self->loop = loop;

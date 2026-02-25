@@ -191,7 +191,7 @@ def update(debug, board, update_all):  # noqa: C901: too complex
             psram_freq = value
         elif key == "UF2_BOOTLOADER":
             uf2_bootloader = not (value == "0")
-        elif key == "CIRCUITPY_BLEIO":
+        elif key == "CIRCUITPY_BLEIO_NATIVE":
             ble_enabled = not (value == "0")
 
     os.environ["IDF_TARGET"] = target
@@ -321,7 +321,7 @@ def update(debug, board, update_all):  # noqa: C901: too complex
             if print_debug:
                 print("  " * len(current_group), i, config_string.strip())
 
-            # Some files are `rsource`d into another kconfig with $IDF_TARGET as
+            # Some files are `rsource`d into another kconfig with $IDF_TARGET as  # codespell:ignore rsource
             # part of the path. kconfiglib doesn't show this as a reference so
             # we have to look ourselves.
             target_reference = target in item.name_and_loc

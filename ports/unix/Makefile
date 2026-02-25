@@ -46,8 +46,12 @@ INC += -I$(BUILD)
 
 # compiler settings
 CWARN = -Wall -Werror
-CWARN += -Wextra -Wno-unused-parameter -Wpointer-arith -Wdouble-promotion -Wfloat-conversion
+CWARN += -Wextra -Wno-unused-parameter -Wpointer-arith -Wdouble-promotion -Wfloat-conversion -Wno-missing-field-initializers
 CFLAGS += $(INC) $(CWARN) -std=gnu99 -DUNIX $(COPT) -I$(VARIANT_DIR) $(CFLAGS_EXTRA)
+
+# Force the use of 64-bits for file sizes in C library functions on 32-bit platforms.
+# This option has no effect on 64-bit builds.
+CFLAGS += -D_FILE_OFFSET_BITS=64
 
 # Debugging/Optimization
 ifdef DEBUG
@@ -169,7 +173,7 @@ ifeq ($(MICROPY_STANDALONE),1)
 # Build libffi from source.
 GIT_SUBMODULES += lib/libffi
 DEPLIBS += libffi
-LIBFFI_CFLAGS := -I$(shell ls -1d $(BUILD)/lib/libffi/out/lib/libffi-*/include)
+LIBFFI_CFLAGS := -I$(shell ls -1d $(BUILD)/lib/libffi/include)
  ifeq ($(MICROPY_FORCE_32BIT),1)
   LIBFFI_LDFLAGS = $(BUILD)/lib/libffi/out/lib32/libffi.a
  else
@@ -204,6 +208,8 @@ SRC_C += \
 	input.c \
 	alloc.c \
 	fatfs_port.c \
+	shared-module/os/__init__.c \
+	supervisor/shared/settings.c \
 	supervisor/stub/filesystem.c \
 	supervisor/stub/safe_mode.c \
 	supervisor/stub/stack.c \

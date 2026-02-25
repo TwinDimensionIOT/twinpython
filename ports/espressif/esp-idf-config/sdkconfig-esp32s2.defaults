@@ -55,8 +55,14 @@ CONFIG_ULP_COPROC_ENABLED=y
 CONFIG_ULP_COPROC_TYPE_FSM=y
 CONFIG_ULP_COPROC_TYPE_RISCV=y  # Note: enabling both ULPs simultaneously only works due to a modification of adafruit/esp-idf
                                 # (see adafruit/esp-idf/pull/16) until espressif/esp-idf/issues/12999 is fixed.
-CONFIG_ULP_COPROC_RESERVE_MEM=8176
+CONFIG_ULP_COPROC_RESERVE_MEM=8144
 # end of Ultra Low Power (ULP) Co-processor
+
+#
+# FreeRTOS
+#
+CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH=y
+# end of FreeRTOS
 
 # end of Component config
 

@@ -32,9 +32,8 @@
 #include "supervisor/usb.h"
 #endif
 
-#if CIRCUITPY_OS_GETENV
-#include "shared-bindings/os/__init__.h"
-#include "shared-module/os/__init__.h"
+#if CIRCUITPY_SETTINGS_TOML
+#include "supervisor/shared/settings.h"
 #endif
 
 #define BLE_MIN_CONN_INTERVAL        MSEC_TO_UNITS(15, UNIT_0_625_MS)
@@ -324,11 +323,11 @@ static void bleio_adapter_reset_name(bleio_adapter_obj_t *self) {
     default_ble_name[len - 1] = nibble_to_hex_lower[addr.addr[0] & 0xf];
     default_ble_name[len] = '\0'; // for now we add null for compatibility with C ASCIIZ strings
 
-    #if CIRCUITPY_OS_GETENV
+    #if CIRCUITPY_SETTINGS_TOML
     char ble_name[32];
 
-    os_getenv_err_t result = common_hal_os_getenv_str("CIRCUITPY_BLE_NAME", ble_name, sizeof(ble_name));
-    if (result == GETENV_OK) {
+    settings_err_t result = settings_get_str("CIRCUITPY_BLE_NAME", ble_name, sizeof(ble_name));
+    if (result == SETTINGS_OK) {
         common_hal_bleio_adapter_set_name(self, ble_name);
         return;
     }
@@ -524,7 +523,7 @@ mp_obj_t common_hal_bleio_adapter_start_scan(bleio_adapter_obj_t *self, uint8_t 
     }
     self->scan_results = shared_module_bleio_new_scanresults(buffer_size, prefixes, prefix_length, minimum_rssi);
     size_t max_packet_size = extended ? BLE_GAP_SCAN_BUFFER_EXTENDED_MAX_SUPPORTED : BLE_GAP_SCAN_BUFFER_MAX;
-    uint8_t *raw_data = m_malloc(sizeof(ble_data_t) + max_packet_size);
+    uint8_t *raw_data = m_malloc_without_collect(sizeof(ble_data_t) + max_packet_size);
     ble_data_t *sd_data = (ble_data_t *)raw_data;
     self->scan_results->common_hal_data = sd_data;
     sd_data->len = max_packet_size;

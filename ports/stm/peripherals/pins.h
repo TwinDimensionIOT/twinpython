@@ -70,6 +70,9 @@ extern const mp_obj_type_t mcu_pin_type;
 #ifdef STM32L4R5xx
 #include "stm32l4/stm32l4r5xx/pins.h"
 #endif
+#ifdef STM32L433xx
+#include "stm32l4/stm32l433xx/pins.h"
+#endif
 #ifdef STM32F405xx
 #include "stm32f4/stm32f405xx/pins.h"
 #endif
@@ -91,4 +94,8 @@ extern const mp_obj_type_t mcu_pin_type;
 // H7 Series
 #ifdef STM32H743xx
 #include "stm32h7/stm32h743xx/pins.h"
+#endif
+
+#ifdef STM32H750xx
+#include "stm32h7/stm32h750xx/pins.h"
 #endif

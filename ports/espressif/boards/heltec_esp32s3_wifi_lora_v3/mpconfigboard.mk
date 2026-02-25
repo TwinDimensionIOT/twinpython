@@ -20,10 +20,5 @@ CIRCUITPY_ESP_FLASH_MODE = qio
 CIRCUITPY_ESP_FLASH_FREQ = 80m
 CIRCUITPY_ESP_FLASH_SIZE = 8MB
 
-CIRCUITPY_ESPCAMERA = 0
-
-CIRCUITPY_DISPLAYIO = 1
-
 FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_Display_Shapes
 FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_Display_Text
-FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_RFM9x

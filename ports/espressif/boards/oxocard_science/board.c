@@ -43,9 +43,9 @@ static void display_init(void) {
     common_hal_fourwire_fourwire_construct(
         bus,
         spi,
-        &pin_GPIO27,    // DC
-        &pin_GPIO15,    // CS
-        &pin_GPIO4,     // RST
+        MP_OBJ_FROM_PTR(&pin_GPIO27),    // DC
+        MP_OBJ_FROM_PTR(&pin_GPIO15),    // CS
+        MP_OBJ_FROM_PTR(&pin_GPIO4),     // RST
         24000000,       // baudrate
         0,              // polarity
         0               // phase
@@ -60,7 +60,7 @@ static void display_init(void) {
         240,            // width (after rotation)
         240,            // height (after rotation)
         0,              // column start
-        80,             // row start
+        0,              // row start
         0,              // rotation
         16,             // color depth
         false,          // grayscale

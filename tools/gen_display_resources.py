@@ -8,8 +8,8 @@ import os
 import struct
 import sys
 
-sys.path.insert(0, "bitmap_font")
-sys.path.insert(0, "../../tools/bitmap_font")
+sys.path.insert(0, "tools/bitmap_font")  # For running from root
+sys.path.insert(0, "../../tools/bitmap_font")  # For running from a port directory
 
 from adafruit_bitmap_font import bitmap_font
 
@@ -366,7 +366,7 @@ c_file.write(
     """\
 terminalio_terminal_obj_t supervisor_terminal = {
     .base = { .type = &terminalio_terminal_type },
-    .font = &supervisor_terminal_font,
+    .font = MP_OBJ_FROM_PTR(&supervisor_terminal_font),
     .cursor_x = 0,
     .cursor_y = 0,
     .scroll_area = NULL,

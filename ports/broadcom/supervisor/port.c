@@ -67,7 +67,6 @@ safe_mode_t port_init(void) {
 void reset_port(void) {
     #if CIRCUITPY_BUSIO
     reset_i2c();
-    reset_spi();
     reset_uart();
     #endif
 
@@ -85,8 +84,6 @@ void reset_port(void) {
     #if CIRCUITPY_AUDIOCORE
     audio_dma_reset();
     #endif
-
-    reset_all_pins();
 }
 
 void reset_to_bootloader(void) {
@@ -143,7 +140,11 @@ uint64_t port_get_raw_ticks(uint8_t *subticks) {
     }
     COMPLETE_MEMORY_READS;
     uint64_t microseconds = hi << 32 | lo;
-    return 1024 * (microseconds / 1000000) + (microseconds % 1000000) / 977;
+    int64_t all_subticks = microseconds * 512 / 15625;
+    if (subticks != NULL) {
+        *subticks = all_subticks % 32;
+    }
+    return all_subticks / 32;
 }
 
 void TIMER_1_IRQHandler(void) {

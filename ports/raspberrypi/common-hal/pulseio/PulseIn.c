@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-#include "src/rp2_common/hardware_gpio/include/hardware/gpio.h"
+#include "hardware/gpio.h"
 
 #include <stdint.h>
 
@@ -26,7 +26,7 @@ static const uint16_t pulsein_program[] = {
 void common_hal_pulseio_pulsein_construct(pulseio_pulsein_obj_t *self,
     const mcu_pin_obj_t *pin, uint16_t maxlen, bool idle_state) {
 
-    self->buffer = (uint16_t *)m_malloc(maxlen * sizeof(uint16_t));
+    self->buffer = (uint16_t *)m_malloc_without_collect(maxlen * sizeof(uint16_t));
     if (self->buffer == NULL) {
         m_malloc_fail(maxlen * sizeof(uint16_t));
     }

@@ -32,13 +32,13 @@ ifeq ($(DEBUG), 1)
   OPTIMIZATION_FLAGS ?= -Og
 else
   CFLAGS += -DNDEBUG -ggdb3
-  OPTIMIZATION_FLAGS ?= -O2 -fno-inline-functions
+  OPTIMIZATION_FLAGS ?= -O2
 endif
 
 # option to override compiler optimization level, set in boards/$(BOARD)/mpconfigboard.mk
 CFLAGS += $(OPTIMIZATION_FLAGS)
 
-CFLAGS += $(INC) -Werror -Wall -std=gnu11 -nostdlib -fshort-enums $(BASE_CFLAGS) $(C_DEFS) $(CFLAGS_MOD) $(COPT) -Werror=missing-prototypes
+CFLAGS += $(INC) -Werror -Wall -std=gnu11 -nostdlib -fshort-enums $(BASE_CFLAGS) $(C_DEFS) $(CFLAGS_MOD) $(COPT) -Werror=missing-prototypes -Werror=old-style-definition
 
 # TODO: check this
 CFLAGS += -D__START=main -DFOMU
@@ -77,16 +77,12 @@ ifneq ($(CIRCUITPY_USB),0)
 SRC_C += lib/tinyusb/src/portable/valentyusb/eptri/dcd_eptri.c
 endif
 
-SRC_S = \
+SRC_S_UPPER = \
 	crt0-vexriscv.S
 
-SRC_COMMON_HAL_EXPANDED = $(addprefix shared-bindings/, $(SRC_COMMON_HAL)) \
-                          $(addprefix shared-bindings/, $(SRC_BINDINGS_ENUMS)) \
-                          $(addprefix common-hal/, $(SRC_COMMON_HAL))
+SRC_S = shared/runtime/gchelper_rv32i.s
 
-SRC_SHARED_MODULE_EXPANDED = $(addprefix shared-bindings/, $(SRC_SHARED_MODULE)) \
-                             $(addprefix shared-module/, $(SRC_SHARED_MODULE)) \
-                             $(addprefix shared-module/, $(SRC_SHARED_MODULE_INTERNAL))
+SRC_C += shared/runtime/gchelper_native.c
 
 $(BUILD)/lib/tlsf/tlsf.o: CFLAGS += -Wno-cast-align
 
@@ -96,20 +92,20 @@ FROZEN_MPY_MPY_FILES := $(addprefix $(BUILD)/,$(FROZEN_MPY_PY_FILES:.py=.mpy))
 endif
 
 OBJ += $(PY_O) $(SUPERVISOR_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
-OBJ += $(addprefix $(BUILD)/, $(SRC_COMMON_HAL_EXPANDED:.c=.o))
-OBJ += $(addprefix $(BUILD)/, $(SRC_SHARED_MODULE_EXPANDED:.c=.o))
+OBJ += $(addprefix $(BUILD)/, $(SRC_COMMON_HAL_SHARED_MODULE_EXPANDED:.c=.o))
 ifeq ($(INTERNAL_LIBM),1)
 OBJ += $(addprefix $(BUILD)/, $(SRC_LIBM:.c=.o))
 endif
 OBJ += $(addprefix $(BUILD)/, $(SRC_CIRCUITPY_COMMON:.c=.o))
-OBJ += $(addprefix $(BUILD)/, $(SRC_S:.S=.o))
+OBJ += $(addprefix $(BUILD)/, $(SRC_S:.s=.o))
+OBJ += $(addprefix $(BUILD)/, $(SRC_S_UPPER:.S=.o))
 OBJ += $(addprefix $(BUILD)/, $(SRC_MOD:.c=.o))
 
 $(BUILD)/$(FATFS_DIR)/ff.o: COPT += -Os
 $(filter $(PY_BUILD)/../extmod/vfs_fat_%.o, $(PY_O)): COPT += -Os
 
 # List of sources for qstr extraction
-SRC_QSTR += $(SRC_C) $(SRC_SUPERVISOR) $(SRC_MOD) $(SRC_COMMON_HAL_EXPANDED) $(SRC_SHARED_MODULE_EXPANDED) $(SRC_CIRCUITPY_COMMON)
+SRC_QSTR += $(SRC_C) $(SRC_SUPERVISOR) $(SRC_MOD) $(SRC_COMMON_HAL_SHARED_MODULE_EXPANDED) $(SRC_CIRCUITPY_COMMON)
 # Sources that only hold QSTRs after pre-processing.
 SRC_QSTR_PREPROCESSOR +=
 

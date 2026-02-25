@@ -305,7 +305,7 @@ void common_hal_audiomp3_mp3file_construct(audiomp3_mp3file_obj_t *self,
         self->inbuf.size = buffer_size - 2 * MAX_BUFFER_LEN;
     } else {
         self->inbuf.size = DEFAULT_INPUT_BUFFER_SIZE;
-        self->inbuf.buf = m_malloc(DEFAULT_INPUT_BUFFER_SIZE);
+        self->inbuf.buf = m_malloc_without_collect(DEFAULT_INPUT_BUFFER_SIZE);
         if (self->inbuf.buf == NULL) {
             common_hal_audiomp3_mp3file_deinit(self);
             m_malloc_fail(DEFAULT_INPUT_BUFFER_SIZE);
@@ -315,13 +315,13 @@ void common_hal_audiomp3_mp3file_construct(audiomp3_mp3file_obj_t *self,
             self->pcm_buffer[0] = (int16_t *)(void *)buffer;
             self->pcm_buffer[1] = (int16_t *)(void *)(buffer + MAX_BUFFER_LEN);
         } else {
-            self->pcm_buffer[0] = m_malloc(MAX_BUFFER_LEN);
+            self->pcm_buffer[0] = m_malloc_without_collect(MAX_BUFFER_LEN);
             if (self->pcm_buffer[0] == NULL) {
                 common_hal_audiomp3_mp3file_deinit(self);
                 m_malloc_fail(MAX_BUFFER_LEN);
             }
 
-            self->pcm_buffer[1] = m_malloc(MAX_BUFFER_LEN);
+            self->pcm_buffer[1] = m_malloc_without_collect(MAX_BUFFER_LEN);
             if (self->pcm_buffer[1] == NULL) {
                 common_hal_audiomp3_mp3file_deinit(self);
                 m_malloc_fail(MAX_BUFFER_LEN);
@@ -385,7 +385,7 @@ void common_hal_audiomp3_mp3file_set_file(audiomp3_mp3file_obj_t *self, mp_obj_t
     self->base.channel_count = fi.nChans;
     self->base.single_buffer = false;
     self->base.bits_per_sample = 16;
-    self->base.samples_signed = false;
+    self->base.samples_signed = true;
     self->base.max_buffer_length = fi.outputSamps * sizeof(int16_t);
     self->len = 2 * self->base.max_buffer_length;
     self->samples_decoded = 0;
